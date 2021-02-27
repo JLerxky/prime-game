@@ -1,4 +1,4 @@
-use crate::command;
+use super::command;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 

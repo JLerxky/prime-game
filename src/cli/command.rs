@@ -1,5 +1,5 @@
 use std::{collections::HashMap, sync::Arc};
-use crate::game_command::GameCommand;
+use super::game_command::GameCommand;
 
 pub trait Command {
     fn get_aliases(&self) -> Vec<&'static str>;

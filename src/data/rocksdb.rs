@@ -1,5 +1,5 @@
 use rocksdb::{ColumnFamilyDescriptor, Error, Options, DB};
-use util::aes::AESUtil;
+use super::super::util::aes::AESUtil;
 
 pub struct RocksDB {
     db: DB,
@@ -103,5 +103,5 @@ fn test() {
         }
         rocks_db.delete(format!("key-{}", i));
     }
-    let _ = rocks_db.destroy();
+    // let _ = rocks_db.destroy();
 }

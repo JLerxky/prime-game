@@ -1,4 +1,4 @@
-use crate::command::Command;
+use super::command::Command;
 
 pub struct GameCommand;
 
