@@ -49,6 +49,6 @@ fn change_fps_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, 
             }
         }
 
-        text.value = format!("{:.1} fps", fps,);
+        text.value = format!("{:.0} fps", fps);
     }
 }

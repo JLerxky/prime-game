@@ -1,4 +1,5 @@
 pub mod breakout;
+pub mod snake;
 
 use bevy::prelude::*;
 

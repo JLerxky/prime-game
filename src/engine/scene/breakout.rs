@@ -5,7 +5,7 @@ use bevy::{
     sprite::collide_aabb::{collide, Collision},
 };
 
-use crate::event::my_event::MyEvent;
+use super::super::event::my_event::MyEvent;
 
 use super::Route;
 
@@ -19,8 +19,8 @@ impl Plugin for BreakOut {
             .register_type::<Scoreboard>()
             .add_resource(Scoreboard { score: 0f32 })
             .add_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
-            .add_startup_system(save_scene_system.system())
-            // .add_startup_system(setup.system())
+            // .add_startup_system(save_scene_system.system())
+            .add_startup_system(setup.system())
             .add_system(paddle_movement_system.system())
             .add_system(ball_collision_system.system())
             .add_system(ball_movement_system.system())
@@ -29,19 +29,19 @@ impl Plugin for BreakOut {
 }
 
 #[derive(Reflect, Default)]
-#[reflect(Component)] 
+#[reflect(Component)]
 struct Paddle {
     speed: f32,
 }
 
 #[derive(Reflect, Default)]
-#[reflect(Component)] 
+#[reflect(Component)]
 struct Ball {
     velocity: Vec3,
 }
 
 #[derive(Reflect, Default)]
-#[reflect(Component)] 
+#[reflect(Component)]
 struct Scoreboard {
     score: f32,
 }

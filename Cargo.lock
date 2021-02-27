@@ -3025,6 +3025,7 @@ dependencies = [
  "base64 0.13.0",
  "bevy",
  "bevy_egui",
+ "clipboard",
  "libaes",
  "rand",
  "rocksdb",

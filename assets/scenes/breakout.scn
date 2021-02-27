@@ -1,0 +1,182 @@
+[
+  (
+    entity: 0,
+    components: [
+      {
+        "type": "prime_game::engine::scene::breakout::Paddle",
+        "struct": {
+          "speed": {
+            "type": "f32",
+            "value": 500.0,
+          },
+        },
+      },
+    ],
+  ),
+  (
+    entity: 1,
+    components: [
+      {
+        "type": "prime_game::engine::scene::breakout::Ball",
+        "struct": {
+          "velocity": {
+            "type": "glam::f32::vec3::Vec3",
+            "value": (282.8427, -282.8427, 0.0),
+          },
+        },
+      },
+    ],
+  ),
+  (
+    entity: 2,
+    components: [
+      {
+        "type": "bevy_transform::components::global_transform::GlobalTransform",
+        "struct": {
+          "translation": {
+            "type": "glam::f32::vec3::Vec3",
+            "value": (0.0, 0.0, 0.0),
+          },
+          "rotation": {
+            "type": "glam::f32::quat::Quat",
+            "value": (0.0, 0.0, 0.0, 1.0),
+          },
+          "scale": {
+            "type": "glam::f32::vec3::Vec3",
+            "value": (1.0, 1.0, 1.0),
+          },
+        },
+      },
+      {
+        "type": "bevy_transform::components::transform::Transform",
+        "struct": {
+          "translation": {
+            "type": "glam::f32::vec3::Vec3",
+            "value": (0.0, 0.0, 0.0),
+          },
+          "rotation": {
+            "type": "glam::f32::quat::Quat",
+            "value": (0.0, 0.0, 0.0, 1.0),
+          },
+          "scale": {
+            "type": "glam::f32::vec3::Vec3",
+            "value": (1.0, 1.0, 1.0),
+          },
+        },
+      },
+      {
+        "type": "bevy_render::draw::Draw",
+        "struct": {},
+      },
+      {
+        "type": "bevy_render::draw::Visible",
+        "struct": {
+          "is_visible": {
+            "type": "bool",
+            "value": true,
+          },
+          "is_transparent": {
+            "type": "bool",
+            "value": true,
+          },
+        },
+      },
+    ],
+  ),
+  (
+    entity: 3,
+    components: [],
+  ),
+  (
+    entity: 4,
+    components: [],
+  ),
+  (
+    entity: 5,
+    components: [],
+  ),
+  (
+    entity: 6,
+    components: [],
+  ),
+  (
+    entity: 7,
+    components: [],
+  ),
+  (
+    entity: 8,
+    components: [],
+  ),
+  (
+    entity: 9,
+    components: [],
+  ),
+  (
+    entity: 10,
+    components: [],
+  ),
+  (
+    entity: 11,
+    components: [],
+  ),
+  (
+    entity: 12,
+    components: [],
+  ),
+  (
+    entity: 13,
+    components: [],
+  ),
+  (
+    entity: 14,
+    components: [],
+  ),
+  (
+    entity: 15,
+    components: [],
+  ),
+  (
+    entity: 16,
+    components: [],
+  ),
+  (
+    entity: 17,
+    components: [],
+  ),
+  (
+    entity: 18,
+    components: [],
+  ),
+  (
+    entity: 19,
+    components: [],
+  ),
+  (
+    entity: 20,
+    components: [],
+  ),
+  (
+    entity: 21,
+    components: [],
+  ),
+  (
+    entity: 22,
+    components: [],
+  ),
+  (
+    entity: 23,
+    components: [],
+  ),
+  (
+    entity: 24,
+    components: [],
+  ),
+  (
+    entity: 25,
+    components: [],
+  ),
+  (
+    entity: 26,
+    components: [],
+  ),
+]
