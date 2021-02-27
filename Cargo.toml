@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "cli",
+    "data",
+    "engine",
+    "net",
+    "run",
+    "util",
+]

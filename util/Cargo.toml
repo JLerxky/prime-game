@@ -1,0 +1,12 @@
+[package]
+name = "util"
+version = "0.1.0"
+authors = ["JLer <472102489@qq.com>"]
+edition = "2018"
+
+[dependencies]
+rsa = "0.3"
+libaes = "0.6"
+base64 = "0.13"
+rand = "0.7"
+sha2 = "0.9"
