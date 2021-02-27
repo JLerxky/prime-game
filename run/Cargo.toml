@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 cli = { path = "../cli" }
 engine = { path = "../engine" }
-tokio = { version = "1.2", features = ["full"] }
+tokio = { version = "1.2", features = ["rt-multi-thread", "macros"] }
