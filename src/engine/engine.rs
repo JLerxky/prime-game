@@ -10,7 +10,7 @@ pub fn engine_start() {
     App::build()
         .add_resource(WindowDescriptor {
             // 垂直同步
-            vsync: false,
+            vsync: true,
             // 是否可调整窗口大小
             resizable: false,
             // 是否有窗口外壳
