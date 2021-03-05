@@ -106,6 +106,69 @@ pub fn init() -> [[Slot; 10]; 10] {
         right: 0,
     });
 
+    tiles.push(Tile {
+        name: "7".to_string(),
+        rotation: 0,
+        top: 1,
+        down: 1,
+        left: 1,
+        right: 0,
+    });
+
+    tiles.push(Tile {
+        name: "8".to_string(),
+        rotation: 0,
+        top: 0,
+        down: 0,
+        left: 0,
+        right: 0,
+    });
+
+    tiles.push(Tile {
+        name: "9".to_string(),
+        rotation: 0,
+        top: 1,
+        down: 1,
+        left: 1,
+        right: 1,
+    });
+
+    tiles.push(Tile {
+        name: "10".to_string(),
+        rotation: 0,
+        top: 1,
+        down: 1,
+        left: 1,
+        right: 1,
+    });
+
+    tiles.push(Tile {
+        name: "11".to_string(),
+        rotation: 0,
+        top: 1,
+        down: 0,
+        left: 1,
+        right: 1,
+    });
+
+    tiles.push(Tile {
+        name: "12".to_string(),
+        rotation: 0,
+        top: 1,
+        down: 1,
+        left: 0,
+        right: 1,
+    });
+
+    tiles.push(Tile {
+        name: "13".to_string(),
+        rotation: 0,
+        top: 0,
+        down: 1,
+        left: 1,
+        right: 1,
+    });
+
     let mut slots: [[Slot; 10]; 10] = [
         [
             Slot::new(),
