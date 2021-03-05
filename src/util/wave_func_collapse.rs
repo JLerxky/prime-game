@@ -4,9 +4,9 @@ use rand::Rng;
 
 // 坐标
 #[derive(Copy, Clone, Debug)]
-struct Position {
-    x: u32,
-    y: u32,
+pub struct Position {
+    x: u8,
+    y: u8,
 }
 
 // 瓷砖
@@ -38,7 +38,20 @@ pub struct Slot {
     tile: Option<Tile>,
 }
 
-pub fn init(x: u32, y: u32) -> Vec<Slot> {
+impl Slot {
+    pub fn new() -> Slot {
+        Slot{
+            position: Position{ x: 0, y: 0},
+            is_collapsed: false,
+            superposition: vec![],
+            entropy: 0,
+            tile: None,
+            
+        }
+    }
+}
+
+pub fn init() -> [[Slot; 10]; 10] {
     let mut tiles: Vec<Tile> = Vec::new();
 
     // 草地
@@ -96,17 +109,18 @@ pub fn init(x: u32, y: u32) -> Vec<Slot> {
         right: 1,
     });
 
-    let mut slots: Vec<Slot> = Vec::new();
-    for i in 0..x {
-        for j in 0..y {
+    let mut slots: [[Slot; 10]; 10] = [[Slot::new(), Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],[Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new(),Slot::new()],];
+    for i in 0..10 {
+        for j in 0..10 {
             let position = Position { x: i, y: j };
-            slots.push(Slot {
+            slots[usize::from(i)][usize::from(j)] = Slot {
                 position,
                 is_collapsed: false,
                 superposition: tiles.clone(),
                 entropy: tiles.len(),
                 tile: None,
-            });
+                
+            };
         }
     }
     slots
@@ -118,7 +132,7 @@ pub fn random_collapse(slots: &mut Vec<Slot>) -> Result<(), ()> {
         if slot.position.x == 0 && slot.position.y == 0 {
             if let Some(tile) = slot
                 .superposition
-                .get(rng.gen_range(0, slot.superposition.len()))
+                .get(rng.gen_range(0..slot.superposition.len()))
             {
                 slot.tile = Some(tile.clone());
                 slot.superposition = Vec::new();
@@ -131,12 +145,30 @@ pub fn random_collapse(slots: &mut Vec<Slot>) -> Result<(), ()> {
     Err(())
 }
 
-pub fn collapse(slots: &mut Vec<Slot>) {
-    let mut rng = rand::thread_rng();
-    // TODO 计算熵 for entropy in 0..x
-    for slot in slots {
-
+pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(),String>{
+    if position.x < 0 || position.x >= 10 || position.y < 0 || position.y >= 10 {
+        return Err("位置不合法".to_string());
     }
+    let mut rng = rand::thread_rng();
+    let mut slot_center = slots[usize::from(position.x)][usize::from(position.y)].clone();
+    // TODO 计算熵
+    if position.x - 1 >= 0 {
+        let slot_top = slots[usize::from(position.x - 1)][usize::from(position.y)].clone();
+        for tile_top in slot_top.superposition {
+            let iter = slot_center.superposition.iter_mut();
+            // while let Some(tile_center) = iter.next() {
+            //     if tile_top.down != tile_center.top {
+
+            //     }
+            // }
+        }
+    }
+    let slot_down = slots[usize::from(position.x)][usize::from(position.y)].clone();
+    let slot_left = slots[usize::from(position.x)][usize::from(position.y)].clone();
+    let slot_right = slots[usize::from(position.x)][usize::from(position.y)].clone();
+
+    slots[usize::from(position.x)][usize::from(position.y)] = slot_center;
+    Ok(())
 }
 
 #[test]
@@ -144,7 +176,7 @@ fn test() {
     use std::time::Instant;
     let start_time = Instant::now();
 
-    let slots = init(10, 10);
+    let slots = init();
 
     let time = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
