@@ -132,7 +132,7 @@ pub fn random_collapse(slots: &mut Vec<Slot>) -> Result<(), ()> {
         if slot.position.x == 0 && slot.position.y == 0 {
             if let Some(tile) = slot
                 .superposition
-                .get(rng.gen_range(0..slot.superposition.len()))
+                .get(rng.gen_range(0, slot.superposition.len()))
             {
                 slot.tile = Some(tile.clone());
                 slot.superposition = Vec::new();
@@ -158,8 +158,7 @@ pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(),S
             let iter = slot_center.superposition.iter_mut();
             // while let Some(tile_center) = iter.next() {
             //     if tile_top.down != tile_center.top {
-
-            //     }
+        //     }
             // }
         }
     }

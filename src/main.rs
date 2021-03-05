@@ -5,7 +5,7 @@ mod net;
 mod util;
 
 use cli::cli::Cli;
-use engine::engine::{engine_start, run_snake};
+use engine::engine::run_snake;
 use tokio::task;
 
 #[tokio::main]

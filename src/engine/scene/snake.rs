@@ -306,6 +306,7 @@ pub fn snake() {
     App::build()
         .add_resource(ClearColor(Color::rgb(0.04, 0.04, 0.04)))
         .add_resource(WindowDescriptor {
+            vsync: true,
             title: "Snake!".to_string(),
             width: 500.0,
             height: 500.0,
