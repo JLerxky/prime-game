@@ -5,7 +5,7 @@ mod net;
 mod util;
 
 use cli::cli::Cli;
-use engine::engine::run_snake;
+use engine::engine::engine_start;
 use tokio::task;
 
 #[tokio::main]
@@ -14,5 +14,5 @@ async fn main() {
         Cli::start();
     });
 
-    run_snake();
+    engine_start();
 }

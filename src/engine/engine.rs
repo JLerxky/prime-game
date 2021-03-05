@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::util::wave_func_collapse::{wave_func_collapse, Position, Slot, Tile};
+
 use super::{
     event::my_event::MyEventPlugin,
     plugin::{clipboard::Clipboard, fps::Fps},
@@ -24,6 +26,8 @@ pub fn engine_start() {
         })
         // 设置摄像机
         .add_startup_system(setCamera.system())
+        // 初始设置
+        .add_startup_system(setup.system())
         // 默认插件
         .add_plugins(DefaultPlugins)
         // 辅助功能插件
@@ -41,6 +45,71 @@ fn setCamera(commands: &mut Commands) {
         // cameras
         .spawn(Camera2dBundle::default())
         .spawn(CameraUiBundle::default());
+}
+
+fn setup(
+    commands: &mut Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
+    let brick_rows = 10;
+    let brick_columns = 10;
+    let brick_spacing = 1.0;
+    let brick_size = Vec2::new(40.0, 40.0);
+    let bricks_width = brick_columns as f32 * (brick_size.x + brick_spacing) - brick_spacing;
+    // center the bricks and move them up a bit
+    let bricks_offset = Vec3::new(-(bricks_width - brick_size.x) / 2.0, 100.0, 0.0);
+
+    let slots = wave_func_collapse();
+
+    for row in 0..brick_rows {
+        let y_position = row as f32 * (brick_size.y + brick_spacing);
+        for column in 0..brick_columns {
+            let texture_handle;
+            if let Some(tile) = slots[column][row].clone().tile {
+                texture_handle = materials.add(
+                    asset_server
+                        .load(format!("textures/tiles/{}.png", tile.name).as_str())
+                        .into(),
+                );
+            } else {
+                texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+            }
+            let brick_position = Vec3::new(
+                column as f32 * (brick_size.x + brick_spacing),
+                y_position,
+                0.0,
+            ) + bricks_offset;
+            commands.spawn(SpriteBundle {
+                material: texture_handle.clone(),
+                sprite: Sprite::new(brick_size),
+                transform: Transform::from_translation(brick_position),
+                ..Default::default()
+            });
+            commands.spawn(TextBundle {
+                text: Text {
+                    value: format!("{}-{}", column, row),
+                    font: asset_server.load("fonts/YouZai.ttf"),
+                    style: TextStyle {
+                        color: Color::rgb(0.5, 0.5, 1.0),
+                        font_size: 20.0,
+                        ..Default::default()
+                    },
+                },
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    position: Rect {
+                        bottom: Val::Px(brick_position[1] + 400.0),
+                        left: Val::Px(brick_position[0] + 400.0),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(brick_position),
+                ..Default::default()
+            });
+        }
+    }
 }
 
 pub fn run_snake() {
