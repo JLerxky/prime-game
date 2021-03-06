@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::util::wave_func_collapse::{wave_func_collapse, Position, Slot, Tile};
+use crate::util::wave_func_collapse::wave_func_collapse;
 
 use super::{
     event::my_event::MyEventPlugin,
@@ -14,11 +14,11 @@ pub fn engine_start() {
             // 垂直同步
             vsync: true,
             // 是否可调整窗口大小
-            resizable: false,
+            resizable: true,
             // 是否有窗口外壳
             decorations: true,
-            width: 1920f32,
-            height: 1080f32,
+            width: 500f32,
+            height: 500f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             title: String::from("初始游戏"),
@@ -52,29 +52,30 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let brick_rows = 10;
-    let brick_columns = 10;
+    let brick_rows = 30;
+    let brick_columns = 30;
     let brick_spacing = 1.0;
     let brick_size = Vec2::new(40.0, 40.0);
     let bricks_width = brick_columns as f32 * (brick_size.x + brick_spacing) - brick_spacing;
     // center the bricks and move them up a bit
-    let bricks_offset = Vec3::new(-(bricks_width - brick_size.x) / 2.0, 100.0, 0.0);
+    let bricks_offset = Vec3::new(-(bricks_width - brick_size.x) / 2.0, 0.0, 0.0);
 
-    let slots = wave_func_collapse();
+    let slots = wave_func_collapse(Vec2::new(-9.0, -9.0), 1, 1);
 
-    for row in 0..brick_rows {
+    for row in 0..=brick_rows {
         let y_position = row as f32 * (brick_size.y + brick_spacing);
-        for column in 0..brick_columns {
+        for column in 0..=brick_columns {
             let texture_handle;
-            if let Some(tile) = slots[column][row].clone().tile {
-                texture_handle = materials.add(
-                    asset_server
-                        .load(format!("textures/tiles/{}.png", tile.name).as_str())
-                        .into(),
-                );
-            } else {
-                texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-            }
+            // let slot = slots[column][row].clone();
+            // if let Some(tile) = slot.tile {
+            //     texture_handle = materials.add(
+            //         asset_server
+            //             .load(format!("textures/tiles/{}.png", tile.name).as_str())
+            //             .into(),
+            //     );
+            // } else {
+            texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+            // }
             let brick_position = Vec3::new(
                 column as f32 * (brick_size.x + brick_spacing),
                 y_position,
@@ -88,11 +89,11 @@ fn setup(
             });
             commands.spawn(TextBundle {
                 text: Text {
-                    value: format!("{}-{}", column, row),
+                    value: format!("[{},{}]", column, row),
                     font: asset_server.load("fonts/YouZai.ttf"),
                     style: TextStyle {
                         color: Color::rgb(0.5, 0.5, 1.0),
-                        font_size: 20.0,
+                        font_size: 14.0,
                         ..Default::default()
                     },
                 },

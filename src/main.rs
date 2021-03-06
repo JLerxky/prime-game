@@ -1,5 +1,5 @@
 // 纯GUI窗口运行, 无命令行窗口
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 mod cli;
 mod data;
 mod engine;

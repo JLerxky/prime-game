@@ -1,11 +1,5 @@
+use bevy::math::Vec2;
 use rand::Rng;
-
-// 坐标
-#[derive(Copy, Clone, Debug)]
-pub struct Position {
-    pub x: usize,
-    pub y: usize,
-}
 
 // 瓷砖
 #[derive(Clone, Debug)]
@@ -25,13 +19,13 @@ pub struct Tile {
 #[derive(Clone, Debug)]
 pub struct Slot {
     // 位置
-    pub position: Position,
+    pub position: Vec2,
     // 是否坍缩
     pub is_collapsed: bool,
     // 叠加态（可选瓷砖集合）
     pub superposition: Vec<Tile>,
     // 熵
-    pub entropy: usize,
+    pub entropy: u64,
     // 确定态（当前瓷砖）
     pub tile: Option<Tile>,
 }
@@ -39,7 +33,7 @@ pub struct Slot {
 impl Slot {
     pub fn new() -> Slot {
         Slot {
-            position: Position { x: 0, y: 0 },
+            position: Vec2::new(0.0, 0.0),
             is_collapsed: false,
             superposition: vec![],
             entropy: 0,
@@ -48,7 +42,7 @@ impl Slot {
     }
 }
 
-pub fn init() -> [[Slot; 10]; 10] {
+pub fn init(position: Vec2, x: usize, y: usize) -> Vec<Vec<Slot>> {
     let mut tiles: Vec<Tile> = Vec::new();
 
     // 草地
@@ -169,139 +163,20 @@ pub fn init() -> [[Slot; 10]; 10] {
         right: 1,
     });
 
-    let mut slots: [[Slot; 10]; 10] = [
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-        [
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-            Slot::new(),
-        ],
-    ];
-    for i in 0..10 {
-        for j in 0..10 {
-            let position = Position { x: i, y: j };
-            slots[usize::from(i)][usize::from(j)] = Slot {
+    let mut slots: Vec<Vec<Slot>> = vec![];
+    for i in (-(x as i32) / (2 as i32))..=((x as i32) / (2 as i32)) {
+        let mut slots_y: Vec<Slot> = vec![];
+        for j in (-(y as i32) / (2 as i32))..=((y as i32) / (2 as i32)) {
+            let position = Vec2::new(i as f32 + position.x, j as f32 + position.y);
+            slots_y.push(Slot {
                 position,
                 is_collapsed: false,
                 superposition: tiles.clone(),
-                entropy: tiles.len(),
+                entropy: tiles.len() as u64,
                 tile: None,
-            };
+            });
         }
+        slots.push(slots_y);
     }
     slots
 }
@@ -321,16 +196,36 @@ pub fn random_collapse(slot: &mut Slot) -> Result<(), ()> {
     Err(())
 }
 
-pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(), String> {
-    if position.x >= 10 || position.y >= 10 {
+pub fn collapse(position: Vec2, slots: &mut Vec<Vec<Slot>>) -> Result<(), String> {
+    // 矩阵大小
+    let x = slots.len();
+    let y = slots[0].len();
+
+    // 矩阵左下角与右上角坐标
+    let min_position: Vec2 = slots[0][0].position;
+    let max_position: Vec2 = slots[x - 1][y - 1].position;
+
+    // 传入位置是否在矩阵内
+    if position.x > max_position.x
+        || position.y > max_position.y
+        || position.x < min_position.x
+        || position.y < min_position.y
+    {
         return Err("位置不合法".to_string());
     }
-    let mut slot_center = slots[usize::from(position.x)][usize::from(position.y)].clone();
-    if slot_center.is_collapsed {
+
+    // 传入位置所在矩阵坐标
+    let i: usize = (position.x - min_position.x) as usize;
+    let j: usize = (position.y - min_position.y) as usize;
+    // 当前位置
+    let mut slot_current = slots[i][j].clone();
+
+    // 是否已坍缩
+    if slot_current.is_collapsed {
         return Ok(());
     }
     // 计算熵
-    if position.x > 0 {
+    if i > 0 {
         fn cannected(slot_left: Slot, tile_center: &Tile) -> bool {
             if slot_left.is_collapsed {
                 if let Some(tile_left) = slot_left.tile {
@@ -347,14 +242,11 @@ pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(), 
             }
             false
         }
-        slot_center.superposition.retain(|tile_center| {
-            cannected(
-                slots[usize::from(position.x - 1)][usize::from(position.y)].clone(),
-                tile_center,
-            )
-        });
+        slot_current
+            .superposition
+            .retain(|tile_center| cannected(slots[i - 1][j].clone(), tile_center));
     }
-    if position.x < 9 {
+    if i < (x - 1) {
         fn cannected(slot_right: Slot, tile_center: &Tile) -> bool {
             if slot_right.is_collapsed {
                 if let Some(tile_right) = slot_right.tile {
@@ -371,14 +263,11 @@ pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(), 
             }
             false
         }
-        slot_center.superposition.retain(|tile_center| {
-            cannected(
-                slots[usize::from(position.x + 1)][usize::from(position.y)].clone(),
-                tile_center,
-            )
-        });
+        slot_current
+            .superposition
+            .retain(|tile_center| cannected(slots[i + 1][j].clone(), tile_center));
     }
-    if position.y > 0 {
+    if j > 0 {
         fn cannected(slot_down: Slot, tile_center: &Tile) -> bool {
             if slot_down.is_collapsed {
                 if let Some(tile_down) = slot_down.tile {
@@ -395,14 +284,11 @@ pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(), 
             }
             false
         }
-        slot_center.superposition.retain(|tile_center| {
-            cannected(
-                slots[usize::from(position.x)][usize::from(position.y - 1)].clone(),
-                tile_center,
-            )
-        });
+        slot_current
+            .superposition
+            .retain(|tile_center| cannected(slots[i][j - 1].clone(), tile_center));
     }
-    if position.y < 9 {
+    if j < (y - 1) {
         fn cannected(slot_top: Slot, tile_center: &Tile) -> bool {
             if slot_top.is_collapsed {
                 if let Some(tile_top) = slot_top.tile {
@@ -419,21 +305,18 @@ pub fn collapse(position: Position, slots: &mut [[Slot; 10]; 10]) -> Result<(), 
             }
             false
         }
-        slot_center.superposition.retain(|tile_center| {
-            cannected(
-                slots[usize::from(position.x)][usize::from(position.y + 1)].clone(),
-                tile_center,
-            )
-        });
+        slot_current
+            .superposition
+            .retain(|tile_center| cannected(slots[i][j + 1].clone(), tile_center));
     }
-    slot_center.entropy = slot_center.superposition.len();
-    if slot_center.entropy == 0 {
-        slot_center.is_collapsed = true;
+    slot_current.entropy = slot_current.superposition.len() as u64;
+    if slot_current.entropy == 0 {
+        slot_current.is_collapsed = true;
     } else {
-        let _ = random_collapse(&mut slot_center);
+        let _ = random_collapse(&mut slot_current);
     }
 
-    slots[usize::from(position.x)][usize::from(position.y)] = slot_center;
+    slots[i][j] = slot_current;
     Ok(())
 }
 
@@ -442,41 +325,47 @@ fn test() {
     use std::time::Instant;
     let start_time = Instant::now();
 
-    let slots = wave_func_collapse();
+    let slots = wave_func_collapse(Vec2::new(-9.0, -9.0), 10, 10);
 
     let time = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
     println!("{}", time);
 }
 
-pub fn wave_func_collapse() -> [[Slot; 10]; 10] {
+pub fn wave_func_collapse(position: Vec2, size_x: usize, size_y: usize) -> Vec<Vec<Slot>> {
     use std::time::Instant;
     let start_time = Instant::now();
 
     let mut rng = rand::thread_rng();
-    let mut slots = init();
-    let _ = collapse(Position { x: 0, y: 0 }, &mut slots);
-    let mut min_entropy: usize = 255;
+    let size_x = size_x * 2;
+    let size_y = size_y * 2;
+    let mut slots = init(position, size_x, size_y);
+    let _ = collapse(position, &mut slots);
+    let mut min_entropy: u64 = 18446744073709551615;
     let mut min_slots: Vec<Slot> = Vec::new();
-    let mut count_collapse: u8 = 99;
+    let mut count_collapse = (size_x + 1) * (size_y + 1);
     while count_collapse > 0 {
-        for i in 0..10 {
-            for j in 0..10 {
+        for i in 0..=size_x {
+            for j in 0..=size_y {
                 if slots[i][j].entropy != 0 && slots[i][j].entropy < min_entropy {
-                    min_entropy = slots[i][j].entropy;
+                    min_entropy = slots[i][j].entropy as u64;
                     min_slots.push(slots[i][j].clone());
                 }
             }
         }
         min_slots.retain(|slot| slot.entropy == min_entropy);
-        if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
-            let _ = collapse(slot.position, &mut slots);
+        if min_slots.len() > 0 {
+            if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
+                let _ = collapse(slot.position, &mut slots);
+            }
         }
         min_slots = Vec::new();
-        min_entropy = 255;
+        min_entropy = 18446744073709551615;
         count_collapse -= 1;
     }
+
+    let elapsed = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
-    println!("{}", start_time.elapsed().as_secs_f64());
+    println!("{}", elapsed);
     slots
 }
