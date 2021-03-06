@@ -24,35 +24,46 @@ fn event_listener_system(
     mut move_event_reader: Local<EventReader<MoveEvent>>,
     move_events: Res<Events<MoveEvent>>,
     mut camera_transform_query: Query<&mut Transform, With<CameraCtrl>>,
-    mut play_transform_query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
 ) {
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
-    let mut play_transform = play_transform_query.iter_mut().next().unwrap();
+    let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
     for move_event in move_event_reader.iter(&move_events) {
-        println!("{:?}", move_event);
         match move_event {
             MoveEvent::UP(state) => {
                 if *state {
-                    camera_transform.translation += Vec3::new(0f32, 100f32, 0f32);
-                    play_transform.translation += Vec3::new(0f32, 100f32, 0f32);
+                    // camera_transform.translation += Vec3::new(0f32, 10f32, 0f32);
+                    // player_transform.translation += Vec3::new(0f32, 10f32, 0f32);
+                    player.velocity.y = 100f32;
+                } else {
+                    player.velocity.y = 0f32;
                 }
             }
             MoveEvent::DOWN(state) => {
                 if *state {
-                    camera_transform.translation += Vec3::new(0f32, -100f32, 0f32);
-                    play_transform.translation += Vec3::new(0f32, -100f32, 0f32);
+                    // camera_transform.translation += Vec3::new(0f32, -10f32, 0f32);
+                    // player_transform.translation += Vec3::new(0f32, -10f32, 0f32);
+                    player.velocity.y = -100f32;
+                } else {
+                    player.velocity.y = 0f32;
                 }
             }
             MoveEvent::LEFT(state) => {
                 if *state {
-                    camera_transform.translation += Vec3::new(-100f32, 0f32, 0f32);
-                    play_transform.translation += Vec3::new(-100f32, 0f32, 0f32);
+                    // camera_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
+                    // player_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
+                    player.velocity.x = -100f32;
+                } else {
+                    player.velocity.x = 0f32;
                 }
             }
             MoveEvent::RIGHT(state) => {
                 if *state {
-                    camera_transform.translation += Vec3::new(100f32, 0f32, 0f32);
-                    play_transform.translation += Vec3::new(100f32, 0f32, 0f32);
+                    // camera_transform.translation += Vec3::new(10f32, 0f32, 0f32);
+                    // player_transform.translation += Vec3::new(10f32, 0f32, 0f32);
+                    player.velocity.x = 100f32;
+                } else {
+                    player.velocity.x = 0f32;
                 }
             }
         }
