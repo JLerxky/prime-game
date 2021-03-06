@@ -36,13 +36,13 @@ fn keyboard_event_system(
 
     // 鼠标显示
     if keyboard_input.just_pressed(KeyCode::LAlt) {
+        window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
         window.set_cursor_lock_mode(false);
         window.set_cursor_visibility(true);
     }
     if keyboard_input.just_released(KeyCode::LAlt) {
         window.set_cursor_lock_mode(true);
         window.set_cursor_visibility(false);
-        window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32))
     }
 
     // ESC退出游戏

@@ -62,9 +62,6 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut windows: ResMut<Windows>,
 ) {
-    // 设置鼠标初始位置
-    let window = windows.get_primary_mut().unwrap();
-    window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
 }
 
 pub fn run_snake() {
