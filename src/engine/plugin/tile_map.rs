@@ -71,36 +71,27 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     // 生成地图
-    let tile_rows = 22;
-    let tile_columns = 38;
-    let tile_spacing = 0.0;
+    let add_x: usize = 19;
+    let add_y: usize = 11;
+    let tile_center = Vec3::new(0f32, 0f32, 0f32);
     let tile_size = Vec2::new(50.0, 50.0);
-    let tiles_width = tile_columns as f32 * (tile_size.x + tile_spacing) - tile_spacing;
-    let tiles_high = tile_rows as f32 * (tile_size.y + tile_spacing) - tile_spacing;
 
-    let tiles_offset = Vec3::new(-tiles_width / 2.0, -tiles_high / 2.0, 0.0);
+    let slots = wave_func_collapse(Vec2::new(0.0, 0.0), add_x, add_y);
 
-    let slots = wave_func_collapse(Vec2::new(0.0, 0.0), 1, 1);
+    let mut texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+    for x in -(add_x as i32)..=(add_x as i32) {
+        let x_position = x as f32 * tile_size.y;
+        for y in -(add_y as i32)..=(add_y as i32) {
+            let tile_position = Vec3::new(x_position, y as f32 * tile_size.x, 0.0) + tile_center;
 
-    for row in 0..=tile_rows {
-        let y_position = row as f32 * (tile_size.y + tile_spacing);
-        for column in 0..=tile_columns {
-            let texture_handle;
-            // let slot = slots[column][row].clone();
-            // if let Some(tile) = slot.tile {
-            //     texture_handle = materials.add(
-            //         asset_server
-            //             .load(format!("textures/tiles/{}.png", tile.name).as_str())
-            //             .into(),
-            //     );
-            // } else {
-            texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-            // }
-            let tile_position = Vec3::new(
-                column as f32 * (tile_size.x + tile_spacing),
-                y_position,
-                0.0,
-            ) + tiles_offset;
+            let slot = slots[(x as usize + add_x) as usize][y as usize + add_y].clone();
+            if let Some(tile) = slot.tile {
+                texture_handle = materials.add(
+                    asset_server
+                        .load(format!("textures/tiles/{}.png", tile.name).as_str())
+                        .into(),
+                );
+            }
             commands
                 .spawn(SpriteBundle {
                     material: texture_handle.clone(),
@@ -111,7 +102,6 @@ fn setup(
                 .with(TileMap {
                     transform: tile_position,
                 });
-            println!("{:?} {} {}", tile_position, row, column);
         }
     }
 }

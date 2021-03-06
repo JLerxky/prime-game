@@ -293,13 +293,13 @@ fn test() {
     println!("{}", time);
 }
 
-pub fn wave_func_collapse(position: Vec2, size_x: usize, size_y: usize) -> Vec<Vec<Slot>> {
+pub fn wave_func_collapse(position: Vec2, add_x: usize, add_y: usize) -> Vec<Vec<Slot>> {
     use std::time::Instant;
     let start_time = Instant::now();
 
     let mut rng = rand::thread_rng();
-    let size_x = size_x * 2;
-    let size_y = size_y * 2;
+    let size_x = add_x * 2;
+    let size_y = add_y * 2;
     let mut slots = init(position, size_x, size_y);
     let _ = collapse(position, &mut slots);
     let mut min_entropy: u64 = 18446744073709551615;
