@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::util::wave_func_collapse::wave_func_collapse;
 
 use super::{
-    event::{move_event::MoveEventPlugin, my_event::MyEventPlugin},
-    plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps},
+    event::{move_event::MoveEventPlugin, window_event::WindowEventPlugin},
+    plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin},
     scene::snake::snake,
 };
 
@@ -22,7 +22,7 @@ pub fn engine_start() {
             height: 1080f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
-            // 鼠标设置
+            // 鼠标隐藏并锁定
             cursor_locked: true,
             cursor_visible: false,
             ..Default::default()
@@ -37,11 +37,11 @@ pub fn engine_start() {
         // 辅助功能插件
         .add_plugin(Fps)
         .add_plugin(Clipboard)
-        .add_plugin(MoveEventPlugin)
         // 事件
-        .add_plugin(MyEventPlugin)
-        // 场景
-        // .add_plugin(BreakOut)
+        .add_plugin(MoveEventPlugin)
+        .add_plugin(WindowEventPlugin)
+        // 玩家
+        .add_plugin(PlayerPlugin)
         .run();
 }
 
@@ -57,7 +57,10 @@ fn setup(
     commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    mut windows: ResMut<Windows>,
 ) {
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
     let brick_rows = 30;
     let brick_columns = 30;
     let brick_spacing = 1.0;
