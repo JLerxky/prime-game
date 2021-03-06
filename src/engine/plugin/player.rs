@@ -1,4 +1,6 @@
 use bevy::{diagnostic::Diagnostics, prelude::*};
+
+use super::camera_ctrl::CameraCtrl;
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -37,10 +39,21 @@ fn setup(
 fn player_move_system(
     time: Res<Time>,
     mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
+    mut camera_transform_query: Query<&mut Transform, With<CameraCtrl>>,
 ) {
     let delta = time.delta_seconds();
     let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
     player_transform.translation += delta * player.velocity * 100f32;
+
+    let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
+
+    if player_transform.translation.x >= (camera_transform.translation.x + 800f32)
+        || player_transform.translation.x <= (camera_transform.translation.x - 800f32)
+        || player_transform.translation.y >= (camera_transform.translation.y + 400f32)
+        || player_transform.translation.y <= (camera_transform.translation.y - 400f32)
+    {
+        camera_transform.translation += delta * player.velocity * 100f32;
+    }
 }
 
 fn animate_system(
