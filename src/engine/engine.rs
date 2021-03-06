@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
-use crate::util::wave_func_collapse::wave_func_collapse;
-
 use super::{
     event::{move_event::MoveEventPlugin, window_event::WindowEventPlugin},
-    plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin},
+    plugin::{
+        camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
+        tile_map::TileMapPlugin,
+    },
     scene::snake::snake,
 };
 
@@ -40,6 +41,8 @@ pub fn engine_start() {
         // 事件
         .add_plugin(MoveEventPlugin)
         .add_plugin(WindowEventPlugin)
+        // 地图初始化
+        .add_plugin(TileMapPlugin)
         // 玩家
         .add_plugin(PlayerPlugin)
         .run();
@@ -59,67 +62,9 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut windows: ResMut<Windows>,
 ) {
+    // 设置鼠标初始位置
     let window = windows.get_primary_mut().unwrap();
     window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
-    let brick_rows = 30;
-    let brick_columns = 30;
-    let brick_spacing = 1.0;
-    let brick_size = Vec2::new(40.0, 40.0);
-    let bricks_width = brick_columns as f32 * (brick_size.x + brick_spacing) - brick_spacing;
-    // center the bricks and move them up a bit
-    let bricks_offset = Vec3::new(-(bricks_width - brick_size.x) / 2.0, 0.0, 0.0);
-
-    let slots = wave_func_collapse(Vec2::new(-9.0, -9.0), 1, 1);
-
-    for row in 0..=brick_rows {
-        let y_position = row as f32 * (brick_size.y + brick_spacing);
-        for column in 0..=brick_columns {
-            let texture_handle;
-            // let slot = slots[column][row].clone();
-            // if let Some(tile) = slot.tile {
-            //     texture_handle = materials.add(
-            //         asset_server
-            //             .load(format!("textures/tiles/{}.png", tile.name).as_str())
-            //             .into(),
-            //     );
-            // } else {
-            texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-            // }
-            let brick_position = Vec3::new(
-                column as f32 * (brick_size.x + brick_spacing),
-                y_position,
-                0.0,
-            ) + bricks_offset;
-            commands.spawn(SpriteBundle {
-                material: texture_handle.clone(),
-                sprite: Sprite::new(brick_size),
-                transform: Transform::from_translation(brick_position),
-                ..Default::default()
-            });
-            // commands.spawn(TextBundle {
-            //     text: Text {
-            //         value: format!("[{},{}]", column, row),
-            //         font: asset_server.load("fonts/YouZai.ttf"),
-            //         style: TextStyle {
-            //             color: Color::rgb(0.5, 0.5, 1.0),
-            //             font_size: 14.0,
-            //             ..Default::default()
-            //         },
-            //     },
-            //     style: Style {
-            //         position_type: PositionType::Absolute,
-            //         position: Rect {
-            //             bottom: Val::Px(brick_position[1] + 400.0),
-            //             left: Val::Px(brick_position[0] + 400.0),
-            //             ..Default::default()
-            //         },
-            //         ..Default::default()
-            //     },
-            //     transform: Transform::from_translation(brick_position),
-            //     ..Default::default()
-            // });
-        }
-    }
 }
 
 pub fn run_snake() {

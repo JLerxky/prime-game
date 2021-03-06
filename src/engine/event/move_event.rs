@@ -34,36 +34,44 @@ fn event_listener_system(
                 if *state {
                     // camera_transform.translation += Vec3::new(0f32, 10f32, 0f32);
                     // player_transform.translation += Vec3::new(0f32, 10f32, 0f32);
-                    player.velocity.y = 100f32;
+                    player.velocity.y = 1f32;
                 } else {
-                    player.velocity.y = 0f32;
+                    if player.velocity.y > 0f32 {
+                        player.velocity.y -= 1f32;
+                    }
                 }
             }
             MoveEvent::DOWN(state) => {
                 if *state {
                     // camera_transform.translation += Vec3::new(0f32, -10f32, 0f32);
                     // player_transform.translation += Vec3::new(0f32, -10f32, 0f32);
-                    player.velocity.y = -100f32;
+                    player.velocity.y = -1f32;
                 } else {
-                    player.velocity.y = 0f32;
+                    if player.velocity.y < 0f32 {
+                        player.velocity.y -= -1f32;
+                    }
                 }
             }
             MoveEvent::LEFT(state) => {
                 if *state {
                     // camera_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
                     // player_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
-                    player.velocity.x = -100f32;
+                    player.velocity.x = -1f32;
                 } else {
-                    player.velocity.x = 0f32;
+                    if player.velocity.x < 0f32 {
+                        player.velocity.x -= -1f32;
+                    }
                 }
             }
             MoveEvent::RIGHT(state) => {
                 if *state {
                     // camera_transform.translation += Vec3::new(10f32, 0f32, 0f32);
                     // player_transform.translation += Vec3::new(10f32, 0f32, 0f32);
-                    player.velocity.x = 100f32;
+                    player.velocity.x = 1f32;
                 } else {
-                    player.velocity.x = 0f32;
+                    if player.velocity.x > 0f32 {
+                        player.velocity.x -= 1f32;
+                    }
                 }
             }
         }

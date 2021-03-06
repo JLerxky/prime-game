@@ -19,13 +19,13 @@ fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture_handle = asset_server.load("textures/chars/gabe-idle-run.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1);
+    let texture_handle = asset_server.load("textures/chars/slime-orange.png");
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(12.0, 24.0), 4, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
-            transform: Transform::from_scale(Vec3::splat(2.0)),
+            transform: Transform::from_scale(Vec3::splat(6.0)),
             ..Default::default()
         })
         .with(Player {
@@ -40,20 +40,32 @@ fn player_move_system(
 ) {
     let delta = time.delta_seconds();
     let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
-    player_transform.translation += delta * player.velocity;
+    player_transform.translation += delta * player.velocity * 100f32;
 }
 
 fn animate_system(
     time: Res<Time>,
+    mut player_query: Query<
+        (
+            &Player,
+            &mut Timer,
+            &mut TextureAtlasSprite,
+            &Handle<TextureAtlas>,
+        ),
+        With<Player>,
+    >,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
+    let (player, mut timer, mut sprite, texture_atlas_handle) =
+        player_query.iter_mut().next().unwrap();
+    if player.velocity.distance(Vec3::new(0.0, 0.0, 0.0)) != 0f32 {
         timer.tick(time.delta_seconds());
         if timer.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
         }
+    } else {
+        sprite.index = 0u32;
     }
 }
 
