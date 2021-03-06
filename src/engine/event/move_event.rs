@@ -1,6 +1,6 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 
-use crate::engine::plugin::{camera_ctrl::CameraCtrl, player::Player};
+use crate::engine::plugin::player::Player;
 
 pub struct MoveEventPlugin;
 
@@ -23,17 +23,13 @@ enum MoveEvent {
 fn event_listener_system(
     mut move_event_reader: Local<EventReader<MoveEvent>>,
     move_events: Res<Events<MoveEvent>>,
-    mut camera_transform_query: Query<&mut Transform, With<CameraCtrl>>,
-    mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
+    mut player_query: Query<&mut Player, With<Player>>,
 ) {
-    let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
-    let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
+    let mut player = player_query.iter_mut().next().unwrap();
     for move_event in move_event_reader.iter(&move_events) {
         match move_event {
             MoveEvent::UP(state) => {
                 if *state {
-                    // camera_transform.translation += Vec3::new(0f32, 10f32, 0f32);
-                    // player_transform.translation += Vec3::new(0f32, 10f32, 0f32);
                     player.velocity.y = 1f32;
                 } else {
                     if player.velocity.y > 0f32 {
@@ -43,8 +39,6 @@ fn event_listener_system(
             }
             MoveEvent::DOWN(state) => {
                 if *state {
-                    // camera_transform.translation += Vec3::new(0f32, -10f32, 0f32);
-                    // player_transform.translation += Vec3::new(0f32, -10f32, 0f32);
                     player.velocity.y = -1f32;
                 } else {
                     if player.velocity.y < 0f32 {
@@ -54,8 +48,6 @@ fn event_listener_system(
             }
             MoveEvent::LEFT(state) => {
                 if *state {
-                    // camera_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
-                    // player_transform.translation += Vec3::new(-10f32, 0f32, 0f32);
                     player.velocity.x = -1f32;
                 } else {
                     if player.velocity.x < 0f32 {
@@ -65,8 +57,6 @@ fn event_listener_system(
             }
             MoveEvent::RIGHT(state) => {
                 if *state {
-                    // camera_transform.translation += Vec3::new(10f32, 0f32, 0f32);
-                    // player_transform.translation += Vec3::new(10f32, 0f32, 0f32);
                     player.velocity.x = 1f32;
                 } else {
                     if player.velocity.x > 0f32 {

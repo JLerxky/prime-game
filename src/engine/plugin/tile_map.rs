@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::util::wave_func_collapse::wave_func_collapse;
 
+use super::{camera_ctrl::CameraCtrl, player::Player};
+
 // 坐标
 #[derive(Copy, Clone, Debug)]
 pub struct Position {
@@ -50,6 +52,10 @@ impl Slot {
     }
 }
 
+pub struct TileMap {
+    transform: Vec3,
+}
+
 pub struct TileMapPlugin;
 
 impl Plugin for TileMapPlugin {
@@ -59,20 +65,20 @@ impl Plugin for TileMapPlugin {
     }
 }
 
-fn setup(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(
+    commands: &mut Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
     // 生成地图
-    let tile_rows = 30;
-    let tile_columns = 60;
-    let tile_spacing = 1.0;
-    let tile_size = Vec2::new(40.0, 40.0);
+    let tile_rows = 22;
+    let tile_columns = 38;
+    let tile_spacing = 0.0;
+    let tile_size = Vec2::new(50.0, 50.0);
     let tiles_width = tile_columns as f32 * (tile_size.x + tile_spacing) - tile_spacing;
     let tiles_high = tile_rows as f32 * (tile_size.y + tile_spacing) - tile_spacing;
 
-    let tiles_offset = Vec3::new(
-        -(tiles_width - tile_size.x) / 2.0,
-        -(tiles_high - tile_size.y) / 2.0,
-        0.0,
-    );
+    let tiles_offset = Vec3::new(-tiles_width / 2.0, -tiles_high / 2.0, 0.0);
 
     let slots = wave_func_collapse(Vec2::new(0.0, 0.0), 1, 1);
 
@@ -102,31 +108,22 @@ fn setup(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) 
                     transform: Transform::from_translation(tile_position),
                     ..Default::default()
                 })
-                .with(Position { x: column, y: row });
-            // commands.spawn(TextBundle {
-            //     text: Text {
-            //         value: format!("[{},{}]", column, row),
-            //         font: asset_server.load("fonts/YouZai.ttf"),
-            //         style: TextStyle {
-            //             color: Color::rgb(0.5, 0.5, 1.0),
-            //             font_size: 14.0,
-            //             ..Default::default()
-            //         },
-            //     },
-            //     style: Style {
-            //         position_type: PositionType::Absolute,
-            //         position: Rect {
-            //             bottom: Val::Px(tile_position[1] + 400.0),
-            //             left: Val::Px(tile_position[0] + 400.0),
-            //             ..Default::default()
-            //         },
-            //         ..Default::default()
-            //     },
-            //     transform: Transform::from_translation(tile_position),
-            //     ..Default::default()
-            // });
+                .with(TileMap {
+                    transform: tile_position,
+                });
+            println!("{:?} {} {}", tile_position, row, column);
         }
     }
 }
 
-fn tile_map_collapse_system() {}
+fn tile_map_collapse_system(
+    commands: &mut Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    player_transform_query: Query<&Transform, With<Player>>,
+    camera_transform_query: Query<&Transform, With<CameraCtrl>>,
+) {
+    let player_transform = player_transform_query.iter().next().unwrap();
+    let camera_transform = camera_transform_query.iter().next().unwrap();
+
+    // println!("{:?}", player_transform);
+}
