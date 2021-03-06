@@ -3,27 +3,31 @@ use bevy::prelude::*;
 use crate::util::wave_func_collapse::wave_func_collapse;
 
 use super::{
-    event::my_event::MyEventPlugin,
-    plugin::{clipboard::Clipboard, fps::Fps},
+    event::{move_event::MoveEventPlugin, my_event::MyEventPlugin},
+    plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps},
     scene::snake::snake,
 };
 
 pub fn engine_start() {
     App::build()
         .add_resource(WindowDescriptor {
+            title: String::from("初始游戏"),
             // 垂直同步
             vsync: true,
             // 是否可调整窗口大小
-            resizable: true,
+            resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 500f32,
-            height: 500f32,
+            width: 1920f32,
+            height: 1080f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
-            title: String::from("初始游戏"),
+            // 鼠标设置
+            cursor_locked: true,
+            cursor_visible: false,
             ..Default::default()
         })
+        .add_resource(Msaa { samples: 8 })
         // 设置摄像机
         .add_startup_system(setCamera.system())
         // 初始设置
@@ -33,6 +37,7 @@ pub fn engine_start() {
         // 辅助功能插件
         .add_plugin(Fps)
         .add_plugin(Clipboard)
+        .add_plugin(MoveEventPlugin)
         // 事件
         .add_plugin(MyEventPlugin)
         // 场景
@@ -44,6 +49,7 @@ fn setCamera(commands: &mut Commands) {
     commands
         // cameras
         .spawn(Camera2dBundle::default())
+        .with(CameraCtrl)
         .spawn(CameraUiBundle::default());
 }
 
@@ -87,28 +93,28 @@ fn setup(
                 transform: Transform::from_translation(brick_position),
                 ..Default::default()
             });
-            commands.spawn(TextBundle {
-                text: Text {
-                    value: format!("[{},{}]", column, row),
-                    font: asset_server.load("fonts/YouZai.ttf"),
-                    style: TextStyle {
-                        color: Color::rgb(0.5, 0.5, 1.0),
-                        font_size: 14.0,
-                        ..Default::default()
-                    },
-                },
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    position: Rect {
-                        bottom: Val::Px(brick_position[1] + 400.0),
-                        left: Val::Px(brick_position[0] + 400.0),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                transform: Transform::from_translation(brick_position),
-                ..Default::default()
-            });
+            // commands.spawn(TextBundle {
+            //     text: Text {
+            //         value: format!("[{},{}]", column, row),
+            //         font: asset_server.load("fonts/YouZai.ttf"),
+            //         style: TextStyle {
+            //             color: Color::rgb(0.5, 0.5, 1.0),
+            //             font_size: 14.0,
+            //             ..Default::default()
+            //         },
+            //     },
+            //     style: Style {
+            //         position_type: PositionType::Absolute,
+            //         position: Rect {
+            //             bottom: Val::Px(brick_position[1] + 400.0),
+            //             left: Val::Px(brick_position[0] + 400.0),
+            //             ..Default::default()
+            //         },
+            //         ..Default::default()
+            //     },
+            //     transform: Transform::from_translation(brick_position),
+            //     ..Default::default()
+            // });
         }
     }
 }
