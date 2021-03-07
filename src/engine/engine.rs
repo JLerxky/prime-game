@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
 use super::{
-    event::{move_event::MoveEventPlugin, window_event::WindowEventPlugin},
+    event::{
+        map_event::MapEventPlugin, move_event::MoveEventPlugin, window_event::WindowEventPlugin,
+    },
     plugin::{
         camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
         tile_map::TileMapPlugin,
@@ -40,6 +42,7 @@ pub fn engine_start() {
         .add_plugin(Clipboard)
         // 事件
         .add_plugin(MoveEventPlugin)
+        .add_plugin(MapEventPlugin)
         .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)

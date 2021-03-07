@@ -294,8 +294,8 @@ fn test() {
 }
 
 pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> Vec<Vec<Slot>> {
-    use std::time::Instant;
-    let start_time = Instant::now();
+    // use std::time::Instant;
+    // let start_time = Instant::now();
 
     let mut rng = rand::thread_rng();
     let size_x = add_x * 2;
@@ -325,8 +325,8 @@ pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> Vec<Vec
         count_collapse -= 1;
     }
 
-    let elapsed = start_time.elapsed().as_secs_f64();
-    println!("{:?}", slots);
-    println!("{}", elapsed);
+    // let elapsed = start_time.elapsed().as_secs_f64();
+    // println!("{:?}", slots);
+    // println!("{}", elapsed);
     slots
 }

@@ -1,5 +1,7 @@
 use bevy::{diagnostic::Diagnostics, prelude::*};
 
+use crate::engine::event::map_event::MapEvent;
+
 use super::camera_ctrl::CameraCtrl;
 pub struct PlayerPlugin;
 
@@ -44,10 +46,11 @@ fn player_move_system(
     time: Res<Time>,
     mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
     mut camera_transform_query: Query<&mut Transform, With<CameraCtrl>>,
+    mut map_events: ResMut<Events<MapEvent>>,
 ) {
     let delta = time.delta_seconds();
     let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
-    player_transform.translation += delta * player.velocity * 1000f32;
+    player_transform.translation += delta * player.velocity * 300f32;
 
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
 
@@ -56,7 +59,8 @@ fn player_move_system(
         || player_transform.translation.y >= (camera_transform.translation.y + 400f32)
         || player_transform.translation.y <= (camera_transform.translation.y - 400f32)
     {
-        camera_transform.translation += delta * player.velocity * 1000f32;
+        camera_transform.translation += delta * player.velocity * 300f32;
+        map_events.send(MapEvent::Add);
     }
 }
 
