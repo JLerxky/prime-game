@@ -3031,6 +3031,8 @@ dependencies = [
  "rocksdb",
  "rsa",
  "rustyline",
+ "serde",
+ "serde_json",
  "sha2",
  "tokio",
 ]

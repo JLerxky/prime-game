@@ -1,5 +1,5 @@
-use rocksdb::{ColumnFamilyDescriptor, Error, Options, DB};
 use super::super::util::aes::AESUtil;
+use rocksdb::{ColumnFamilyDescriptor, Error, Options, DB};
 
 pub struct RocksDB {
     db: DB,
@@ -30,7 +30,7 @@ impl RocksDB {
     }
 
     // 加密存储
-    fn put<K, V>(&self, key: K, value: V) -> Result<(), Error>
+    pub fn put<K, V>(&self, key: K, value: V) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
         V: AsRef<[u8]>,
@@ -40,7 +40,7 @@ impl RocksDB {
     }
 
     // 无加密存储
-    fn put_value<K, V>(&self, key: K, value: V) -> Result<(), Error>
+    pub fn put_value<K, V>(&self, key: K, value: V) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
         V: AsRef<[u8]>,
@@ -49,7 +49,7 @@ impl RocksDB {
     }
 
     // 读取加密值
-    fn get<K: AsRef<[u8]>>(&self, key: K) -> Option<String> {
+    pub fn get<K: AsRef<[u8]>>(&self, key: K) -> Option<String> {
         match self.db.get(key) {
             Ok(Some(ciphertext)) => self.aes.decrypt(ciphertext.as_slice()),
             Ok(None) => None,
@@ -61,7 +61,7 @@ impl RocksDB {
     }
 
     // 读取原值
-    fn get_value<K: AsRef<[u8]>>(&self, key: K) -> Option<String> {
+    pub fn get_value<K: AsRef<[u8]>>(&self, key: K) -> Option<String> {
         match self.db.get(key) {
             Ok(Some(ciphertext)) => match String::from_utf8(ciphertext) {
                 Ok(data) => Some(data),
@@ -75,14 +75,14 @@ impl RocksDB {
         }
     }
 
-    fn delete<K: AsRef<[u8]>>(&self, key: K) {
+    pub fn delete<K: AsRef<[u8]>>(&self, key: K) {
         match self.db.delete(key) {
             Ok(_) => {}
             Err(e) => println!("RocksDB: 清空库文件失败 -> {}", e),
         }
     }
 
-    fn destroy(&self) {
+    pub fn destroy(&self) {
         match DB::destroy(&self.opts, self.path.clone()) {
             Ok(_) => {}
             Err(e) => println!("RocksDB: 清空库文件失败 -> {}", e),

@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{math::Vec3Swizzles, prelude::*};
+use serde::{Deserialize, Serialize};
 
-use crate::{engine::event::map_event::MapEvent, util::wave_func_collapse::wave_func_collapse};
+use crate::{engine::event::map_event::MapEvent, util::collapse::wave_func_collapse};
 
 use super::{camera_ctrl::CameraCtrl, player::Player};
 
@@ -14,10 +15,10 @@ pub struct Position {
 }
 
 // 瓷砖
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Tile {
     // 文件名作为name
-    pub name: String,
+    pub id: i32,
     // 旋转 0-0 1-90 2-180 3-270
     pub rotation: u8,
     // 可连接id
@@ -28,27 +29,144 @@ pub struct Tile {
 }
 
 // 位置
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Slot {
     // 位置
     pub position: Vec3,
     // 是否坍缩
     pub is_collapsed: bool,
     // 叠加态（可选瓷砖集合）
-    pub superposition: Vec<Tile>,
+    pub superposition: [Option<Tile>; 13],
     // 熵
-    pub entropy: u64,
+    pub entropy: usize,
     // 确定态（当前瓷砖）
     pub tile: Option<Tile>,
 }
 
+pub fn get_tiles() -> [Option<Tile>; 13] {
+    // 加载瓷砖素材
+    [
+        Some(Tile {
+            id: 1,
+            rotation: 0,
+            top: 1,
+            down: 0,
+            left: 0,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 2,
+            rotation: 0,
+            top: 0,
+            down: 0,
+            left: 1,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 3,
+            rotation: 0,
+            top: 0,
+            down: 1,
+            left: 1,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 4,
+            rotation: 0,
+            top: 1,
+            down: 1,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 5,
+            rotation: 0,
+            top: 0,
+            down: 1,
+            left: 0,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 6,
+            rotation: 0,
+            top: 1,
+            down: 0,
+            left: 1,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 7,
+            rotation: 0,
+            top: 1,
+            down: 1,
+            left: 1,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 8,
+            rotation: 0,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 9,
+            rotation: 0,
+            top: 1,
+            down: 1,
+            left: 1,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 10,
+            rotation: 0,
+            top: 1,
+            down: 1,
+            left: 1,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 11,
+            rotation: 0,
+            top: 1,
+            down: 0,
+            left: 1,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 12,
+            rotation: 0,
+            top: 1,
+            down: 1,
+            left: 0,
+            right: 1,
+        }),
+        Some(Tile {
+            id: 13,
+            rotation: 0,
+            top: 0,
+            down: 1,
+            left: 1,
+            right: 1,
+        }),
+    ]
+}
+
+pub fn get_none_tiles() -> [Option<Tile>; 13] {
+    [
+        None, None, None, None, None, None, None, None, None, None, None, None, None,
+    ]
+}
+
 impl Slot {
-    pub fn new() -> Slot {
+    pub fn new(position: Vec3) -> Slot {
+        let tiles = get_tiles();
         Slot {
-            position: Vec3::new(0.0, 0.0, 0.0),
+            position,
             is_collapsed: false,
-            superposition: vec![],
-            entropy: 0,
+            superposition: tiles,
+            entropy: tiles.len(),
             tile: None,
         }
     }
@@ -60,7 +178,7 @@ pub struct TileMap {
 
 #[derive(Default)]
 pub struct MapState {
-    slots: Vec<Vec<Slot>>,
+    slots: HashMap<String, Slot>,
     tiles: HashMap<i32, HashMap<i32, bool>>,
 }
 
@@ -68,10 +186,13 @@ pub struct TileMapPlugin;
 
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(MapState { slots: Vec::new(), tiles: HashMap::new() })
-            .add_startup_system(setup.system())
-            .add_system(tile_map_produce_system.system())
-            .add_system(tile_map_clean_system.system());
+        app.add_resource(MapState {
+            slots: HashMap::default(),
+            tiles: HashMap::new(),
+        })
+        .add_startup_system(setup.system())
+        .add_system(tile_map_produce_system.system())
+        .add_system(tile_map_clean_system.system());
         // .add_stage_after(
         //     stage::UPDATE,
         //     "fixed_update",
@@ -90,7 +211,7 @@ fn test() {
     println!("{:?}", 1920 as i32 / 100i32);
 }
 
-fn setup(
+fn setup<'a>(
     commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
@@ -107,7 +228,7 @@ fn setup(
     println!("{},{}", add_x, add_y);
 
     let tile_center = Vec3::new(0f32, 0f32, 0f32);
-    let tile_size = Vec2::new(50.0, 50.0);
+    let tile_size = Vec3::new(50.0, 50.0, 50.0);
 
     map_state.slots = wave_func_collapse(Vec3::new(0.0, 0.0, 0.0), add_x, add_y);
 
@@ -128,14 +249,14 @@ fn setup(
             commands
                 .spawn(SpriteBundle {
                     material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size),
+                    sprite: Sprite::new(tile_size.xy()),
                     transform: Transform::from_translation(tile_position),
                     ..Default::default()
                 })
                 .with(Slot {
                     position: tile_position,
                     is_collapsed: true,
-                    superposition: vec![],
+                    superposition: get_none_tiles(),
                     entropy: 0,
                     tile: None,
                 });
@@ -201,7 +322,7 @@ fn tile_map_produce_system(
                             .with(Slot {
                                 position: tile_position,
                                 is_collapsed: true,
-                                superposition: vec![],
+                                superposition: get_none_tiles(),
                                 entropy: 0,
                                 tile: None,
                             });

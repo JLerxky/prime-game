@@ -281,18 +281,6 @@ pub fn collapse(position: Vec3, slots: &mut Vec<Vec<Slot>>) -> Result<(), String
     Ok(())
 }
 
-#[test]
-fn test() {
-    use std::time::Instant;
-    let start_time = Instant::now();
-
-    let slots = wave_func_collapse(Vec3::new(-9.0, -9.0, 0.0), 10, 10);
-
-    let time = start_time.elapsed().as_secs_f64();
-    println!("{:?}", slots);
-    println!("{}", time);
-}
-
 pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> Vec<Vec<Slot>> {
     // use std::time::Instant;
     // let start_time = Instant::now();
@@ -329,4 +317,16 @@ pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> Vec<Vec
     // println!("{:?}", slots);
     // println!("{}", elapsed);
     slots
+}
+
+#[test]
+fn test() {
+    use std::time::Instant;
+    let start_time = Instant::now();
+
+    let slots = wave_func_collapse(Vec3::new(-9.0, -9.0, 0.0), 10, 10);
+
+    let time = start_time.elapsed().as_secs_f64();
+    println!("{:?}", slots);
+    println!("{}", time);
 }
