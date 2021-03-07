@@ -27,7 +27,11 @@ fn setup(
     commands
         .spawn(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
-            transform: Transform::from_scale(Vec3::splat(6.0)),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 1.0),
+                scale: Vec3::splat(6.0),
+                ..Default::default()
+            },
             ..Default::default()
         })
         .with(Player {
@@ -43,7 +47,7 @@ fn player_move_system(
 ) {
     let delta = time.delta_seconds();
     let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
-    player_transform.translation += delta * player.velocity * 100f32;
+    player_transform.translation += delta * player.velocity * 1000f32;
 
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
 
@@ -52,7 +56,7 @@ fn player_move_system(
         || player_transform.translation.y >= (camera_transform.translation.y + 400f32)
         || player_transform.translation.y <= (camera_transform.translation.y - 400f32)
     {
-        camera_transform.translation += delta * player.velocity * 100f32;
+        camera_transform.translation += delta * player.velocity * 1000f32;
     }
 }
 

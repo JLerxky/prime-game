@@ -1,9 +1,9 @@
-use bevy::math::Vec2;
+use bevy::math::Vec3;
 use rand::Rng;
 
 use crate::engine::plugin::tile_map::{Slot, Tile};
 
-pub fn init(position: Vec2, x: usize, y: usize) -> Vec<Vec<Slot>> {
+pub fn init(position: Vec3, x: usize, y: usize) -> Vec<Vec<Slot>> {
     let mut tiles: Vec<Tile> = Vec::new();
 
     // 草地
@@ -128,7 +128,7 @@ pub fn init(position: Vec2, x: usize, y: usize) -> Vec<Vec<Slot>> {
     for i in (-(x as i32) / (2 as i32))..=((x as i32) / (2 as i32)) {
         let mut slots_y: Vec<Slot> = vec![];
         for j in (-(y as i32) / (2 as i32))..=((y as i32) / (2 as i32)) {
-            let position = Vec2::new(i as f32 + position.x, j as f32 + position.y);
+            let position = Vec3::new(i as f32 + position.x, j as f32 + position.y, position.z);
             slots_y.push(Slot {
                 position,
                 is_collapsed: false,
@@ -157,14 +157,14 @@ pub fn random_collapse(slot: &mut Slot) -> Result<(), ()> {
     Err(())
 }
 
-pub fn collapse(position: Vec2, slots: &mut Vec<Vec<Slot>>) -> Result<(), String> {
+pub fn collapse(position: Vec3, slots: &mut Vec<Vec<Slot>>) -> Result<(), String> {
     // 矩阵大小
     let x = slots.len();
     let y = slots[0].len();
 
     // 矩阵左下角与右上角坐标
-    let min_position: Vec2 = slots[0][0].position;
-    let max_position: Vec2 = slots[x - 1][y - 1].position;
+    let min_position: Vec3 = slots[0][0].position;
+    let max_position: Vec3 = slots[x - 1][y - 1].position;
 
     // 传入位置是否在矩阵内
     if position.x > max_position.x
@@ -286,14 +286,14 @@ fn test() {
     use std::time::Instant;
     let start_time = Instant::now();
 
-    let slots = wave_func_collapse(Vec2::new(-9.0, -9.0), 10, 10);
+    let slots = wave_func_collapse(Vec3::new(-9.0, -9.0, 0.0), 10, 10);
 
     let time = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
     println!("{}", time);
 }
 
-pub fn wave_func_collapse(position: Vec2, add_x: usize, add_y: usize) -> Vec<Vec<Slot>> {
+pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> Vec<Vec<Slot>> {
     use std::time::Instant;
     let start_time = Instant::now();
 
