@@ -8,27 +8,32 @@ use crate::{
     engine::plugin::tile_map::{get_tiles, Slot},
 };
 
-pub fn init(position: Vec3, size: Vec3, step: f32) -> HashMap<String, Slot> {
+pub fn vec3_to_key(pos: Vec3) -> String {
+    format!("{},{},{}", pos.x as i32, pos.y as i32, pos.z as i32)
+}
+
+pub fn i32_to_key(x: i32, y: i32, z: i32) -> String {
+    format!("{},{},{}", x, y, z)
+}
+
+pub fn init(position: Vec3, size: Vec3, step: Vec3) -> HashMap<String, Slot> {
     let mut slots: HashMap<String, Slot> = HashMap::default();
 
     let rocks_db = RocksDB::open();
 
     for x in (-(size.x as i32) / (2 as i32)) + 1..=((size.x as i32) / (2 as i32)) + 1 {
-        let position_x = x as f32 * step;
+        let position_x = x as f32 * step.x;
         for y in (-(size.y as i32) / (2 as i32))..=((size.y as i32) / (2 as i32)) {
-            let position_y = y as f32 * step;
+            let position_y = y as f32 * step.y;
             for z in (-(size.z as i32) / (2 as i32))..=((size.z as i32) / (2 as i32)) {
-                let position_z = z as f32 * step;
+                let position_z = z as f32 * step.z;
                 let position = Vec3::new(
                     position_x + position.x,
                     position_y + position.y,
                     position_z + position.z,
                 );
 
-                let position_key = format!(
-                    "{:?},{:?},{:?}",
-                    position.x as i32, position.y as i32, position.z as i32
-                );
+                let position_key = vec3_to_key(position);
 
                 match rocks_db.get_value(&position_key) {
                     Some(value) => {
@@ -89,12 +94,7 @@ pub fn collapse(
     let k: i32 = (position.z - min_position.z) as i32;
     // 当前位置
     let slots_clone = slots.clone();
-    let mut slot_current = slots
-        .get_mut(&format!(
-            "{:?},{:?},{:?}",
-            position.x as i32, position.y as i32, position.z as i32
-        ))
-        .unwrap();
+    let mut slot_current = slots.get_mut(&vec3_to_key(position)).unwrap();
 
     // 是否已坍缩
     if slot_current.is_collapsed {
@@ -102,48 +102,44 @@ pub fn collapse(
     }
     // 计算熵
     // 四周
-    let mut slot_top = *slots_clone
-        .get(&format!(
-            "{:?},{:?},{:?}",
+    let slot_top = *slots_clone
+        .get(&i32_to_key(
             position.x as i32,
             position.y as i32 + size.y as i32,
-            position.z as i32
+            position.z as i32,
         ))
         .unwrap_or(&Slot::new(Vec3::new(
             position.x,
             position.y + size.y,
             position.z,
         )));
-    let mut slot_down = *slots_clone
-        .get(&format!(
-            "{:?},{:?},{:?}",
+    let slot_down = *slots_clone
+        .get(&i32_to_key(
             position.x as i32,
             position.y as i32 - size.y as i32,
-            position.z as i32
+            position.z as i32,
         ))
         .unwrap_or(&Slot::new(Vec3::new(
             position.x,
             position.y - size.y,
             position.z,
         )));
-    let mut slot_left = *slots_clone
-        .get(&format!(
-            "{:?},{:?},{:?}",
+    let slot_left = *slots_clone
+        .get(&i32_to_key(
             position.x as i32 - size.x as i32,
             position.y as i32,
-            position.z as i32
+            position.z as i32,
         ))
         .unwrap_or(&Slot::new(Vec3::new(
             position.x - size.x,
             position.y,
             position.z,
         )));
-    let mut slot_right = *slots_clone
-        .get(&format!(
-            "{:?},{:?},{:?}",
+    let slot_right = *slots_clone
+        .get(&i32_to_key(
             position.x as i32 + size.x as i32,
             position.y as i32,
-            position.z as i32
+            position.z as i32,
         ))
         .unwrap_or(&Slot::new(Vec3::new(
             position.x + size.x,
@@ -227,13 +223,13 @@ pub fn collapse(
     Ok(())
 }
 
-pub fn wave_func_collapse(position: Vec3, add_x: usize, add_y: usize) -> HashMap<String, Slot> {
+pub fn wave_func_collapse(position: Vec3, mut size: Vec3, step: Vec3) -> HashMap<String, Slot> {
     // use std::time::Instant;
     // let start_time = Instant::now();
 
     let mut rng = rand::thread_rng();
-    let size = Vec3::new((add_x * 2) as f32, (add_y * 2) as f32, 0f32);
-    let mut slots = init(position, size, 50f32);
+    size *= 2f32;
+    let mut slots = init(position, size, step);
     let _ = collapse(position, size, 50f32, &mut slots);
     let mut min_entropy: usize = 999999999;
     let mut min_slots: Vec<Slot> = Vec::new();
@@ -267,7 +263,11 @@ fn test() {
     use std::time::Instant;
     let start_time = Instant::now();
 
-    let slots = wave_func_collapse(Vec3::new(-9.0, -9.0, 0.0), 10, 10);
+    let slots = wave_func_collapse(
+        Vec3::new(-9.0, -9.0, 0.0),
+        Vec3::new(10f32, 10f32, 0f32),
+        Vec3::new(50f32, 50f32, 50f32),
+    );
 
     let time = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);

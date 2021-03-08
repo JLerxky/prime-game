@@ -1,7 +1,10 @@
 use bevy::{core::FixedTimestep, math::Vec3Swizzles, prelude::*};
 use serde::{Deserialize, Serialize};
 
-use crate::{engine::event::map_event::MapEvent, util::collapse::wave_func_collapse};
+use crate::{
+    engine::event::map_event::MapEvent,
+    util::collapse::{vec3_to_key, wave_func_collapse},
+};
 
 use super::camera_ctrl::CameraCtrl;
 
@@ -236,7 +239,11 @@ fn setup<'a>(
     add_y += (add_y % 2 == 0) as usize + 1;
     println!("瓷砖数: {},{}", add_x, add_y);
 
-    let slots = wave_func_collapse(Vec3::new(0.0, 0.0, 0.0), add_x, add_y);
+    let slots = wave_func_collapse(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(add_x as f32, add_y as f32, 0f32),
+        tile_size,
+    );
 
     let mut texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
     for x in -(add_x as i32)..=(add_x as i32) {
@@ -244,10 +251,7 @@ fn setup<'a>(
         for y in -(add_y as i32)..=(add_y as i32) {
             let tile_position = Vec3::new(x_position, y as f32 * tile_size.x, 0.0) + tile_center;
 
-            let slot_option = slots.get(&format!(
-                "{:?},{:?},{:?}",
-                tile_position.x as i32, tile_position.y as i32, tile_position.z as i32
-            ));
+            let slot_option = slots.get(&vec3_to_key(tile_position));
             if let Some(slot) = slot_option {
                 if let Some(tile) = slot.tile {
                     texture_handle = materials.add(
