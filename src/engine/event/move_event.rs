@@ -23,6 +23,7 @@ enum MoveEvent {
 fn event_listener_system(
     mut move_event_reader: Local<EventReader<MoveEvent>>,
     move_events: Res<Events<MoveEvent>>,
+    // mut map_events: ResMut<Events<MapEvent>>,
     mut player_query: Query<&mut Player, With<Player>>,
 ) {
     let mut player = player_query.iter_mut().next().unwrap();

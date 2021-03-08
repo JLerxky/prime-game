@@ -191,17 +191,17 @@ impl Plugin for TileMapPlugin {
                 tile_size: Vec3::new(50f32, 50f32, 0f32),
             })
             .add_startup_system(setup.system())
-            // .add_system(tile_map_produce_system.system())
+            .add_system(tile_map_produce_system.system())
             // .add_system(tile_map_clean_system.system())
-            .add_stage_after(
-                stage::UPDATE,
-                "build_map_fixed_update",
-                SystemStage::parallel()
-                    .with_run_criteria(
-                        FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
-                    )
-                    .with_system(tile_map_produce_system.system()),
-            )
+            // .add_stage_after(
+            //     stage::UPDATE,
+            //     "build_map_fixed_update",
+            //     SystemStage::parallel()
+            //         .with_run_criteria(
+            //             FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
+            //         )
+            //         .with_system(tile_map_produce_system.system()),
+            // )
             .add_stage_after(
                 stage::UPDATE,
                 "clean_map_fixed_update",
@@ -223,7 +223,6 @@ fn test() {
 fn setup<'a>(
     commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     asset_server: Res<AssetServer>,
     mut map_state: ResMut<MapState>,
     window: Res<WindowDescriptor>,
@@ -237,8 +236,8 @@ fn setup<'a>(
     let tile_size = map_state.tile_size;
     let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2);
     let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2);
-    add_x += (add_x % 2 == 0) as usize;
-    add_y += (add_y % 2 == 0) as usize;
+    add_x += (add_x % 2 == 0) as usize + 1;
+    add_y += (add_y % 2 == 0) as usize + 1;
     println!("瓷砖数: {},{}", add_x, add_y);
 
     let slots = wave_func_collapse(Vec3::new(0.0, 0.0, 0.0), add_x, add_y);
@@ -283,7 +282,8 @@ fn setup<'a>(
 fn tile_map_produce_system(
     commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    slot_query: Query<(Entity, &Transform), With<Slot>>,
+    mut map_state: ResMut<MapState>,
+    slot_exist_query: Query<(Entity, &Transform), With<Slot>>,
     player_transform_query: Query<&Transform, With<Player>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     window: Res<WindowDescriptor>,
@@ -292,17 +292,19 @@ fn tile_map_produce_system(
 ) {
     let player_transform = player_transform_query.iter().next().unwrap();
     let camera_transform = camera_transform_query.iter().next().unwrap();
-    let mut count = 0;
+    map_state.tile_center = camera_transform.translation;
+    let tile_size = map_state.tile_size;
     for map_event in map_event_reader.iter(&map_events) {
+        let mut count = 0;
         // 扩展地图
-        let mut add_x: usize = 3;
-        let mut add_y: usize = 3;
-        add_x += (add_x % 2 == 0) as usize;
-        add_y += (add_y % 2 == 0) as usize;
+        let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2);
+        let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2);
+        add_x += (add_x % 2 == 0) as usize + 1;
+        add_y += (add_y % 2 == 0) as usize + 1;
 
         let mut tile_center_transform = Vec3::new(
-            (player_transform.translation.x as i32 / 50i32) as f32 * 50f32,
-            (player_transform.translation.y as i32 / 50i32) as f32 * 50f32,
+            (camera_transform.translation.x as i32 / 50i32) as f32 * 50f32,
+            (camera_transform.translation.y as i32 / 50i32) as f32 * 50f32,
             0f32,
         );
 
@@ -327,6 +329,15 @@ fn tile_map_produce_system(
                         //     player_transform.translation, tile_center_transform, tile_position
                         // );
 
+                        // 存在性检查
+                        for (exist_entity, exist_transform) in slot_exist_query.iter() {
+                            if exist_transform.translation.distance(tile_position) == 0f32 {
+                                commands.despawn(exist_entity);
+                                break;
+                            }
+                        }
+
+                        // 生成
                         count += 1;
                         commands
                             .spawn(SpriteBundle {
@@ -347,8 +358,8 @@ fn tile_map_produce_system(
             }
             _ => {}
         }
+        println!("新生成瓷砖: {}", count);
     }
-    println!("新生成瓷砖: {}", count);
 }
 
 fn tile_map_clean_system(
