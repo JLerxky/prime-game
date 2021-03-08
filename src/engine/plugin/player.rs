@@ -24,7 +24,7 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     let texture_handle = asset_server.load("textures/chars/slime-orange.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(12.0, 24.0), 4, 1);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(12.0, 12.0), 4, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(SpriteSheetBundle {
@@ -47,6 +47,7 @@ fn player_move_system(
     mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
     mut camera_transform_query: Query<&mut Transform, With<CameraCtrl>>,
     mut map_events: ResMut<Events<MapEvent>>,
+    window: Res<WindowDescriptor>,
 ) {
     let delta = time.delta_seconds();
     let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
@@ -54,10 +55,13 @@ fn player_move_system(
 
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
 
-    if player_transform.translation.x >= (camera_transform.translation.x + 800f32)
-        || player_transform.translation.x <= (camera_transform.translation.x - 800f32)
-        || player_transform.translation.y >= (camera_transform.translation.y + 400f32)
-        || player_transform.translation.y <= (camera_transform.translation.y - 400f32)
+    let w = window.width / 2f32;
+    let h = window.height / 2f32;
+
+    if player_transform.translation.x >= (camera_transform.translation.x + w - 50f32)
+        || player_transform.translation.x <= (camera_transform.translation.x - w + 50f32)
+        || player_transform.translation.y >= (camera_transform.translation.y + h - 50f32)
+        || player_transform.translation.y <= (camera_transform.translation.y - h + 50f32)
     {
         camera_transform.translation += delta * player.velocity * 300f32;
         map_events.send(MapEvent::Add);

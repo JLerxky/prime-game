@@ -21,8 +21,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 1920f32,
-            height: 1080f32,
+            width: 500f32,
+            height: 500f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -32,7 +32,7 @@ pub fn engine_start() {
         })
         .add_resource(Msaa { samples: 8 })
         // 设置摄像机
-        .add_startup_system(setCamera.system())
+        .add_startup_system(set_camera.system())
         // 初始设置
         .add_startup_system(setup.system())
         // 默认插件
@@ -51,7 +51,7 @@ pub fn engine_start() {
         .run();
 }
 
-fn setCamera(commands: &mut Commands) {
+fn set_camera(commands: &mut Commands) {
     commands
         // cameras
         .spawn(Camera2dBundle::default())
