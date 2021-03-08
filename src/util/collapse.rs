@@ -98,34 +98,37 @@ pub fn collapse(
     }
     // 计算熵
     build_entropy(slots_clone, position, step, &mut slot_current);
-    if slot_current.entropy <= 0 {
-        slot_current.entropy = 0;
+    if slot_current.entropy == 0 {
         slot_current.is_collapsed = true;
     } else {
         let _ = random_collapse(&mut slot_current);
-        let slots_clone1 = slots.clone();
-        let slots_clone2 = slots.clone();
-        let slots_clone3 = slots.clone();
-        let slots_clone4 = slots.clone();
 
         let pos_top = Vec3::new(position.x, position.y + step.y, position.z);
         if let Some(slot_top) = slots.get_mut(&vec3_to_key(pos_top)) {
-            build_entropy(slots_clone1, pos_top, step, slot_top);
-        }
-
-        let pos_down = Vec3::new(position.x, position.y - step.y, position.z);
-        if let Some(slot_down) = slots.get_mut(&vec3_to_key(pos_down)) {
-            build_entropy(slots_clone2, pos_down, step, slot_down);
-        }
-
-        let pos_left = Vec3::new(position.x - step.x, position.y, position.z);
-        if let Some(slot_left) = slots.get_mut(&vec3_to_key(pos_left)) {
-            build_entropy(slots_clone3, pos_left, step, slot_left);
+            if !slot_top.is_collapsed {
+                let _ = collapse(pos_top, size, step, slots);
+            }
         }
 
         let pos_right = Vec3::new(position.x + step.x, position.y, position.z);
         if let Some(slot_right) = slots.get_mut(&vec3_to_key(pos_right)) {
-            build_entropy(slots_clone4, pos_right, step, slot_right);
+            if !slot_right.is_collapsed {
+                let _ = collapse(pos_right, size, step, slots);
+            }
+        }
+
+        let pos_down = Vec3::new(position.x, position.y - step.y, position.z);
+        if let Some(slot_down) = slots.get_mut(&vec3_to_key(pos_down)) {
+            if !slot_down.is_collapsed {
+                let _ = collapse(pos_down, size, step, slots);
+            }
+        }
+
+        let pos_left = Vec3::new(position.x - step.x, position.y, position.z);
+        if let Some(slot_left) = slots.get_mut(&vec3_to_key(pos_left)) {
+            if !slot_left.is_collapsed {
+                let _ = collapse(pos_left, size, step, slots);
+            }
         }
     }
 
@@ -264,27 +267,27 @@ pub fn wave_func_collapse(position: Vec3, mut size: Vec3, step: Vec3) -> HashMap
     size *= 2f32;
     let mut slots = init(position, size, step);
     let _ = collapse(position, size, step, &mut slots);
-    let mut min_entropy: usize = 999999999;
-    let mut min_slots: Vec<Slot> = Vec::new();
-    let mut count_collapse = (size.x as usize + 1) * (size.y as usize + 1);
-    while count_collapse > 0 {
-        println!("{:?}", slots.get(&vec3_to_key(position)));
-        for slot in slots.values() {
-            if slot.entropy != 0 && slot.entropy < min_entropy {
-                min_entropy = slot.entropy;
-                min_slots.push(slot.clone());
-            }
-        }
-        min_slots.retain(|slot| slot.entropy == min_entropy);
-        if min_slots.len() > 0 {
-            if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
-                let _ = collapse(slot.position, size, step, &mut slots);
-            }
-        }
-        min_slots = Vec::new();
-        min_entropy = 999999999;
-        count_collapse -= 1;
-    }
+    // let mut min_entropy: usize = 999999999;
+    // let mut min_slots: Vec<Slot> = Vec::new();
+    // let mut count_collapse = (size.x as usize + 1) * (size.y as usize + 1);
+    // while count_collapse > 0 {
+    //     println!("{:?}", slots.get(&vec3_to_key(position)));
+    //     for slot in slots.values() {
+    //         if slot.entropy != 0 && slot.entropy < min_entropy {
+    //             min_entropy = slot.entropy;
+    //             min_slots.push(slot.clone());
+    //         }
+    //     }
+    //     min_slots.retain(|slot| slot.entropy == min_entropy);
+    //     if min_slots.len() > 0 {
+    //         if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
+    //             let _ = collapse(slot.position, size, step, &mut slots);
+    //         }
+    //     }
+    //     min_slots = Vec::new();
+    //     min_entropy = 999999999;
+    //     count_collapse -= 1;
+    // }
 
     // let elapsed = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
