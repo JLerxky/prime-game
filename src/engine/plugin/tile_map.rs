@@ -259,6 +259,8 @@ fn setup<'a>(
                             .load(format!("textures/tiles/{}.png", tile.id).as_str())
                             .into(),
                     );
+                } else {
+                    texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
                 }
             }
             commands

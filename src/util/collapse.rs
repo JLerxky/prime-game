@@ -185,100 +185,61 @@ fn build_entropy(
             position.y,
             position.z,
         )));
-    let mut entropy = slot_current.superposition.len();
-    for i in 0..slot_current.superposition.len() {
-        if let Some(tile_current) = slot_current.superposition[i] {
-            // 左连接
-            let mut flag_left = false;
-            if slot_left.is_collapsed {
-                if let Some(tile_left) = slot_left.tile {
-                    if tile_left.right == tile_current.left {
-                        flag_left = true;
-                    }
-                }
-            } else {
-                for left in 0..slot_left.superposition.len() {
-                    if let Some(tile_left) = slot_left.superposition[left] {
-                        if tile_left.right == tile_current.left {
-                            flag_left = true;
-                            break;
-                        }
+    let mut entropy = slot_current.entropy;
+    // 左连接
+    if slot_left.is_collapsed {
+        if let Some(tile_left) = slot_left.tile {
+            for i in 0..slot_current.superposition.len() {
+                if let Some(tile_current) = slot_current.superposition[i] {
+                    if tile_left.right != tile_current.left {
+                        slot_current.superposition[i] = None;
+                        entropy -= 1;
                     }
                 }
             }
-            if flag_left {
-                continue;
-            }
-
-            // 右连接
-            let mut flag_right = false;
-            if slot_right.is_collapsed {
-                if let Some(tile_right) = slot_right.tile {
-                    if tile_right.left == tile_current.right {
-                        flag_right = true;
-                    }
-                }
-            } else {
-                for right in 0..slot_right.superposition.len() {
-                    if let Some(tile_right) = slot_right.superposition[right] {
-                        if tile_right.left == tile_current.right {
-                            flag_right = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if flag_right {
-                continue;
-            }
-
-            // 上连接
-            let mut flag_top = false;
-            if slot_top.is_collapsed {
-                if let Some(tile_top) = slot_top.tile {
-                    if tile_top.down == tile_current.top {
-                        flag_top = true;
-                    }
-                }
-            } else {
-                for top in 0..slot_top.superposition.len() {
-                    if let Some(tile_top) = slot_top.superposition[top] {
-                        if tile_top.down == tile_current.top {
-                            flag_top = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if flag_top {
-                continue;
-            }
-
-            // 下连接
-            let mut flag_down = false;
-            if slot_down.is_collapsed {
-                if let Some(tile_down) = slot_down.tile {
-                    if tile_down.top == tile_current.down {
-                        flag_down = true;
-                    }
-                }
-            } else {
-                for down in 0..slot_down.superposition.len() {
-                    if let Some(tile) = slot_down.superposition[down] {
-                        if tile.top == tile_current.down {
-                            flag_down = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if flag_down {
-                continue;
-            }
-
-            slot_current.superposition[i] = None;
         }
-        entropy -= 1;
+    }
+
+    // 右连接
+    if slot_right.is_collapsed {
+        if let Some(tile_right) = slot_right.tile {
+            for i in 0..slot_current.superposition.len() {
+                if let Some(tile_current) = slot_current.superposition[i] {
+                    if tile_right.left == tile_current.right {
+                        slot_current.superposition[i] = None;
+                        entropy -= 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // 上连接
+    if slot_top.is_collapsed {
+        if let Some(tile_top) = slot_top.tile {
+            for i in 0..slot_current.superposition.len() {
+                if let Some(tile_current) = slot_current.superposition[i] {
+                    if tile_top.down == tile_current.top {
+                        slot_current.superposition[i] = None;
+                        entropy -= 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // 下连接
+    if slot_down.is_collapsed {
+        if let Some(tile_down) = slot_down.tile {
+            for i in 0..slot_current.superposition.len() {
+                if let Some(tile_current) = slot_current.superposition[i] {
+                    if tile_down.top == tile_current.down {
+                        slot_current.superposition[i] = None;
+                        entropy -= 1;
+                    }
+                }
+            }
+        }
     }
     slot_current.entropy = entropy;
 }
