@@ -191,14 +191,23 @@ impl Plugin for TileMapPlugin {
                 tile_size: Vec3::new(50f32, 50f32, 0f32),
             })
             .add_startup_system(setup.system())
-            .add_system(tile_map_produce_system.system())
-            .add_system(tile_map_clean_system.system())
+            // .add_system(tile_map_produce_system.system())
+            // .add_system(tile_map_clean_system.system())
             .add_stage_after(
                 stage::UPDATE,
-                "fixed_update",
+                "build_map_fixed_update",
                 SystemStage::parallel()
                     .with_run_criteria(
-                        FixedTimestep::step(1.0).with_label("build_map_fixed_timestep"),
+                        FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
+                    )
+                    .with_system(tile_map_produce_system.system()),
+            )
+            .add_stage_after(
+                stage::UPDATE,
+                "clean_map_fixed_update",
+                SystemStage::parallel()
+                    .with_run_criteria(
+                        FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"),
                     )
                     .with_system(tile_map_clean_system.system()),
             );
@@ -220,7 +229,7 @@ fn setup<'a>(
     window: Res<WindowDescriptor>,
 ) {
     println!(
-        "window: {},{}; map_state: {:?}",
+        "窗口大小: {},{}; 瓷砖大小: {:?}",
         window.width, window.height, map_state.tile_size
     );
     // 生成地图
@@ -230,7 +239,7 @@ fn setup<'a>(
     let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2);
     add_x += (add_x % 2 == 0) as usize;
     add_y += (add_y % 2 == 0) as usize;
-    println!("{},{}", add_x, add_y);
+    println!("瓷砖数: {},{}", add_x, add_y);
 
     let slots = wave_func_collapse(Vec3::new(0.0, 0.0, 0.0), add_x, add_y);
 
@@ -339,12 +348,12 @@ fn tile_map_produce_system(
             _ => {}
         }
     }
-    // println!("生成： {}, {}", count, slot_query.iter().count());
+    println!("新生成瓷砖: {}", count);
 }
 
 fn tile_map_clean_system(
     commands: &mut Commands,
-    // entity_query: Query<Entity>,
+    entity_query: Query<Entity>,
     slot_query: Query<(Entity, &Transform), With<Slot>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     window: Res<WindowDescriptor>,
@@ -371,9 +380,9 @@ fn tile_map_clean_system(
         {
             // println!("Clean: {:?}", tile_transform);
             commands.despawn_recursive(tile_entity);
-            // println!("{}", entity_query.iter().len());
         }
     }
+    println!("垃圾回收完成，剩余实体数: {}", entity_query.iter().len());
     //     }
     //     _ => {}
     // }
