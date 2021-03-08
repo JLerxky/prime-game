@@ -5,7 +5,7 @@ use rand::Rng;
 
 use crate::{
     data::rocksdb::RocksDB,
-    engine::plugin::tile_map::{get_tiles, Slot, Tile},
+    engine::plugin::tile_map::{get_tiles, Slot},
 };
 
 pub fn init(position: Vec3, size: Vec3, step: f32) -> HashMap<String, Slot> {

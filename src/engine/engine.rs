@@ -8,7 +8,6 @@ use super::{
         camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
         tile_map::TileMapPlugin,
     },
-    scene::snake::snake,
 };
 
 pub fn engine_start() {
@@ -21,8 +20,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 500f32,
-            height: 500f32,
+            width: 1600f32,
+            height: 900f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -59,14 +58,13 @@ fn set_camera(commands: &mut Commands) {
         .spawn(CameraUiBundle::default());
 }
 
-fn setup(
-    commands: &mut Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    asset_server: Res<AssetServer>,
-    mut windows: ResMut<Windows>,
+fn setup(// commands: &mut Commands,
+    // mut materials: ResMut<Assets<ColorMaterial>>,
+    // asset_server: Res<AssetServer>,
+    // mut windows: ResMut<Windows>,
 ) {
 }
 
-pub fn run_snake() {
-    snake();
-}
+// pub fn run_snake() {
+//     snake();
+// }

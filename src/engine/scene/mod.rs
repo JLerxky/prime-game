@@ -35,25 +35,25 @@ impl Routes {
         }
     }
 
-    fn goto(&mut self, route: Route) {
-        self.routes.push(route);
-        self.before = self.current;
-        self.current += 1;
-    }
+    // fn goto(&mut self, route: Route) {
+    //     self.routes.push(route);
+    //     self.before = self.current;
+    //     self.current += 1;
+    // }
 
-    fn back(&mut self) {
-        if self.current > 0 {
-            self.before = self.current;
-            self.current -= 1;
-        }
-    }
+    // fn back(&mut self) {
+    //     if self.current > 0 {
+    //         self.before = self.current;
+    //         self.current -= 1;
+    //     }
+    // }
 
-    fn go_ahead(&mut self) {
-        if self.current + 1 < self.routes.len() {
-            self.before = self.current;
-            self.current += 1;
-        }
-    }
+    // fn go_ahead(&mut self) {
+    //     if self.current + 1 < self.routes.len() {
+    //         self.before = self.current;
+    //         self.current += 1;
+    //     }
+    // }
 }
 
 // 路由事件
@@ -79,7 +79,7 @@ fn route_event_listener_system(
             Route::Index => {}
         }
         match &route_event.routes.routes[route_event.routes.current] {
-            Route::BreakOut(plugin) => {
+            Route::BreakOut(_plugin) => {
                 // app.add_plugin(plugin.clone());
             }
             Route::Index => {}

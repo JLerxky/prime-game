@@ -1,4 +1,4 @@
-use bevy::{diagnostic::Diagnostics, prelude::*};
+use bevy::prelude::*;
 pub struct CameraCtrl;
 
 impl Plugin for CameraCtrl {
@@ -17,9 +17,7 @@ fn setup(commands: &mut Commands) {
         .with(CameraCtrl);
 }
 
-fn camera_ctrl_system(
-    diagnostics: Res<Diagnostics>,
-    mut query: Query<&mut Camera2dBundle, With<CameraCtrl>>,
+fn camera_ctrl_system(// diagnostics: Res<Diagnostics>,
+    // mut query: Query<&mut Camera2dBundle, With<CameraCtrl>>,
 ) {
-    
 }

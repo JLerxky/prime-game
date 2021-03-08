@@ -8,6 +8,6 @@ impl Plugin for MapEventPlugin {
     }
 }
 pub enum MapEvent {
-    Clean,
+    // Clean,
     Add,
 }

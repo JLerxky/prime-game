@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{engine::event::map_event::MapEvent, util::collapse::wave_func_collapse};
 
-use super::{camera_ctrl::CameraCtrl, player::Player};
+use super::camera_ctrl::CameraCtrl;
 
 // 坐标
 #[derive(Copy, Clone, Debug)]
@@ -170,10 +170,6 @@ impl Slot {
     }
 }
 
-pub struct TileMap {
-    position: Vec3,
-}
-
 #[derive(Reflect, Default)]
 #[reflect(Component)]
 pub struct MapState {
@@ -191,17 +187,17 @@ impl Plugin for TileMapPlugin {
                 tile_size: Vec3::new(50f32, 50f32, 0f32),
             })
             .add_startup_system(setup.system())
-            .add_system(tile_map_produce_system.system())
+            // .add_system(tile_map_produce_system.system())
             // .add_system(tile_map_clean_system.system())
-            // .add_stage_after(
-            //     stage::UPDATE,
-            //     "build_map_fixed_update",
-            //     SystemStage::parallel()
-            //         .with_run_criteria(
-            //             FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
-            //         )
-            //         .with_system(tile_map_produce_system.system()),
-            // )
+            .add_stage_after(
+                stage::UPDATE,
+                "build_map_fixed_update",
+                SystemStage::parallel()
+                    .with_run_criteria(
+                        FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
+                    )
+                    .with_system(tile_map_produce_system.system()),
+            )
             .add_stage_after(
                 stage::UPDATE,
                 "clean_map_fixed_update",
@@ -224,7 +220,7 @@ fn setup<'a>(
     commands: &mut Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
-    mut map_state: ResMut<MapState>,
+    map_state: ResMut<MapState>,
     window: Res<WindowDescriptor>,
 ) {
     println!(
@@ -284,17 +280,23 @@ fn tile_map_produce_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut map_state: ResMut<MapState>,
     slot_exist_query: Query<(Entity, &Transform), With<Slot>>,
-    player_transform_query: Query<&Transform, With<Player>>,
+    // player_transform_query: Query<&Transform, With<Player>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     window: Res<WindowDescriptor>,
     mut map_event_reader: Local<EventReader<MapEvent>>,
-    map_events: Res<Events<MapEvent>>,
+    mut map_events: ResMut<Events<MapEvent>>,
 ) {
-    let player_transform = player_transform_query.iter().next().unwrap();
-    let camera_transform = camera_transform_query.iter().next().unwrap();
-    map_state.tile_center = camera_transform.translation;
-    let tile_size = map_state.tile_size;
-    for map_event in map_event_reader.iter(&map_events) {
+    let mut has_event = false;
+    for _ in map_event_reader.iter(&map_events) {
+        has_event = true;
+    }
+    map_events.clear();
+    if has_event {
+        println!("生成事件！");
+        // let player_transform = player_transform_query.iter().next().unwrap();
+        let camera_transform = camera_transform_query.iter().next().unwrap();
+        map_state.tile_center = camera_transform.translation;
+        let tile_size = map_state.tile_size;
         let mut count = 0;
         // 扩展地图
         let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2);
@@ -302,63 +304,63 @@ fn tile_map_produce_system(
         add_x += (add_x % 2 == 0) as usize + 1;
         add_y += (add_y % 2 == 0) as usize + 1;
 
-        let mut tile_center_transform = Vec3::new(
-            (camera_transform.translation.x as i32 / 50i32) as f32 * 50f32,
-            (camera_transform.translation.y as i32 / 50i32) as f32 * 50f32,
+        let tile_center_transform = Vec3::new(
+            (camera_transform.translation.x as i32 / tile_size.x as i32) as f32 * tile_size.x,
+            (camera_transform.translation.y as i32 / tile_size.y as i32) as f32 * tile_size.y,
             0f32,
         );
 
-        // println!(
-        //     "{:?},{:?}",
-        //     player_transform.translation, tile_center_transform
-        // );
-        let tile_size = Vec2::new(50.0, 50.0);
+        let texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
 
-        let mut texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-        match map_event {
-            MapEvent::Add => {
-                for x in -(add_x as i32)..=(add_x as i32) {
-                    let x_position = x as f32 * tile_size.y;
-                    for y in -(add_y as i32)..=(add_y as i32) {
-                        let y_position = y as f32 * tile_size.x;
-                        let tile_position =
-                            Vec3::new(x_position, y_position, 0.0) + tile_center_transform;
+        for x in -(add_x as i32)..=(add_x as i32) {
+            let x_position = x as f32 * tile_size.x;
+            for y in -(add_y as i32)..=(add_y as i32) {
+                let y_position = y as f32 * tile_size.y;
+                let tile_position = Vec3::new(x_position, y_position, 0.0) + tile_center_transform;
 
-                        // println!(
-                        //     "{:?},{:?},{:?}",
-                        //     player_transform.translation, tile_center_transform, tile_position
-                        // );
+                // println!(
+                //     "{:?},{:?},{:?}",
+                //     player_transform.translation, tile_center_transform, tile_position
+                // );
 
-                        // 存在性检查
-                        for (exist_entity, exist_transform) in slot_exist_query.iter() {
-                            if exist_transform.translation.distance(tile_position) == 0f32 {
-                                commands.despawn(exist_entity);
-                                break;
-                            }
-                        }
-
-                        // 生成
-                        count += 1;
-                        commands
-                            .spawn(SpriteBundle {
-                                material: texture_handle.clone(),
-                                sprite: Sprite::new(tile_size),
-                                transform: Transform::from_translation(tile_position),
-                                ..Default::default()
-                            })
-                            .with(Slot {
-                                position: tile_position,
-                                is_collapsed: true,
-                                superposition: get_none_tiles(),
-                                entropy: 0,
-                                tile: None,
-                            });
+                // 存在性检查
+                let mut exist = false;
+                for (_exist_entity, exist_transform) in slot_exist_query.iter() {
+                    if exist_transform.translation.distance(tile_position) == 0f32 {
+                        exist = true;
+                        break;
                     }
                 }
+                if exist {
+                    continue;
+                }
+
+                // 生成
+                count += 1;
+                commands
+                    .spawn(SpriteBundle {
+                        material: texture_handle.clone(),
+                        sprite: Sprite::new(tile_size.xy()),
+                        transform: Transform::from_translation(tile_position),
+                        ..Default::default()
+                    })
+                    .with(Slot {
+                        position: tile_position,
+                        is_collapsed: true,
+                        superposition: get_none_tiles(),
+                        entropy: 0,
+                        tile: None,
+                    });
             }
-            _ => {}
         }
-        println!("新生成瓷砖: {}", count);
+
+        if count > 0 {
+            println!(
+                "{:?},{:?}",
+                camera_transform.translation, tile_center_transform
+            );
+            println!("新生成瓷砖: {}", count);
+        }
     }
 }
 

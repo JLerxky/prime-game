@@ -12,7 +12,7 @@ impl Plugin for WindowEventPlugin {
 
 #[derive(Debug)]
 enum WindowEvent {
-    QUIT,
+    _QUIT,
 }
 
 fn event_listener_system(
@@ -22,7 +22,7 @@ fn event_listener_system(
     for window_event in window_event_reader.iter(&window_events) {
         println!("{:?}", window_event);
         match window_event {
-            WindowEvent::QUIT => {}
+            WindowEvent::_QUIT => {}
         }
     }
 }

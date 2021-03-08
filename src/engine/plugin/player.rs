@@ -1,4 +1,4 @@
-use bevy::{diagnostic::Diagnostics, prelude::*};
+use bevy::prelude::*;
 
 use crate::engine::event::map_event::MapEvent;
 
@@ -50,7 +50,7 @@ fn player_move_system(
     window: Res<WindowDescriptor>,
 ) {
     let delta = time.delta_seconds();
-    let (mut player_transform, mut player) = player_query.iter_mut().next().unwrap();
+    let (mut player_transform, player) = player_query.iter_mut().next().unwrap();
     player_transform.translation += delta * player.velocity * 300f32;
 
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
@@ -58,10 +58,10 @@ fn player_move_system(
     let w = window.width / 2f32;
     let h = window.height / 2f32;
 
-    if player_transform.translation.x >= (camera_transform.translation.x + w - 50f32)
-        || player_transform.translation.x <= (camera_transform.translation.x - w + 50f32)
-        || player_transform.translation.y >= (camera_transform.translation.y + h - 50f32)
-        || player_transform.translation.y <= (camera_transform.translation.y - h + 50f32)
+    if player_transform.translation.x >= (camera_transform.translation.x + w - 200f32)
+        || player_transform.translation.x <= (camera_transform.translation.x - w + 200f32)
+        || player_transform.translation.y >= (camera_transform.translation.y + h - 200f32)
+        || player_transform.translation.y <= (camera_transform.translation.y - h + 200f32)
     {
         camera_transform.translation += delta * player.velocity * 300f32;
         map_events.send(MapEvent::Add);
@@ -94,8 +94,7 @@ fn animate_system(
     }
 }
 
-fn player_ctrl_system(
-    diagnostics: Res<Diagnostics>,
-    mut query: Query<&mut Text, With<PlayerPlugin>>,
+fn player_ctrl_system(// diagnostics: Res<Diagnostics>,
+    // mut query: Query<&mut Text, With<PlayerPlugin>>,
 ) {
 }
