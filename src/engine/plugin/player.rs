@@ -16,6 +16,7 @@ impl Plugin for PlayerPlugin {
 
 pub struct Player {
     pub velocity: Vec3,
+    pub show_size: Vec2,
 }
 
 fn setup(
@@ -24,20 +25,23 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     let texture_handle = asset_server.load("textures/chars/slime-orange.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(16.0, 24.0), 4, 1);
+    let tile_size = Vec2::new(16.0, 24.0);
+    let scale = 5f32;
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 4, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 1.0),
-                scale: Vec3::splat(5.0),
+                scale: Vec3::splat(scale),
                 ..Default::default()
             },
             ..Default::default()
         })
         .with(Player {
             velocity: Vec3::new(0f32, 0f32, 0f32),
+            show_size: tile_size * scale,
         })
         .with(Timer::from_seconds(0.1, true));
 }
@@ -55,13 +59,14 @@ fn player_move_system(
 
     let mut camera_transform = camera_transform_query.iter_mut().next().unwrap();
 
-    let w = window.width / 2f32;
-    let h = window.height / 2f32;
+    // 屏幕可见范围偏移量
+    let w = (window.width / 2f32) - (3f32 * (player.show_size.x / 2f32));
+    let h = (window.height / 2f32) - (3f32 * (player.show_size.y / 2f32));
 
-    if player_transform.translation.x >= (camera_transform.translation.x + w - 200f32)
-        || player_transform.translation.x <= (camera_transform.translation.x - w + 200f32)
-        || player_transform.translation.y >= (camera_transform.translation.y + h - 200f32)
-        || player_transform.translation.y <= (camera_transform.translation.y - h + 200f32)
+    if player_transform.translation.x >= (camera_transform.translation.x + w)
+        || player_transform.translation.x <= (camera_transform.translation.x - w)
+        || player_transform.translation.y >= (camera_transform.translation.y + h)
+        || player_transform.translation.y <= (camera_transform.translation.y - h)
     {
         camera_transform.translation += delta * player.velocity * 300f32;
         map_events.send(MapEvent::Add);
