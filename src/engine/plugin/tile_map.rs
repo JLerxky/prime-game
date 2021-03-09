@@ -154,12 +154,6 @@ pub fn get_tiles() -> [Option<Tile>; 13] {
     ]
 }
 
-pub fn get_none_tiles() -> [Option<Tile>; 13] {
-    [
-        None, None, None, None, None, None, None, None, None, None, None, None, None,
-    ]
-}
-
 impl Slot {
     pub fn new(position: Vec3) -> Slot {
         let tiles = get_tiles();
@@ -273,7 +267,7 @@ fn setup<'a>(
                 .with(Slot {
                     position: tile_position,
                     is_collapsed: true,
-                    superposition: get_none_tiles(),
+                    superposition: [None; 13],
                     entropy: 0,
                     tile: None,
                 });
@@ -353,7 +347,7 @@ fn tile_map_produce_system(
                     .with(Slot {
                         position: tile_position,
                         is_collapsed: true,
-                        superposition: get_none_tiles(),
+                        superposition: [None; 13],
                         entropy: 0,
                         tile: None,
                     });

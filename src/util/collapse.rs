@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use bevy::math::Vec3;
 use rand::Rng;
 
-use crate::{
-    data::rocksdb::RocksDB,
-    engine::plugin::tile_map::{get_none_tiles, get_tiles, Slot},
-};
+use crate::{data::rocksdb::RocksDB, engine::plugin::tile_map::Slot};
 
 pub fn vec3_to_key(pos: Vec3) -> String {
     format!("{},{},{}", pos.x as i32, pos.y as i32, pos.z as i32)
@@ -47,17 +44,36 @@ pub fn init(position: Vec3, size: Vec3, step: Vec3) -> HashMap<String, Slot> {
 
 pub fn random_collapse(slot: &mut Slot) -> Result<(), ()> {
     let mut rng = rand::thread_rng();
-    if let Some(tile) = slot
-        .superposition
-        .get(rng.gen_range(0, slot.superposition.len()))
-    {
-        slot.tile = *tile;
-        slot.superposition = get_none_tiles();
-        slot.entropy = 0;
-        slot.is_collapsed = true;
-        return Ok(());
-    };
-    Err(())
+    let center = rng.gen_range(0, slot.superposition.len());
+    for i in center..slot.superposition.len() {
+        match slot.superposition.get(i) {
+            Some(tile) => {
+                slot.tile = *tile;
+                slot.superposition = [None; 13];
+                slot.entropy = 0;
+                slot.is_collapsed = true;
+                return Ok(());
+            }
+            None => {}
+        };
+    }
+    for i in 0..center {
+        match slot.superposition.get(i) {
+            Some(tile) => {
+                slot.tile = *tile;
+                slot.superposition = [None; 13];
+                slot.entropy = 0;
+                slot.is_collapsed = true;
+                return Ok(());
+            }
+            None => {}
+        };
+    }
+    slot.tile = None;
+    slot.superposition = [None; 13];
+    slot.entropy = 0;
+    slot.is_collapsed = true;
+    Ok(())
 }
 
 pub fn collapse(
@@ -103,33 +119,33 @@ pub fn collapse(
     } else {
         let _ = random_collapse(&mut slot_current);
 
-        let pos_top = Vec3::new(position.x, position.y + step.y, position.z);
-        if let Some(slot_top) = slots.get_mut(&vec3_to_key(pos_top)) {
-            if !slot_top.is_collapsed {
-                let _ = collapse(pos_top, size, step, slots);
-            }
-        }
+        // let pos_top = Vec3::new(position.x, position.y + step.y, position.z);
+        // if let Some(slot_top) = slots.get_mut(&vec3_to_key(pos_top)) {
+        //     if !slot_top.is_collapsed {
+        //         let _ = collapse(pos_top, size, step, slots);
+        //     }
+        // }
 
-        let pos_right = Vec3::new(position.x + step.x, position.y, position.z);
-        if let Some(slot_right) = slots.get_mut(&vec3_to_key(pos_right)) {
-            if !slot_right.is_collapsed {
-                let _ = collapse(pos_right, size, step, slots);
-            }
-        }
+        // let pos_right = Vec3::new(position.x + step.x, position.y, position.z);
+        // if let Some(slot_right) = slots.get_mut(&vec3_to_key(pos_right)) {
+        //     if !slot_right.is_collapsed {
+        //         let _ = collapse(pos_right, size, step, slots);
+        //     }
+        // }
 
-        let pos_down = Vec3::new(position.x, position.y - step.y, position.z);
-        if let Some(slot_down) = slots.get_mut(&vec3_to_key(pos_down)) {
-            if !slot_down.is_collapsed {
-                let _ = collapse(pos_down, size, step, slots);
-            }
-        }
+        // let pos_down = Vec3::new(position.x, position.y - step.y, position.z);
+        // if let Some(slot_down) = slots.get_mut(&vec3_to_key(pos_down)) {
+        //     if !slot_down.is_collapsed {
+        //         let _ = collapse(pos_down, size, step, slots);
+        //     }
+        // }
 
-        let pos_left = Vec3::new(position.x - step.x, position.y, position.z);
-        if let Some(slot_left) = slots.get_mut(&vec3_to_key(pos_left)) {
-            if !slot_left.is_collapsed {
-                let _ = collapse(pos_left, size, step, slots);
-            }
-        }
+        // let pos_left = Vec3::new(position.x - step.x, position.y, position.z);
+        // if let Some(slot_left) = slots.get_mut(&vec3_to_key(pos_left)) {
+        //     if !slot_left.is_collapsed {
+        //         let _ = collapse(pos_left, size, step, slots);
+        //     }
+        // }
     }
 
     Ok(())
@@ -189,59 +205,94 @@ fn build_entropy(
             position.z,
         )));
     let mut entropy = slot_current.entropy;
-    // 左连接
-    if slot_left.is_collapsed {
-        if let Some(tile_left) = slot_left.tile {
-            for i in 0..slot_current.superposition.len() {
-                if let Some(tile_current) = slot_current.superposition[i] {
+    for i in 0..slot_current.superposition.len() {
+        if let Some(tile_current) = slot_current.superposition[i] {
+            // 左连接
+            if slot_left.is_collapsed {
+                if let Some(tile_left) = slot_left.tile {
                     if tile_left.right != tile_current.left {
-                        slot_current.superposition[i] = None;
-                        entropy -= 1;
+                        continue;
                     }
                 }
+            } else {
+                let mut left_flag_for = false;
+                for i_left in 0..slot_left.superposition.len() {
+                    if let Some(tile_left) = slot_left.superposition[i_left] {
+                        if tile_left.right == tile_current.left {
+                            left_flag_for = true;
+                        }
+                    }
+                }
+                if left_flag_for {
+                    continue;
+                }
             }
-        }
-    }
 
-    // 右连接
-    if slot_right.is_collapsed {
-        if let Some(tile_right) = slot_right.tile {
-            for i in 0..slot_current.superposition.len() {
-                if let Some(tile_current) = slot_current.superposition[i] {
-                    if tile_right.left == tile_current.right {
-                        slot_current.superposition[i] = None;
-                        entropy -= 1;
+            // 右连接
+            if slot_right.is_collapsed {
+                if let Some(tile_right) = slot_right.tile {
+                    if tile_right.left != tile_current.right {
+                        continue;
                     }
                 }
+            } else {
+                let mut right_flag_for = false;
+                for i_right in 0..slot_right.superposition.len() {
+                    if let Some(tile_right) = slot_right.superposition[i_right] {
+                        if tile_right.left == tile_current.right {
+                            right_flag_for = true;
+                        }
+                    }
+                }
+                if right_flag_for {
+                    continue;
+                }
             }
-        }
-    }
 
-    // 上连接
-    if slot_top.is_collapsed {
-        if let Some(tile_top) = slot_top.tile {
-            for i in 0..slot_current.superposition.len() {
-                if let Some(tile_current) = slot_current.superposition[i] {
-                    if tile_top.down == tile_current.top {
-                        slot_current.superposition[i] = None;
-                        entropy -= 1;
+            // 上连接
+            if slot_top.is_collapsed {
+                if let Some(tile_top) = slot_top.tile {
+                    if tile_top.down != tile_current.top {
+                        continue;
                     }
                 }
+            } else {
+                let mut top_flag_for = false;
+                for i_top in 0..slot_top.superposition.len() {
+                    if let Some(tile_top) = slot_top.superposition[i_top] {
+                        if tile_top.down == tile_current.top {
+                            top_flag_for = true;
+                        }
+                    }
+                }
+                if top_flag_for {
+                    continue;
+                }
             }
-        }
-    }
 
-    // 下连接
-    if slot_down.is_collapsed {
-        if let Some(tile_down) = slot_down.tile {
-            for i in 0..slot_current.superposition.len() {
-                if let Some(tile_current) = slot_current.superposition[i] {
-                    if tile_down.top == tile_current.down {
-                        slot_current.superposition[i] = None;
-                        entropy -= 1;
+            // 下连接
+            if slot_down.is_collapsed {
+                if let Some(tile_down) = slot_down.tile {
+                    if tile_down.top != tile_current.down {
+                        continue;
                     }
                 }
+            } else {
+                let mut down_flag_for = false;
+                for i_down in 0..slot_down.superposition.len() {
+                    if let Some(tile_down) = slot_down.superposition[i_down] {
+                        if tile_down.top == tile_current.down {
+                            down_flag_for = true;
+                        }
+                    }
+                }
+                if down_flag_for {
+                    continue;
+                }
             }
+
+            slot_current.superposition[i] = None;
+            entropy -= 1;
         }
     }
     slot_current.entropy = entropy;
@@ -267,27 +318,38 @@ pub fn wave_func_collapse(position: Vec3, mut size: Vec3, step: Vec3) -> HashMap
     size *= 2f32;
     let mut slots = init(position, size, step);
     let _ = collapse(position, size, step, &mut slots);
-    // let mut min_entropy: usize = 999999999;
-    // let mut min_slots: Vec<Slot> = Vec::new();
-    // let mut count_collapse = (size.x as usize + 1) * (size.y as usize + 1);
-    // while count_collapse > 0 {
-    //     println!("{:?}", slots.get(&vec3_to_key(position)));
-    //     for slot in slots.values() {
-    //         if slot.entropy != 0 && slot.entropy < min_entropy {
-    //             min_entropy = slot.entropy;
-    //             min_slots.push(slot.clone());
-    //         }
-    //     }
-    //     min_slots.retain(|slot| slot.entropy == min_entropy);
-    //     if min_slots.len() > 0 {
-    //         if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
-    //             let _ = collapse(slot.position, size, step, &mut slots);
-    //         }
-    //     }
-    //     min_slots = Vec::new();
-    //     min_entropy = 999999999;
-    //     count_collapse -= 1;
-    // }
+    let mut min_entropy: usize = 999999999;
+    let mut min_slots: Vec<Slot> = Vec::new();
+
+    let mut x_size = size.x as i32 / 2;
+    let mut y_size = size.y as i32 / 2;
+    println!("{:?}", slots.get(&vec3_to_key(position)));
+
+    while x_size > -size.x as i32 / 2 {
+        while y_size > -size.x as i32 / 2 {
+            if let Some(slot) = slots.get(&vec3_to_key(Vec3::new(
+                position.x - (x_size as f32 * step.x),
+                position.y - (y_size as f32 * step.y),
+                0f32,
+            ))) {
+                if slot.entropy != 0 && slot.entropy < min_entropy {
+                    min_entropy = slot.entropy;
+                    min_slots.push(slot.clone());
+                }
+            }
+            y_size -= 1i32;
+        }
+        x_size -= 1i32;
+    }
+
+    min_slots.retain(|slot| slot.entropy == min_entropy);
+    if min_slots.len() > 0 {
+        if let Some(slot) = min_slots.get(rng.gen_range(0, min_slots.len())) {
+            let _ = collapse(slot.position, size, step, &mut slots);
+        }
+    }
+    min_slots = Vec::new();
+    min_entropy = 999999999;
 
     // let elapsed = start_time.elapsed().as_secs_f64();
     println!("{:?}", slots);
