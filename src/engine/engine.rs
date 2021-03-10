@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::{physics::RapierPhysicsPlugin, render::RapierRenderPlugin};
 
 use super::{
     event::{
@@ -30,12 +31,16 @@ pub fn engine_start() {
             ..Default::default()
         })
         .add_resource(Msaa { samples: 8 })
-        // 设置摄像机
-        .add_startup_system(set_camera.system())
-        // 初始设置
-        .add_startup_system(setup.system())
         // 默认插件
         .add_plugins(DefaultPlugins)
+        // 物理插件
+        .add_plugin(RapierPhysicsPlugin)
+        .add_plugin(RapierRenderPlugin)
+        // 物理
+        // .add_startup_system(setup_physics.system())
+        // .add_system(print_events.system())
+        // 设置摄像机
+        .add_startup_system(set_camera.system())
         // 辅助功能插件
         .add_plugin(Fps)
         .add_plugin(Clipboard)
@@ -58,12 +63,40 @@ fn set_camera(commands: &mut Commands) {
         .spawn(CameraUiBundle::default());
 }
 
-fn setup(// commands: &mut Commands,
-    // mut materials: ResMut<Assets<ColorMaterial>>,
-    // asset_server: Res<AssetServer>,
-    // mut windows: ResMut<Windows>,
-) {
-}
+// fn setup_physics(commands: &mut Commands) {
+//     // Static rigid-body with a cuboid shape.
+//     let rigid_body1 = RigidBodyBuilder::new_static();
+//     let collider1 = ColliderBuilder::cuboid(10.0, 1.0);
+//     // Keep the entity identifier.
+//     let entity1 = commands
+//         .spawn((rigid_body1, collider1))
+//         .current_entity()
+//         .unwrap();
+
+//     // Dynamic rigid-body with ball shape.
+//     let rigid_body2 = RigidBodyBuilder::new_dynamic().translation(0.0, 3.0);
+//     let collider2 = ColliderBuilder::ball(0.5);
+//     // Keep the entity identifier.
+//     let entity2 = commands
+//         .spawn((rigid_body2, collider2))
+//         .current_entity()
+//         .unwrap();
+
+//     // Create the joint.
+//     let joint_params = BallJoint::new(Point2::origin(), Point2::new(0.0, -3.0));
+//     let joint_builder_component = JointBuilderComponent::new(joint_params, entity1, entity2);
+//     commands.spawn((joint_builder_component,));
+// }
+
+// fn print_events(events: Res<EventQueue>) {
+//     while let Ok(intersection_event) = events.intersection_events.pop() {
+//         println!("Received intersection event: {:?}", intersection_event);
+//     }
+
+//     while let Ok(contact_event) = events.contact_events.pop() {
+//         println!("Received contact event: {:?}", contact_event);
+//     }
+// }
 
 // pub fn run_snake() {
 //     snake();
