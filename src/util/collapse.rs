@@ -323,7 +323,7 @@ pub fn wave_func_collapse(position: Vec3, mut size: Vec3, step: Vec3) -> HashMap
 
     let mut x_size = size.x as i32 / 2;
     let mut y_size = size.y as i32 / 2;
-    println!("{:?}", slots.get(&vec3_to_key(position)));
+    // println!("{:?}", slots.get(&vec3_to_key(position)));
 
     while x_size > -size.x as i32 / 2 {
         while y_size > -size.x as i32 / 2 {
@@ -352,7 +352,7 @@ pub fn wave_func_collapse(position: Vec3, mut size: Vec3, step: Vec3) -> HashMap
     min_entropy = 999999999;
 
     // let elapsed = start_time.elapsed().as_secs_f64();
-    println!("{:?}", slots);
+    // println!("{:?}", slots);
     // println!("{}", elapsed);
     slots
 }

@@ -1,4 +1,3 @@
-use rand::thread_rng;
 use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
 
 pub struct RSAUtil {
@@ -55,11 +54,10 @@ oWL75n60/RC6YRVMYI5OZNLzrRYmPz22oYAOcB6oOkP077RhSqD1
         }
     }
     pub fn encrypt(&mut self, data: &[u8]) -> String {
-        // let mut rng = OsRng;
         let padding = PaddingScheme::new_oaep::<sha2::Sha256>();
         base64::encode(
             self.public_key
-                .encrypt(&mut thread_rng(), padding, data)
+                .encrypt(&mut rand::thread_rng(), padding, data)
                 .unwrap(),
         )
     }

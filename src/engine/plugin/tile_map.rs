@@ -239,7 +239,7 @@ fn setup<'a>(
         tile_size,
     );
 
-    let mut texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+    let mut texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
     for x in -(add_x as i32)..=(add_x as i32) {
         let x_position = x as f32 * tile_size.y;
         for y in -(add_y as i32)..=(add_y as i32) {
@@ -254,7 +254,7 @@ fn setup<'a>(
                             .into(),
                     );
                 } else {
-                    texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+                    texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
                 }
             }
             commands

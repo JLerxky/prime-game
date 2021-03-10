@@ -6,7 +6,8 @@ pub struct Fps;
 
 impl Plugin for Fps {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_plugin(FrameTimeDiagnosticsPlugin)
+        app.add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+            // .add_plugin(bevy::diagnostic::PrintDiagnosticsPlugin::default())
             .add_startup_system(add_fps_system.system())
             .add_system(change_fps_system.system());
     }
