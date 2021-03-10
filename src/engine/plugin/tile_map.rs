@@ -299,10 +299,8 @@ fn tile_map_produce_system(
         let tile_size = map_state.tile_size;
         let mut count = 0;
         // 扩展地图
-        let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2);
-        let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2);
-        add_x += (add_x % 2 == 0) as usize + 1;
-        add_y += (add_y % 2 == 0) as usize + 1;
+        let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2) + 2;
+        let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2) + 2;
 
         let tile_center_transform = Vec3::new(
             (camera_transform.translation.x as i32 / tile_size.x as i32) as f32 * tile_size.x,
