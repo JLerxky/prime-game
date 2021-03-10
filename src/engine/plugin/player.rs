@@ -24,10 +24,10 @@ fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture_handle = asset_server.load("textures/chars/slime-orange.png");
-    let tile_size = Vec2::new(16.0, 24.0);
-    let scale = 5f32;
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 4, 1);
+    let texture_handle = asset_server.load("textures/chars/player.png");
+    let tile_size = Vec2::new(100.0, 120.0);
+    let scale = 1f32;
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 1, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(SpriteSheetBundle {
