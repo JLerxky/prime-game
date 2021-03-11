@@ -33,8 +33,14 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn name(&self) -> String {
+    fn name(&self) -> String {
         format!("{}_{}_{}", self.layer, self.row, self.row)
+    }
+    fn filename(&self) -> String {
+        format!(
+            "textures/tiles/background{}_{}_{}.png",
+            self.layer, self.row, self.row
+        )
     }
 }
 
@@ -193,7 +199,6 @@ impl Slot {
 #[reflect(Component)]
 pub struct MapState {
     tile_center: Vec3,
-    tile_size: Vec3,
 }
 
 pub struct TileMapPlugin;
@@ -203,7 +208,6 @@ impl Plugin for TileMapPlugin {
         app.register_type::<MapState>()
             .add_resource(MapState {
                 tile_center: Vec3::new(0f32, 0f32, 0f32),
-                tile_size: Vec3::new(50f32, 50f32, 0f32),
             })
             .add_startup_system(setup.system())
             // .add_system(tile_map_produce_system.system())
@@ -242,131 +246,105 @@ fn setup<'a>(
     map_state: ResMut<MapState>,
     window: Res<WindowDescriptor>,
 ) {
-    println!(
-        "窗口大小: {},{}; 瓷砖大小: {:?}",
-        window.width, window.height, map_state.tile_size
-    );
     // 生成地图
     let tile_center = map_state.tile_center;
-    let tile_size = map_state.tile_size;
-    let mut add_x: usize = window.width as usize / (tile_size.x as usize * 2);
-    let mut add_y: usize = window.height as usize / (tile_size.y as usize * 2);
-    add_x += (add_x % 2 == 0) as usize + 1;
-    add_y += (add_y % 2 == 0) as usize + 1;
-    println!("瓷砖数: {},{}", add_x, add_y);
+    let tile_size = Vec2::new(
+        window.width / 1344f32 * 64f32,
+        window.height / 832f32 * 64f32,
+    );
+    println!(
+        "窗口大小: {},{}; 瓷砖大小: {:?}",
+        window.width, window.height, tile_size
+    );
+    // 长21格，高13格
+    let x_size: i32 = window.width as i32 / 1344i32 * 21i32;
+    let y_size: i32 = window.height as i32 / 832i32 * 13i32;
 
+    // 波函数坍缩生成场景
     // let slots = wave_func_collapse(
     //     Vec3::new(0.0, 0.0, 0.0),
     //     Vec3::new(add_x as f32, add_y as f32, 0f32),
     //     tile_size,
     // );
 
-    let mut texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
-    // for x in -(add_x as i32)..=(add_x as i32) {
-    //     let x_position = x as f32 * tile_size.y;
-    //     for y in -(add_y as i32)..=(add_y as i32) {
-    //         let tile_position = Vec3::new(x_position, y as f32 * tile_size.x, 0.0) + tile_center;
+    // 天空背景
+    let mut texture_handle = materials.add(Color::rgb(0.6, 0.8, 1.0).into());
+    for x in -x_size / 2..=x_size / 2 {
+        let x_pos = x as f32 * tile_size.x;
+        for y in -y_size / 2..=y_size / 2 {
+            for z in 0..=1 {
+                let tile_position =
+                    Vec3::new(x_pos, y as f32 * tile_size.y, z as f32 * 10f32) + tile_center;
 
-    //         let slot_option = slots.get(&vec3_to_key(tile_position));
-    //         if let Some(slot) = slot_option {
-    //             if let Some(tile) = slot.tile {
-    //                 texture_handle = materials.add(
-    //                     asset_server
-    //                         .load(format!("textures/tiles/{}.png", tile.id).as_str())
-    //                         .into(),
-    //                 );
-    //             } else {
-    //                 texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
-    //             }
-    //         }
-    //         commands
-    //             .spawn(SpriteBundle {
-    //                 material: texture_handle.clone(),
-    //                 sprite: Sprite::new(tile_size.xy()),
-    //                 transform: Transform::from_translation(tile_position),
-    //                 ..Default::default()
-    //             })
-    //             .with(Slot {
-    //                 position: tile_position,
-    //                 is_collapsed: true,
-    //                 superposition: [None; 13],
-    //                 entropy: 0,
-    //                 tile: None,
-    //             });
-    //     }
-    // }
-
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(0.5, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 400.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Dynamic);
-
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(0.4, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 300.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Dynamic);
-
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(0.3, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 200.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Dynamic);
-    // .with(Gravity::from(Vec3::new(0.0, -9.81, 0.0)))
-    // .with(Velocity::from(Vec2::new(30.0, 0.0)));
-
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, -225.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Kinematic);
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(0.0, -225.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Kinematic);
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(-100.0, -225.0, 1.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Kinematic);
+                // let slot_option = slots.get(&vec3_to_key(tile_position));
+                // if let Some(slot) = slot_option {
+                //     if let Some(tile) = slot.tile {
+                //         texture_handle = materials.add(
+                //             asset_server
+                //                 .load(format!("textures/tiles/{}.png", tile.id).as_str())
+                //                 .into(),
+                //         );
+                //     }
+                // }
+                if y <= -2 && y >= -6 && z >= 1 {
+                    texture_handle = materials.add(
+                        asset_server
+                            .load(
+                                format!("textures/tiles/background/{}_{}_1.png", z as i8 * 10i8, y)
+                                    .as_str(),
+                            )
+                            .into(),
+                    );
+                    commands
+                        .spawn(SpriteBundle {
+                            material: texture_handle.clone(),
+                            sprite: Sprite::new(tile_size),
+                            transform: Transform::from_translation(tile_position),
+                            ..Default::default()
+                        })
+                        .with(Body::Cuboid {
+                            half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
+                        })
+                        .with(BodyType::Kinematic)
+                        .with(Slot {
+                            position: tile_position,
+                            is_collapsed: true,
+                            superposition: [None; 13],
+                            entropy: 0,
+                            tile: None,
+                        });
+                }
+                if (y > -2 || y < -6) && z <= 0 {
+                    texture_handle = materials.add(
+                        asset_server
+                            .load(
+                                format!("textures/tiles/background/{}_{}_1.png", z as i8 * 10i8, y)
+                                    .as_str(),
+                            )
+                            .into(),
+                    );
+                    commands
+                        .spawn(SpriteBundle {
+                            material: texture_handle.clone(),
+                            sprite: Sprite::new(tile_size),
+                            transform: Transform::from_translation(tile_position),
+                            ..Default::default()
+                        })
+                        .with(Body::Cuboid {
+                            half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
+                        })
+                        .with(BodyType::Sensor)
+                        .with(Slot {
+                            position: tile_position,
+                            is_collapsed: true,
+                            superposition: [None; 13],
+                            entropy: 0,
+                            tile: None,
+                        });
+                }
+            }
+        }
+    }
 }
 
 fn tile_map_produce_system(
@@ -390,7 +368,10 @@ fn tile_map_produce_system(
         // let player_transform = player_transform_query.iter().next().unwrap();
         let camera_transform = camera_transform_query.iter().next().unwrap();
         map_state.tile_center = camera_transform.translation;
-        let tile_size = map_state.tile_size;
+        let tile_size = Vec2::new(
+            window.width / 1920f32 * 64f32,
+            window.height / 1080f32 * 64f32,
+        );
         let mut count = 0;
         // 扩展地图
         let add_x: usize = window.width as usize / (tile_size.x as usize * 2) + 2;
@@ -432,7 +413,7 @@ fn tile_map_produce_system(
                 commands
                     .spawn(SpriteBundle {
                         material: texture_handle.clone(),
-                        sprite: Sprite::new(tile_size.xy()),
+                        sprite: Sprite::new(tile_size),
                         transform: Transform::from_translation(tile_position),
                         ..Default::default()
                     })
@@ -475,8 +456,12 @@ fn tile_map_clean_system(
     //     "window: {},{}; map_state: {:?}",
     //     window.width, window.height, map_state.tile_size
     // );
-    let w = window.width / 2f32 + (map_state.tile_size.x * 2f32);
-    let h = window.height / 2f32 + (map_state.tile_size.y * 2f32);
+    let tile_size = Vec2::new(
+        window.width / 1920f32 * 64f32,
+        window.height / 1080f32 * 64f32,
+    );
+    let w = window.width / 2f32 + (tile_size.x * 2f32);
+    let h = window.height / 2f32 + (tile_size.y * 2f32);
     for (tile_entity, tile_transform) in slot_query.iter() {
         if tile_transform.translation.x > camera_transform.translation.x + w
             || tile_transform.translation.x < camera_transform.translation.x - w

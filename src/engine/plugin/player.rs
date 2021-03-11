@@ -34,7 +34,7 @@ fn setup(
         .spawn(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 1.0),
+                translation: Vec3::new(0.0, 220.0, 10.0),
                 scale: Vec3::splat(scale),
                 ..Default::default()
             },
