@@ -249,16 +249,16 @@ fn setup<'a>(
     // 生成地图
     let tile_center = map_state.tile_center;
     let tile_size = Vec2::new(
-        window.width / 1344f32 * 64f32,
-        window.height / 832f32 * 64f32,
+        window.width / 21f32 * 1f32,
+        window.height / 13f32 * 1f32,
     );
     println!(
         "窗口大小: {},{}; 瓷砖大小: {:?}",
         window.width, window.height, tile_size
     );
     // 长21格，高13格
-    let x_size: i32 = window.width as i32 / 1344i32 * 21i32;
-    let y_size: i32 = window.height as i32 / 832i32 * 13i32;
+    let x_size: i32 = 21i32;
+    let y_size: i32 = 13i32;
 
     // 波函数坍缩生成场景
     // let slots = wave_func_collapse(
@@ -268,7 +268,7 @@ fn setup<'a>(
     // );
 
     // 天空背景
-    let mut texture_handle = materials.add(Color::rgb(0.6, 0.8, 1.0).into());
+    let mut texture_handle ;
     for x in -x_size / 2..=x_size / 2 {
         let x_pos = x as f32 * tile_size.x;
         for y in -y_size / 2..=y_size / 2 {

@@ -24,9 +24,11 @@ fn setup(
     commands: &mut Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
+    window: Res<WindowDescriptor>,
 ) {
     let texture_handle = asset_server.load("textures/chars/player.png");
-    let tile_size = Vec2::new(100.0, 120.0);
+    // let tile_size = Vec2::new(100.0, 120.0);
+    let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 2f32);
     let scale = 1f32;
     let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 1, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -41,7 +43,7 @@ fn setup(
             ..Default::default()
         })
         .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 60.0, 0.0),
+            half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
         })
         .with(BodyType::Dynamic)
         .with(Velocity::from(Vec2::new(-20.0, 0.0)))
