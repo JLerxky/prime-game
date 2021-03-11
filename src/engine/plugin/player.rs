@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use heron::{Body, BodyType, Velocity};
 
 use crate::engine::event::map_event::MapEvent;
 
@@ -39,6 +40,11 @@ fn setup(
             },
             ..Default::default()
         })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 60.0, 0.0),
+        })
+        .with(BodyType::Dynamic)
+        .with(Velocity::from(Vec2::new(-20.0, 0.0)))
         .with(Player {
             velocity: Vec3::new(0f32, 0f32, 0f32),
             show_size: tile_size * scale,
@@ -69,7 +75,7 @@ fn player_move_system(
         || player_transform.translation.y <= (camera_transform.translation.y - h)
     {
         camera_transform.translation += delta * player.velocity * 300f32;
-        map_events.send(MapEvent::Add);
+        // map_events.send(MapEvent::Add);
     }
 }
 

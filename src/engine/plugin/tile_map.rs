@@ -1,4 +1,5 @@
 use bevy::{core::FixedTimestep, math::Vec3Swizzles, prelude::*};
+use heron::{Body, BodyType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -19,14 +20,22 @@ pub struct Position {
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Tile {
     // 文件名作为name
-    pub id: i32,
-    // 旋转 0-0 1-90 2-180 3-270
-    pub rotation: u8,
+    pub id: u32,
+    // 层级
+    pub layer: u8,
+    // 可在哪行生成
+    pub row: i32,
     // 可连接id
     pub top: u32,
     pub down: u32,
     pub left: u32,
     pub right: u32,
+}
+
+impl Tile {
+    pub fn name(&self) -> String {
+        format!("{}_{}_{}", self.layer, self.row, self.row)
+    }
 }
 
 // 位置
@@ -49,107 +58,120 @@ pub fn get_tiles() -> [Option<Tile>; 13] {
     [
         Some(Tile {
             id: 1,
-            rotation: 0,
-            top: 1,
-            down: 0,
-            left: 0,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 2,
-            rotation: 0,
-            top: 0,
-            down: 0,
-            left: 1,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 3,
-            rotation: 0,
-            top: 0,
-            down: 1,
-            left: 1,
-            right: 0,
-        }),
-        Some(Tile {
-            id: 4,
-            rotation: 0,
-            top: 1,
-            down: 1,
-            left: 0,
-            right: 0,
-        }),
-        Some(Tile {
-            id: 5,
-            rotation: 0,
-            top: 0,
-            down: 1,
-            left: 0,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 6,
-            rotation: 0,
-            top: 1,
-            down: 0,
-            left: 1,
-            right: 0,
-        }),
-        Some(Tile {
-            id: 7,
-            rotation: 0,
-            top: 1,
-            down: 1,
-            left: 1,
-            right: 0,
-        }),
-        Some(Tile {
-            id: 8,
-            rotation: 0,
+            layer: 0,
+            row: 6,
             top: 0,
             down: 0,
             left: 0,
             right: 0,
         }),
         Some(Tile {
-            id: 9,
-            rotation: 0,
-            top: 1,
-            down: 1,
-            left: 1,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 10,
-            rotation: 0,
-            top: 1,
-            down: 1,
-            left: 1,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 11,
-            rotation: 0,
-            top: 1,
-            down: 0,
-            left: 1,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 12,
-            rotation: 0,
-            top: 1,
-            down: 1,
-            left: 0,
-            right: 1,
-        }),
-        Some(Tile {
-            id: 13,
-            rotation: 0,
+            id: 1,
+            layer: 0,
+            row: 5,
             top: 0,
-            down: 1,
-            left: 1,
-            right: 1,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 4,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 3,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 2,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 1,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 0,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: -1,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -2,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -3,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -4,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -5,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -6,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
         }),
     ]
 }
@@ -233,46 +255,118 @@ fn setup<'a>(
     add_y += (add_y % 2 == 0) as usize + 1;
     println!("瓷砖数: {},{}", add_x, add_y);
 
-    let slots = wave_func_collapse(
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(add_x as f32, add_y as f32, 0f32),
-        tile_size,
-    );
+    // let slots = wave_func_collapse(
+    //     Vec3::new(0.0, 0.0, 0.0),
+    //     Vec3::new(add_x as f32, add_y as f32, 0f32),
+    //     tile_size,
+    // );
 
     let mut texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
-    for x in -(add_x as i32)..=(add_x as i32) {
-        let x_position = x as f32 * tile_size.y;
-        for y in -(add_y as i32)..=(add_y as i32) {
-            let tile_position = Vec3::new(x_position, y as f32 * tile_size.x, 0.0) + tile_center;
+    // for x in -(add_x as i32)..=(add_x as i32) {
+    //     let x_position = x as f32 * tile_size.y;
+    //     for y in -(add_y as i32)..=(add_y as i32) {
+    //         let tile_position = Vec3::new(x_position, y as f32 * tile_size.x, 0.0) + tile_center;
 
-            let slot_option = slots.get(&vec3_to_key(tile_position));
-            if let Some(slot) = slot_option {
-                if let Some(tile) = slot.tile {
-                    texture_handle = materials.add(
-                        asset_server
-                            .load(format!("textures/tiles/{}.png", tile.id).as_str())
-                            .into(),
-                    );
-                } else {
-                    texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
-                }
-            }
-            commands
-                .spawn(SpriteBundle {
-                    material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size.xy()),
-                    transform: Transform::from_translation(tile_position),
-                    ..Default::default()
-                })
-                .with(Slot {
-                    position: tile_position,
-                    is_collapsed: true,
-                    superposition: [None; 13],
-                    entropy: 0,
-                    tile: None,
-                });
-        }
-    }
+    //         let slot_option = slots.get(&vec3_to_key(tile_position));
+    //         if let Some(slot) = slot_option {
+    //             if let Some(tile) = slot.tile {
+    //                 texture_handle = materials.add(
+    //                     asset_server
+    //                         .load(format!("textures/tiles/{}.png", tile.id).as_str())
+    //                         .into(),
+    //                 );
+    //             } else {
+    //                 texture_handle = materials.add(Color::rgb(0.8, 0.8, 1.0).into());
+    //             }
+    //         }
+    //         commands
+    //             .spawn(SpriteBundle {
+    //                 material: texture_handle.clone(),
+    //                 sprite: Sprite::new(tile_size.xy()),
+    //                 transform: Transform::from_translation(tile_position),
+    //                 ..Default::default()
+    //             })
+    //             .with(Slot {
+    //                 position: tile_position,
+    //                 is_collapsed: true,
+    //                 superposition: [None; 13],
+    //                 entropy: 0,
+    //                 tile: None,
+    //             });
+    //     }
+    // }
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(0.5, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 400.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Dynamic);
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(0.4, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 300.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Dynamic);
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(0.3, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 200.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Dynamic);
+    // .with(Gravity::from(Vec3::new(0.0, -9.81, 0.0)))
+    // .with(Velocity::from(Vec2::new(30.0, 0.0)));
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, -225.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Kinematic);
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, -225.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Kinematic);
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(-100.0, -225.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Kinematic);
 }
 
 fn tile_map_produce_system(

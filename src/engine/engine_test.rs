@@ -28,8 +28,8 @@ pub fn engine_start() {
         .add_plugin(Fps) // 事件
         .add_plugin(WindowEventPlugin)
         // Default Bevy plugins.
-        .add_plugin(PhysicsPlugin::default()) // Add the plugin
-        .add_resource(Gravity::from(Vec3::new(0.0, -98.1, 0.0)))
+        .add_plugin(PhysicsPlugin::default())
+        .add_resource(Gravity::from(Vec3::new(0.0, -120.0, 0.0)))
         .add_startup_system(setup_physics.system())
         .run();
 }
@@ -45,7 +45,31 @@ fn setup_physics(commands: &mut Commands, mut materials: ResMut<Assets<ColorMate
         .spawn(SpriteBundle {
             material: texture_handle.clone(),
             sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 100.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 400.0, 0.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Dynamic);
+
+    commands
+        .spawn(SpriteBundle {
+            material: texture_handle.clone(),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 300.0, 0.0)),
+            ..Default::default()
+        })
+        .with(Body::Cuboid {
+            half_extends: Vec3::new(50.0, 50.0, 0.0),
+        })
+        .with(BodyType::Dynamic);
+
+    commands
+        .spawn(SpriteBundle {
+            material: texture_handle.clone(),
+            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, 200.0, 0.0)),
             ..Default::default()
         })
         .with(Body::Cuboid {
@@ -59,7 +83,7 @@ fn setup_physics(commands: &mut Commands, mut materials: ResMut<Assets<ColorMate
         .spawn(SpriteBundle {
             material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
             sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, -100.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(100.0, -225.0, 0.0)),
             ..Default::default()
         })
         .with(Body::Cuboid {
