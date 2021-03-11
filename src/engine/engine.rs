@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_rapier2d::{physics::RapierPhysicsPlugin, render::RapierRenderPlugin};
 
 use super::{
     event::{
@@ -34,8 +33,6 @@ pub fn engine_start() {
         // 默认插件
         .add_plugins(DefaultPlugins)
         // 物理插件
-        .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
         // 物理
         // .add_startup_system(setup_physics.system())
         // .add_system(print_events.system())
