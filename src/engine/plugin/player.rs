@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use heron::{Body, BodyType, Velocity};
+use heron::{Body, BodyType, CollisionEvent, PhysicMaterial, Velocity};
 
 use crate::engine::event::map_event::MapEvent;
 
@@ -10,8 +10,9 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(setup.system())
             .add_system(player_ctrl_system.system())
-            .add_system(animate_system.system())
-            .add_system(player_move_system.system());
+            .add_system(player_collider_system.system())
+            .add_system(animate_system.system());
+        // .add_system(player_move_system.system());
     }
 }
 
@@ -28,7 +29,7 @@ fn setup(
 ) {
     let texture_handle = asset_server.load("textures/chars/player.png");
     // let tile_size = Vec2::new(100.0, 120.0);
-    let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 2f32);
+    let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 2f32);
     let scale = 1f32;
     let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 1, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -46,12 +47,34 @@ fn setup(
             half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
         })
         .with(BodyType::Dynamic)
-        .with(Velocity::from(Vec2::new(-20.0, 0.0)))
+        .with(Velocity::from(Vec2::new(0.0, 0.0)))
+        .with(PhysicMaterial {
+            restitution: 1.0,
+            density: 1.0,
+        })
         .with(Player {
             velocity: Vec3::new(0f32, 0f32, 0f32),
             show_size: tile_size * scale,
         })
         .with(Timer::from_seconds(0.1, true));
+}
+
+fn player_collider_system(
+    mut player_query: Query<(&mut Velocity, &mut Body), With<Player>>,
+    mut reader: Local<EventReader<CollisionEvent>>,
+    events: Res<Events<CollisionEvent>>,
+) {
+    let (mut player_transform, player_body) = player_query.iter_mut().next().unwrap();
+    for event in reader.iter(&events) {
+        match event {
+            CollisionEvent::Started(e1, e2) => {
+                println!("Collision started between {:?} and {:?}", e1, e2)
+            }
+            CollisionEvent::Stopped(e1, e2) => {
+                println!("Collision stopped between {:?} and {:?}", e1, e2)
+            }
+        }
+    }
 }
 
 fn player_move_system(

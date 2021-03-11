@@ -21,8 +21,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 160f32,
-            height: 90f32,
+            width: 1920f32,
+            height: 1080f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定

@@ -1,93 +1,82 @@
-use bevy::prelude::*;
-use heron::{Body, BodyType, Gravity, PhysicsPlugin, Velocity};
+use std::f32::consts::PI;
 
-use super::{event::window_event::WindowEventPlugin, plugin::fps::Fps};
+use bevy::prelude::*;
+
+use heron::*;
 
 pub fn engine_start() {
     App::build()
-        .add_resource(WindowDescriptor {
-            title: String::from("初始游戏"),
-            // 垂直同步
-            vsync: true,
-            // 是否可调整窗口大小
-            resizable: false,
-            // 是否有窗口外壳
-            decorations: true,
-            width: 960f32,
-            height: 540f32,
-            // 窗口模式
-            // mode: WindowMode::BorderlessFullscreen,
-            // 鼠标隐藏并锁定
-            cursor_locked: true,
-            cursor_visible: false,
-            ..Default::default()
-        })
-        .add_resource(Msaa { samples: 8 })
-        // 默认插件
-        .add_plugins(DefaultPlugins) // 辅助功能插件
-        .add_plugin(Fps) // 事件
-        .add_plugin(WindowEventPlugin)
-        // Default Bevy plugins.
-        .add_plugin(PhysicsPlugin::default())
-        .add_resource(Gravity::from(Vec3::new(0.0, -120.0, 0.0)))
-        .add_startup_system(setup_physics.system())
+        .add_plugins(DefaultPlugins)
+        .add_plugin(PhysicsPlugin::default()) // Add the plugin
+        .add_resource(Gravity::from(Vec2::new(0.0, -600.0))) // Define the gravity
+        .add_startup_system(spawn.system())
+        .add_system(log_collisions.system())
         .run();
 }
 
-fn setup_physics(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
-    commands
-        .spawn(Camera2dBundle::default())
-        .spawn(CameraUiBundle::default());
+fn spawn(commands: &mut Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+    commands.spawn(Camera2dBundle::default());
 
-    let texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-
+    // The ground
+    let size = Vec2::new(1000.0, 50.0);
     commands
+        // Spawn a bundle that contains at least a `GlobalTransform`
         .spawn(SpriteBundle {
-            material: texture_handle.clone(),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 400.0, 0.0)),
+            sprite: Sprite::new(size),
+            material: materials.add(Color::WHITE.into()),
+            transform: Transform::from_translation(Vec3::new(0.0, -300.0, 0.0)),
             ..Default::default()
         })
+        // Make it a rigid body by picking a collision shape
         .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
+            half_extends: size.extend(0.0) / 2.0,
         })
-        .with(BodyType::Dynamic);
+        // Bodies, are "dynamic" by default. Let's make the ground static (doesn't move)
+        .with(BodyType::Static)
+        // Define restitution (so that it bounces)
+        .with(PhysicMaterial {
+            restitution: 0.5,
+            ..Default::default()
+        });
 
+    // The Ball
+    let size = Vec2::new(30.0, 30.0);
     commands
+        // Spawn a bundle that contains at least a `GlobalTransform`
         .spawn(SpriteBundle {
-            material: texture_handle.clone(),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 300.0, 0.0)),
+            sprite: Sprite::new(size),
+            material: materials.add(Color::GREEN.into()),
+            transform: Transform::from_translation(Vec3::new(-400.0, 200.0, 0.0)),
             ..Default::default()
         })
+        // Make it a rigid body by picking a collision shape
         .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
+            half_extends: size.extend(0.0) / 2.0,
         })
-        .with(BodyType::Dynamic);
-
-    commands
-        .spawn(SpriteBundle {
-            material: texture_handle.clone(),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, 200.0, 0.0)),
+        // Add an initial velocity. (it is also possible to read/mutate this component later)
+        .with(
+            Velocity::from(Vec2::unit_x() * 300.0)
+                .with_angular(AxisAngle::new(Vec3::unit_z(), -PI)),
+        )
+        // Define restitution (so that it bounces)
+        .with(PhysicMaterial {
+            restitution: 0.1,
             ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Dynamic);
-    // .with(Gravity::from(Vec3::new(0.0, -9.81, 0.0)))
-    // .with(Velocity::from(Vec2::new(30.0, 0.0)));
+        });
+}
 
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            sprite: Sprite::new(Vec2::new(100.0, 100.0)),
-            transform: Transform::from_translation(Vec3::new(100.0, -225.0, 0.0)),
-            ..Default::default()
-        })
-        .with(Body::Cuboid {
-            half_extends: Vec3::new(50.0, 50.0, 0.0),
-        })
-        .with(BodyType::Static);
+fn log_collisions(
+    mut reader: Local<EventReader<CollisionEvent>>,
+    events: Res<Events<CollisionEvent>>,
+) {
+    for event in reader.iter(&events) {
+        match event {
+            CollisionEvent::Started(e1, e2) => {
+                println!("Collision started between {:?} and {:?}", e1, e2)
+            }
+            CollisionEvent::Stopped(e1, e2) => {
+                println!("Collision stopped between {:?} and {:?}", e1, e2)
+            }
+        }
+    }
 }

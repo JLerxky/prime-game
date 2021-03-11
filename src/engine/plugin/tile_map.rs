@@ -305,7 +305,7 @@ fn setup<'a>(
                         .with(Body::Cuboid {
                             half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
                         })
-                        .with(BodyType::Kinematic)
+                        .with(BodyType::Static)
                         .with(Slot {
                             position: tile_position,
                             is_collapsed: true,
@@ -330,10 +330,6 @@ fn setup<'a>(
                             transform: Transform::from_translation(tile_position),
                             ..Default::default()
                         })
-                        .with(Body::Cuboid {
-                            half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
-                        })
-                        .with(BodyType::Sensor)
                         .with(Slot {
                             position: tile_position,
                             is_collapsed: true,
