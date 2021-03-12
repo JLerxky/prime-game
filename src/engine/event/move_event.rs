@@ -1,5 +1,4 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
-use heron::{AppBuilderExt, Body, Velocity};
 
 use crate::engine::plugin::player::Player;
 
@@ -8,8 +7,8 @@ pub struct MoveEventPlugin;
 impl Plugin for MoveEventPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<MoveEvent>()
-            .add_system(keyboard_event_system.system())
-            .add_physics_system(event_listener_system.system());
+            .add_system(keyboard_event_system.system());
+            // .add_physics_system(event_listener_system.system());
     }
 }
 
@@ -21,51 +20,51 @@ enum MoveEvent {
     RIGHT(bool),
 }
 
-fn event_listener_system(
-    mut move_event_reader: Local<EventReader<MoveEvent>>,
-    move_events: Res<Events<MoveEvent>>,
-    // mut map_events: ResMut<Events<MapEvent>>,
-    mut player_query: Query<(&mut Transform, &mut Velocity, &mut Body), With<Player>>,
-) {
-    let (mut player_transform, mut player_velocity, _player_body) =
-        player_query.iter_mut().next().unwrap();
-    for move_event in move_event_reader.iter(&move_events) {
-        match move_event {
-            MoveEvent::UP(state) => {
-                if *state {
-                    // player_transform.translation += Vec3::new(0.0, 20.0, 0.0);
-                    player_velocity.linear = Vec3::new(player_velocity.linear.x, 200.0, 0.0);
-                } else {
-                    // player_velocity.linear = Vec3::new(player_velocity.linear.x, 0.0, 0.0);
-                }
-            }
-            MoveEvent::DOWN(state) => {
-                if *state {
-                    // player_transform.translation += Vec3::new(0.0, -20.0, 0.0);
-                    player_velocity.linear = Vec3::new(player_velocity.linear.x, -200.0, 0.0);
-                } else {
-                    // player_velocity.linear = Vec3::new(player_velocity.linear.x, 0.0, 0.0);
-                }
-            }
-            MoveEvent::LEFT(state) => {
-                if *state {
-                    // player_transform.translation += Vec3::new(-20.0, 0.0, 0.0);
-                    player_velocity.linear = Vec3::new(-200.0, player_velocity.linear.y, 0.0);
-                } else {
-                    // player_velocity.linear = Vec3::new(0.0, player_velocity.linear.y, 0.0);
-                }
-            }
-            MoveEvent::RIGHT(state) => {
-                if *state {
-                    // player_transform.translation += Vec3::new(20.0, 0.0, 0.0);
-                    player_velocity.linear = Vec3::new(200.0, player_velocity.linear.y, 0.0);
-                } else {
-                    // player_velocity.linear = Vec3::new(0.0, player_velocity.linear.y, 0.0);
-                }
-            }
-        }
-    }
-}
+// fn event_listener_system(
+//     mut move_event_reader: Local<EventReader<MoveEvent>>,
+//     move_events: Res<Events<MoveEvent>>,
+//     // mut map_events: ResMut<Events<MapEvent>>,
+//     mut player_query: Query<(&mut Transform, &mut Velocity, &mut Body), With<Player>>,
+// ) {
+//     let (mut player_transform, mut player_velocity, _player_body) =
+//         player_query.iter_mut().next().unwrap();
+//     for move_event in move_event_reader.iter(&move_events) {
+//         match move_event {
+//             MoveEvent::UP(state) => {
+//                 if *state {
+//                     // player_transform.translation += Vec3::new(0.0, 20.0, 0.0);
+//                     player_velocity.linear = Vec3::new(player_velocity.linear.x, 200.0, 0.0);
+//                 } else {
+//                     // player_velocity.linear = Vec3::new(player_velocity.linear.x, 0.0, 0.0);
+//                 }
+//             }
+//             MoveEvent::DOWN(state) => {
+//                 if *state {
+//                     // player_transform.translation += Vec3::new(0.0, -20.0, 0.0);
+//                     player_velocity.linear = Vec3::new(player_velocity.linear.x, -200.0, 0.0);
+//                 } else {
+//                     // player_velocity.linear = Vec3::new(player_velocity.linear.x, 0.0, 0.0);
+//                 }
+//             }
+//             MoveEvent::LEFT(state) => {
+//                 if *state {
+//                     // player_transform.translation += Vec3::new(-20.0, 0.0, 0.0);
+//                     player_velocity.linear = Vec3::new(-200.0, player_velocity.linear.y, 0.0);
+//                 } else {
+//                     // player_velocity.linear = Vec3::new(0.0, player_velocity.linear.y, 0.0);
+//                 }
+//             }
+//             MoveEvent::RIGHT(state) => {
+//                 if *state {
+//                     // player_transform.translation += Vec3::new(20.0, 0.0, 0.0);
+//                     player_velocity.linear = Vec3::new(200.0, player_velocity.linear.y, 0.0);
+//                 } else {
+//                     // player_velocity.linear = Vec3::new(0.0, player_velocity.linear.y, 0.0);
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn keyboard_event_system(
     mut keyboard_event_reader: Local<EventReader<KeyboardInput>>,

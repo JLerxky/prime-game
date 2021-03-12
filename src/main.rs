@@ -12,9 +12,9 @@ use tokio::task;
 
 #[tokio::main]
 async fn main() {
-    task::spawn(async {
-        Cli::start();
-    });
+    // task::spawn(async {
+    //     Cli::start();
+    // });
 
     engine_start();
 }

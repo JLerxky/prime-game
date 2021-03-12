@@ -1,11 +1,8 @@
-use bevy::{core::FixedTimestep, math::Vec3Swizzles, prelude::*};
-use heron::{Body, BodyType};
+use bevy::{core::FixedTimestep, prelude::*};
+use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    engine::event::map_event::MapEvent,
-    util::collapse::{vec3_to_key, wave_func_collapse},
-};
+use crate::engine::event::map_event::MapEvent;
 
 use super::camera_ctrl::CameraCtrl;
 
@@ -248,10 +245,7 @@ fn setup<'a>(
 ) {
     // 生成地图
     let tile_center = map_state.tile_center;
-    let tile_size = Vec2::new(
-        window.width / 21f32 * 1f32,
-        window.height / 13f32 * 1f32,
-    );
+    let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
     println!(
         "窗口大小: {},{}; 瓷砖大小: {:?}",
         window.width, window.height, tile_size
@@ -267,8 +261,24 @@ fn setup<'a>(
     //     tile_size,
     // );
 
+    /*
+     * The ground
+     */
+
+    let rigid_body = RigidBodyBuilder::new_static().translation(0.0, 400.0);
+    let collider = ColliderBuilder::cuboid(150.0, 5.0);
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
+            sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 400.0, 10.0)),
+            ..Default::default()
+        })
+        .with(rigid_body)
+        .with(collider);
+
     // 天空背景
-    let mut texture_handle ;
+    let mut texture_handle;
     for x in -x_size / 2..=x_size / 2 {
         let x_pos = x as f32 * tile_size.x;
         for y in -y_size / 2..=y_size / 2 {
@@ -295,6 +305,11 @@ fn setup<'a>(
                             )
                             .into(),
                     );
+
+                    let rigid_body = RigidBodyBuilder::new_static()
+                        .translation(tile_position.x, tile_position.y);
+                    let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+
                     commands
                         .spawn(SpriteBundle {
                             material: texture_handle.clone(),
@@ -302,10 +317,8 @@ fn setup<'a>(
                             transform: Transform::from_translation(tile_position),
                             ..Default::default()
                         })
-                        .with(Body::Cuboid {
-                            half_extends: Vec3::new(tile_size.x / 2f32, tile_size.y / 2f32, 0.0),
-                        })
-                        .with(BodyType::Static)
+                        .with(rigid_body)
+                        .with(collider)
                         .with(Slot {
                             position: tile_position,
                             is_collapsed: true,

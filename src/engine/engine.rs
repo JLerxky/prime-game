@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use heron::{Gravity, PhysicsPlugin};
+use bevy::{prelude::*, wgpu::WgpuPlugin, winit::WinitPlugin};
+use bevy_rapier2d::{physics::RapierPhysicsPlugin, render::RapierRenderPlugin};
 
 use super::{
     event::{
@@ -33,16 +33,24 @@ pub fn engine_start() {
         .add_resource(Msaa { samples: 4 })
         // 默认插件
         .add_plugins(DefaultPlugins)
+        // 窗口插件
+        // .add_resource(ClearColor(Color::rgb(
+        //     0xF9 as f32 / 255.0,
+        //     0xF9 as f32 / 255.0,
+        //     0xFF as f32 / 255.0,
+        // )))
+        .add_plugin(WinitPlugin::default())
+        // .add_plugin(WgpuPlugin::default())
         // 物理插件
-        .add_plugin(PhysicsPlugin::default())
-        .add_resource(Gravity::from(Vec3::new(0.0, -120.0, 0.0)))
+        .add_plugin(RapierPhysicsPlugin)
+        .add_plugin(RapierRenderPlugin)
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
         .add_plugin(Fps)
         .add_plugin(Clipboard)
         // 事件
-        .add_plugin(MoveEventPlugin)
+        // .add_plugin(MoveEventPlugin)
         .add_plugin(MapEventPlugin)
         .add_plugin(WindowEventPlugin)
         // 地图初始化
