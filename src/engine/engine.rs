@@ -7,7 +7,10 @@ use bevy_rapier2d::{
 };
 
 use super::{
-    event::{map_event::MapEventPlugin, window_event::WindowEventPlugin},
+    event::{
+        keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
+        window_event::WindowEventPlugin,
+    },
     plugin::{
         camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
         tile_map::TileMapPlugin,
@@ -55,7 +58,7 @@ pub fn engine_start() {
         .add_plugin(Fps)
         .add_plugin(Clipboard)
         // 事件
-        // .add_plugin(MoveEventPlugin)
+        .add_plugin(KeyboardEventPlugin)
         .add_plugin(MapEventPlugin)
         .add_plugin(WindowEventPlugin)
         // 地图初始化

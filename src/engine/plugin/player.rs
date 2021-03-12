@@ -23,7 +23,7 @@ impl Plugin for PlayerPlugin {
 pub struct Player {
     pub velocity: Vec3,
     pub show_size: Vec2,
-    pub jump_count: u8,
+    pub jumped: bool,
 }
 
 fn setup(
@@ -53,11 +53,11 @@ fn setup(
                 .gravity_scale(3.0)
                 .lock_rotations(),
         )
-        .with(ColliderBuilder::cuboid(tile_size.x / 2.0, tile_size.y / 2.0).friction(0.0))
+        .with(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
         .with(Player {
             velocity: Vec3::new(40f32, 10000f32, 0f32),
             show_size: tile_size * scale,
-            jump_count: 2,
+            jumped: false,
         })
         .with(Timer::from_seconds(0.1, true));
 }
@@ -76,11 +76,9 @@ fn player_movement(
 
         let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8)
             + (keyboard_input.pressed(KeyCode::D) as i8);
-        let mut y_axis = 0;
-        if player.jump_count > 0 {
-            y_axis = keyboard_input.pressed(KeyCode::Space) as i8;
-            // player.jump_count -= 1;
-        }
+        let y_axis = keyboard_input.pressed(KeyCode::Space) as i8;
+
+        // if !player.jumped {
 
         let mut move_delta = Vector2::new(x_axis as f32, y_axis as f32);
         if move_delta != Vector2::zeros() {
@@ -89,9 +87,7 @@ fn player_movement(
 
         if let Some(rb) = rigid_bodies.get_mut(rigid_body_component.handle()) {
             // println!("{:?}", rb.linvel());
-            if rb.linvel().y != 0f32 {
-                rb.set_linvel(Vector2::new(move_delta.x * player.velocity.x, 0f32), true);
-            } else {
+            if rb.linvel().y == 0f32 && !player.jumped {
                 rb.set_linvel(
                     Vector2::new(
                         move_delta.x * player.velocity.x,
@@ -99,8 +95,12 @@ fn player_movement(
                     ),
                     true,
                 );
+            // player.jumped = true;
+            } else {
+                rb.set_linvel(Vector2::new(move_delta.x * player.velocity.x, 0f32), true);
             }
         }
+        // }
 
         // 屏幕可见范围偏移量
         // let w = (window.width / 2f32) - (3f32 * (player.show_size.x / 2f32));
