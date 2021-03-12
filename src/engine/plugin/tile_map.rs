@@ -333,7 +333,7 @@ fn setup<'a>(
                             ..Default::default()
                         })
                         .with(rigid_body)
-                        .with(collider)
+                        .with(collider.friction(0.0))
                         .with(Slot {
                             position: tile_position,
                             is_collapsed: true,
