@@ -264,18 +264,33 @@ fn setup<'a>(
     /*
      * The ground
      */
-
-    let rigid_body = RigidBodyBuilder::new_static().translation(0.0, 400.0);
-    let collider = ColliderBuilder::cuboid(150.0, 5.0);
     commands
         .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
+            material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
             sprite: Sprite::new(Vec2::new(300.0, 10.0)),
-            transform: Transform::from_translation(Vec3::new(0.0, 400.0, 10.0)),
             ..Default::default()
         })
-        .with(rigid_body)
-        .with(collider);
+        .with(RigidBodyBuilder::new_static().translation(400.0, -tile_size.y / 2f32))
+        .with(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+            sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+            ..Default::default()
+        })
+        .with(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 5f32))
+        .with(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
+
+    // commands
+    //     .spawn(SpriteBundle {
+    //         material: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
+    //         sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+    //         transform: Transform::from_translation(Vec3::new(0.0, tile_size.y, 10.0)),
+    //         ..Default::default()
+    //     })
+    //     .with(RigidBodyBuilder::new_static())
+    //     .with(ColliderBuilder::cuboid(150.0, 5.0));
 
     // 天空背景
     let mut texture_handle;
