@@ -47,7 +47,7 @@ fn setup(
             },
             ..Default::default()
         })
-        .with(RigidBodyBuilder::new_dynamic().gravity_scale(10.0))
+        .with(RigidBodyBuilder::new_dynamic().gravity_scale(20.0).lock_rotations())
         .with(ColliderBuilder::cuboid(
             tile_size.x / 2.0,
             tile_size.y / 2.0,
