@@ -30,7 +30,7 @@ pub fn engine_start() {
             cursor_visible: false,
             ..Default::default()
         })
-        .add_resource(Msaa { samples: 8 })
+        .add_resource(Msaa { samples: 4 })
         // 默认插件
         .add_plugins(DefaultPlugins)
         // 物理插件
