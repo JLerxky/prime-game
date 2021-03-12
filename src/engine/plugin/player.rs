@@ -30,9 +30,7 @@ fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     window: Res<WindowDescriptor>,
-    mut rapier_config: ResMut<RapierConfiguration>,
 ) {
-    rapier_config.gravity = Vector2::zeros();
     let texture_handle = asset_server.load("textures/chars/player.png");
     // let tile_size = Vec2::new(100.0, 120.0);
     let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 2f32);

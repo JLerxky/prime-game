@@ -1,10 +1,13 @@
-use bevy::{prelude::*, wgpu::WgpuPlugin, winit::WinitPlugin};
-use bevy_rapier2d::{physics::RapierPhysicsPlugin, render::RapierRenderPlugin};
+use bevy::{prelude::*, winit::WinitPlugin};
+use bevy_rapier2d::{
+    na::Vector2,
+    physics::{RapierConfiguration, RapierPhysicsPlugin},
+    rapier::pipeline::PhysicsPipeline,
+    render::RapierRenderPlugin,
+};
 
 use super::{
-    event::{
-        map_event::MapEventPlugin, move_event::MoveEventPlugin, window_event::WindowEventPlugin,
-    },
+    event::{map_event::MapEventPlugin, window_event::WindowEventPlugin},
     plugin::{
         camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
         tile_map::TileMapPlugin,
@@ -44,6 +47,8 @@ pub fn engine_start() {
         // 物理插件
         .add_plugin(RapierPhysicsPlugin)
         .add_plugin(RapierRenderPlugin)
+        .add_startup_system(setup_graphics.system())
+        .add_startup_system(enable_physics_profiling.system())
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
@@ -66,6 +71,20 @@ fn set_camera(commands: &mut Commands) {
         .spawn(Camera2dBundle::default())
         .with(CameraCtrl)
         .spawn(CameraUiBundle::default());
+}
+
+fn setup_graphics(commands: &mut Commands, mut rapier_config: ResMut<RapierConfiguration>) {
+    // configuration.scale = 40.0;
+
+    rapier_config.gravity = Vector2::new(0.0, -512.0);
+    commands.spawn(LightBundle {
+        transform: Transform::from_translation(Vec3::new(1000.0, 100.0, 2000.0)),
+        ..Default::default()
+    });
+}
+
+fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
+    pipeline.counters.enable()
 }
 
 // pub fn run_snake() {
