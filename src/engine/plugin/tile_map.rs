@@ -279,7 +279,7 @@ fn setup<'a>(
             sprite: Sprite::new(Vec2::new(300.0, 10.0)),
             ..Default::default()
         })
-        .with(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 5f32))
+        .with(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 1f32))
         .with(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
 
     // commands
