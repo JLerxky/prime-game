@@ -99,6 +99,12 @@ fn player_movement(
             } else {
                 rb.set_linvel(Vector2::new(move_delta.x * player.velocity.x, 0f32), true);
             }
+            let player_pos = rb.position().translation;
+            camera_transform.translation = Vec3::new(
+                player_pos.x,
+                camera_transform.translation.y,
+                camera_transform.translation.z,
+            );
         }
         // }
 
