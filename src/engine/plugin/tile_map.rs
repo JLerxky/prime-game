@@ -35,7 +35,7 @@ impl Tile {
     }
     fn filename(&self) -> String {
         format!(
-            "textures/tiles/background{}_{}_{}.png",
+            "textures/tiles/{}_{}_{}.png",
             self.layer, self.row, self.row
         )
     }
@@ -314,10 +314,7 @@ fn setup<'a>(
                 if y <= -2 && y >= -6 && z >= 1 {
                     texture_handle = materials.add(
                         asset_server
-                            .load(
-                                format!("textures/tiles/background/{}_{}_1.png", z as i8 * 10i8, y)
-                                    .as_str(),
-                            )
+                            .load(format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y).as_str())
                             .into(),
                     );
 
@@ -345,10 +342,7 @@ fn setup<'a>(
                 if (y > -2 || y < -6) && z <= 0 {
                     texture_handle = materials.add(
                         asset_server
-                            .load(
-                                format!("textures/tiles/background/{}_{}_1.png", z as i8 * 10i8, y)
-                                    .as_str(),
-                            )
+                            .load(format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y).as_str())
                             .into(),
                     );
                     commands
