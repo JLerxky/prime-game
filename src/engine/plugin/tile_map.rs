@@ -375,6 +375,7 @@ fn tile_map_produce_system(
     window: Res<WindowDescriptor>,
     mut map_event_reader: Local<EventReader<MapEvent>>,
     mut map_events: ResMut<Events<MapEvent>>,
+    asset_server: Res<AssetServer>,
 ) {
     let mut has_event = false;
     for _ in map_event_reader.iter(&map_events) {
@@ -383,17 +384,14 @@ fn tile_map_produce_system(
     map_events.clear();
     if has_event {
         println!("生成事件！");
-        // let player_transform = player_transform_query.iter().next().unwrap();
         let camera_transform = camera_transform_query.iter().next().unwrap();
         map_state.tile_center = camera_transform.translation;
-        let tile_size = Vec2::new(
-            window.width / 1920f32 * 64f32,
-            window.height / 1080f32 * 64f32,
-        );
+
+        let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
         let mut count = 0;
-        // 扩展地图
-        let add_x: usize = window.width as usize / (tile_size.x as usize * 2) + 2;
-        let add_y: usize = window.height as usize / (tile_size.y as usize * 2) + 2;
+        // 长21格，高13格
+        let x_size: i32 = 21i32;
+        let y_size: i32 = 13i32;
 
         let tile_center_transform = Vec3::new(
             (camera_transform.translation.x as i32 / tile_size.x as i32) as f32 * tile_size.x,
@@ -401,54 +399,93 @@ fn tile_map_produce_system(
             0f32,
         );
 
-        let texture_handle = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
+        let mut texture_handle;
+        for x in -x_size / 2 - 2..=x_size / 2 + 2 {
+            let x_pos = x as f32 * tile_size.x;
+            for y in -y_size / 2..=y_size / 2 {
+                for z in 0..=1 {
+                    let tile_position = Vec3::new(x_pos, y as f32 * tile_size.y, z as f32 * 10f32)
+                        + tile_center_transform;
+                    // 存在性检查
+                    let mut exist = false;
+                    for (_exist_entity, exist_transform) in slot_exist_query.iter() {
+                        if exist_transform.translation.distance(tile_position) == 0f32 {
+                            exist = true;
+                            break;
+                        }
+                    }
+                    if exist {
+                        continue;
+                    }
 
-        for x in -(add_x as i32)..=(add_x as i32) {
-            let x_position = x as f32 * tile_size.x;
-            for y in -(add_y as i32)..=(add_y as i32) {
-                let y_position = y as f32 * tile_size.y;
-                let tile_position = Vec3::new(x_position, y_position, 0.0) + tile_center_transform;
+                    if y <= -2 && y >= -6 && z >= 1 {
+                        texture_handle = materials.add(
+                            asset_server
+                                .load(
+                                    format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y)
+                                        .as_str(),
+                                )
+                                .into(),
+                        );
 
-                // println!(
-                //     "{:?},{:?},{:?}",
-                //     player_transform.translation, tile_center_transform, tile_position
-                // );
+                        let rigid_body = RigidBodyBuilder::new_static()
+                            .translation(tile_position.x, tile_position.y);
+                        let collider =
+                            ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
 
-                // 存在性检查
-                let mut exist = false;
-                for (_exist_entity, exist_transform) in slot_exist_query.iter() {
-                    if exist_transform.translation.distance(tile_position) == 0f32 {
-                        exist = true;
-                        break;
+                        commands
+                            .spawn(SpriteBundle {
+                                material: texture_handle.clone(),
+                                sprite: Sprite::new(tile_size),
+                                transform: Transform::from_translation(tile_position),
+                                ..Default::default()
+                            })
+                            .with(rigid_body)
+                            .with(collider.friction(0.0))
+                            .with(Slot {
+                                position: tile_position,
+                                is_collapsed: true,
+                                superposition: [None; 13],
+                                entropy: 0,
+                                tile: None,
+                            });
+                        // 生成
+                        count += 1;
+                    }
+                    if (y > -2 || y < -6) && z <= 0 {
+                        texture_handle = materials.add(
+                            asset_server
+                                .load(
+                                    format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y)
+                                        .as_str(),
+                                )
+                                .into(),
+                        );
+                        commands
+                            .spawn(SpriteBundle {
+                                material: texture_handle.clone(),
+                                sprite: Sprite::new(tile_size),
+                                transform: Transform::from_translation(tile_position),
+                                ..Default::default()
+                            })
+                            .with(Slot {
+                                position: tile_position,
+                                is_collapsed: true,
+                                superposition: [None; 13],
+                                entropy: 0,
+                                tile: None,
+                            });
+                        // 生成
+                        count += 1;
                     }
                 }
-                if exist {
-                    continue;
-                }
-
-                // 生成
-                count += 1;
-                commands
-                    .spawn(SpriteBundle {
-                        material: texture_handle.clone(),
-                        sprite: Sprite::new(tile_size),
-                        transform: Transform::from_translation(tile_position),
-                        ..Default::default()
-                    })
-                    .with(Slot {
-                        position: tile_position,
-                        is_collapsed: true,
-                        superposition: [None; 13],
-                        entropy: 0,
-                        tile: None,
-                    });
             }
         }
 
         if count > 0 {
             println!(
                 "{:?},{:?}",
-                camera_transform.translation, tile_center_transform
+                camera_transform.translation, map_state.tile_center
             );
             println!("新生成瓷砖: {}", count);
         }

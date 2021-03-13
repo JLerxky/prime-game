@@ -8,6 +8,8 @@ use bevy_rapier2d::{
     },
 };
 
+use crate::engine::event::map_event::MapEvent;
+
 use super::camera_ctrl::CameraCtrl;
 pub struct PlayerPlugin;
 
@@ -50,12 +52,12 @@ fn setup(
         })
         .with(
             RigidBodyBuilder::new_dynamic()
-                .gravity_scale(3.0)
+                .gravity_scale(8.0)
                 .lock_rotations(),
         )
         .with(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
         .with(Player {
-            velocity: Vec3::new(40f32, 10000f32, 0f32),
+            velocity: Vec3::new(40f32, 12000f32, 0f32),
             show_size: tile_size * scale,
             jumped: false,
         })
@@ -69,6 +71,7 @@ fn player_movement(
     mut player_info: Query<(&mut Player, &Transform, &RigidBodyHandleComponent)>,
     mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
     window: Res<WindowDescriptor>,
+    mut map_events: ResMut<Events<MapEvent>>,
 ) {
     let (_camera_ctrl, mut camera_transform) = camera_query.iter_mut().next().unwrap();
     for (mut player, player_transform, rigid_body_component) in player_info.iter_mut() {
@@ -100,11 +103,15 @@ fn player_movement(
                 rb.set_linvel(Vector2::new(move_delta.x * player.velocity.x, 0f32), true);
             }
             let player_pos = rb.position().translation;
+            let old_pos = camera_transform.translation.clone();
             camera_transform.translation = Vec3::new(
                 player_pos.x,
                 camera_transform.translation.y,
                 camera_transform.translation.z,
             );
+            if old_pos.distance(camera_transform.translation) > 0f32 {
+                map_events.send(MapEvent::Add);
+            }
         }
         // }
 
