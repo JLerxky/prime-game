@@ -38,7 +38,7 @@ fn setup(
     // let tile_size = Vec2::new(100.0, 120.0);
     let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 2f32);
     let scale = 1f32;
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 1, 1);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 8, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(SpriteSheetBundle {
@@ -132,9 +132,10 @@ fn player_movement(
 
 fn animate_system(
     time: Res<Time>,
+    mut rigid_bodies: ResMut<RigidBodySet>,
     mut player_query: Query<
         (
-            &Player,
+            &RigidBodyHandleComponent,
             &mut Timer,
             &mut TextureAtlasSprite,
             &Handle<TextureAtlas>,
@@ -143,17 +144,32 @@ fn animate_system(
     >,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
-    let (player, mut timer, mut sprite, texture_atlas_handle) =
+    let (player_rb, mut timer, mut sprite, texture_atlas_handle) =
         player_query.iter_mut().next().unwrap();
-    if player.velocity.distance(Vec3::new(0.0, 0.0, 0.0)) != 0f32 {
-        timer.tick(time.delta_seconds());
-        if timer.finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+    if let Some(rb) = rigid_bodies.get_mut(player_rb.handle()) {
+        if rb.linvel().x > 0.001f32
+            || rb.linvel().y > 0.001f32
+            || rb.linvel().x < -0.001f32
+            || rb.linvel().y < -0.001f32
+        {
+            timer.tick(time.delta_seconds());
+            if timer.finished() {
+                let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+                sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+            }
+        } else {
+            sprite.index = 0u32;
         }
-    } else {
-        sprite.index = 0u32;
     }
+    // if player.velocity.distance(Vec3::new(0.0, 0.0, 0.0)) != 0f32 {
+    //     timer.tick(time.delta_seconds());
+    //     if timer.finished() {
+    //         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+    //         sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+    //     }
+    // } else {
+    //     sprite.index = 0u32;
+    // }
 }
 
 fn player_ctrl_system(// diagnostics: Res<Diagnostics>,
