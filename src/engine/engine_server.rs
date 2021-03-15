@@ -30,9 +30,17 @@ pub fn engine_start() {
             "player_register_fixed_update",
             SystemStage::parallel()
                 .with_run_criteria(
-                    FixedTimestep::step(10.0).with_label("player_register_fixed_timestep"),
+                    FixedTimestep::step(2.0).with_label("player_register_fixed_timestep"),
                 )
                 .with_system(player_register_system.system()),
+        )
+        // 帧同步
+        .add_stage_after(
+            stage::UPDATE,
+            "sync_data_fixed_update",
+            SystemStage::parallel()
+                .with_run_criteria(FixedTimestep::step(2.0).with_label("sync_data_fixed_timestep"))
+                .with_system(sync_data_system.system()),
         )
         .run();
 }
@@ -43,7 +51,7 @@ fn setup_graphics(
 ) {
     // rapier_config.scale = 40.0;
 
-    rapier_config.gravity = Vector2::new(0.0, -512.0);
+    rapier_config.gravity = Vector2::new(0.0, -1.0);
     pipeline.counters.enable()
 }
 
@@ -72,7 +80,6 @@ fn player_register_system(commands: &mut Commands, player_list: Query<&Player>) 
                     commands
                         .spawn(SpriteSheetBundle {
                             transform: Transform {
-                                translation: Vec3::new(0.0, 220.0, 10.0),
                                 scale: Vec3::splat(1f32),
                                 ..Default::default()
                             },
@@ -80,7 +87,8 @@ fn player_register_system(commands: &mut Commands, player_list: Query<&Player>) 
                         })
                         .with(
                             RigidBodyBuilder::new_dynamic()
-                                .gravity_scale(8.0)
+                                .translation(0.0, 0.0)
+                                .gravity_scale(1.0)
                                 .lock_rotations(),
                         )
                         .with(ColliderBuilder::capsule_y(11f32, 16f32).friction(0.0))
@@ -178,5 +186,14 @@ fn setup_tile_map(commands: &mut Commands) {
                 }
             }
         }
+    }
+}
+
+fn sync_data_system(player_query: Query<(&Player, &Transform)>) {
+    for (player, player_transform) in player_query.iter() {
+        println!(
+            "玩家: {}, 位置: {}",
+            player.uid, player_transform.translation
+        );
     }
 }
