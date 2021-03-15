@@ -23,3 +23,11 @@ tokio-util = { version = "0.6", features = ["full"] }
 tokio-stream = { version = "0.1" }
 bytes = "1.0"
 futures = { version = "0.3", features = ["thread-pool"]}
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"

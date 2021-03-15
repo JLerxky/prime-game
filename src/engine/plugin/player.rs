@@ -23,6 +23,7 @@ impl Plugin for PlayerPlugin {
 }
 
 pub struct Player {
+    pub uid: u32,
     pub velocity: Vec3,
     pub show_size: Vec2,
     pub jumped: bool,
@@ -57,6 +58,7 @@ fn setup(
         )
         .with(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
         .with(Player {
+            uid: 0,
             velocity: Vec3::new(40f32, 12000f32, 0f32),
             show_size: tile_size * scale,
             jumped: false,
