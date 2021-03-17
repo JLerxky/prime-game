@@ -1,4 +1,5 @@
 use crate::data::game_db::{self, GameData};
+use serde::{Deserialize, Serialize};
 use tokio::io;
 use tokio::net::UdpSocket;
 use tokio_stream::StreamExt;
@@ -10,14 +11,19 @@ use futures::SinkExt;
 use std::error::Error;
 use std::net::SocketAddr;
 
+#[derive(Copy, Clone, Deserialize, Serialize)]
 struct Packet {
     uid: u32,
     event: GameEvent,
 }
 
-trait GameEvent {}
-
-enum PlayerMoveEvent {
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+enum GameEvent {
+    Default,
+    // 玩家登录
+    Login,
+    Logout,
+    // 玩家移动
     MoveLeft,
     MoveRight,
     JumpUp,
@@ -27,8 +33,6 @@ enum PlayerMoveEvent {
     FlyLeft,
     FlyRight,
 }
-
-impl GameEvent for PlayerMoveEvent {}
 
 pub async fn start_server() -> Result<(), Box<dyn Error>> {
     let game_server_socket = UdpSocket::bind("127.0.0.1:2101").await?;
@@ -59,15 +63,42 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>) {
     loop {
         if let Some(Ok((bytes, addr))) = socket.next().await {
             println!("recv: {}", String::from_utf8_lossy(&bytes));
-
+            let packet =
+                serde_json::from_str(&String::from_utf8_lossy(&bytes)[..]).unwrap_or(Packet {
+                    uid: 0,
+                    event: GameEvent::Default,
+                });
             // TODO 转发事件
-            let _ = game_db::save(GameData {
-                table: "player".to_string(),
-                key: "online".to_string(),
-                data: Some("1".to_string()),
-            });
+            match packet.event {
+                GameEvent::Login => {
+                    match game_db::find(GameData {
+                        table: "player".to_string(),
+                        key: "online".to_string(),
+                        data: None,
+                    }) {
+                        Some(data) => {
+                            if data.len() > 0 {
+                                let _ = game_db::save(GameData::player(format!(
+                                    "{},{}",
+                                    data, packet.uid
+                                )));
+                            } else {
+                                let _ = game_db::save(GameData::player(format!("{}", packet.uid)));
+                            }
+                        }
+                        None => {
+                            let _ = game_db::save(GameData {
+                                table: "player".to_string(),
+                                key: "online".to_string(),
+                                data: Some(format!("{}", packet.uid)),
+                            });
+                        }
+                    }
+                }
+                _ => println!("收到事件未处理: {:?}", packet.event),
+            }
 
-            socket.send((Bytes::from("收到！"), addr)).await.unwrap();
+            // socket.send((Bytes::from("收到！"), addr)).await.unwrap();
         }
     }
 }

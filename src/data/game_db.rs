@@ -8,6 +8,16 @@ pub struct GameData {
     pub data: Option<String>,
 }
 
+impl GameData {
+    pub fn player(data: String) -> Self {
+        GameData {
+            table: "player".to_string(),
+            key: "online".to_string(),
+            data: Some(data),
+        }
+    }
+}
+
 pub fn find(key: GameData) -> Option<String> {
     let rocks_db = RocksDB::open();
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
