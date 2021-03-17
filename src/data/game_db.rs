@@ -9,11 +9,11 @@ pub struct GameData {
 }
 
 impl GameData {
-    pub fn player(data: String) -> Self {
+    pub fn player(data: Option<String>) -> Self {
         GameData {
             table: "player".to_string(),
             key: "online".to_string(),
-            data: Some(data),
+            data,
         }
     }
 }

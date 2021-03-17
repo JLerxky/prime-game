@@ -70,31 +70,43 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>) {
                 });
             // TODO 转发事件
             match packet.event {
-                GameEvent::Login => {
-                    match game_db::find(GameData {
-                        table: "player".to_string(),
-                        key: "online".to_string(),
-                        data: None,
-                    }) {
-                        Some(data) => {
-                            if data.len() > 0 {
-                                let _ = game_db::save(GameData::player(format!(
-                                    "{},{}",
-                                    data, packet.uid
-                                )));
-                            } else {
-                                let _ = game_db::save(GameData::player(format!("{}", packet.uid)));
-                            }
-                        }
-                        None => {
-                            let _ = game_db::save(GameData {
-                                table: "player".to_string(),
-                                key: "online".to_string(),
-                                data: Some(format!("{}", packet.uid)),
-                            });
+                GameEvent::Login => match game_db::find(GameData::player(None)) {
+                    Some(data) => {
+                        if data.len() > 0 {
+                            let _ = game_db::save(GameData::player(Some(format!(
+                                "{},{}",
+                                data, packet.uid
+                            ))));
+                        } else {
+                            let _ =
+                                game_db::save(GameData::player(Some(format!("{}", packet.uid))));
                         }
                     }
-                }
+                    None => {
+                        let _ = game_db::save(GameData::player(Some(format!("{}", packet.uid))));
+                    }
+                },
+                GameEvent::Logout => match game_db::find(GameData::player(None)) {
+                    Some(data) => {
+                        if data.len() > 0 {
+                            let mut uid_list: Vec<&str> = data.split(",").collect();
+                            let mut rm_index = None;
+                            for index in 0..uid_list.len() {
+                                if uid_list[index].eq(&packet.uid.to_string()) {
+                                    rm_index = Some(index);
+                                    break;
+                                }
+                            }
+                            if let Some(index) = rm_index {
+                                uid_list.remove(index);
+                                let _ = game_db::save(GameData::player(Some(uid_list.join(","))));
+                            }
+                        }
+                    }
+                    None => {
+                        let _ = game_db::save(GameData::player(Some(format!("{}", packet.uid))));
+                    }
+                },
                 _ => println!("收到事件未处理: {:?}", packet.event),
             }
 

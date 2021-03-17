@@ -72,11 +72,11 @@ fn player_movement(
     mut rigid_bodies: ResMut<RigidBodySet>,
     mut player_info: Query<(&mut Player, &Transform, &RigidBodyHandleComponent)>,
     mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
-    window: Res<WindowDescriptor>,
+    // window: Res<WindowDescriptor>,
     mut map_events: ResMut<Events<MapEvent>>,
 ) {
     let (_camera_ctrl, mut camera_transform) = camera_query.iter_mut().next().unwrap();
-    for (mut player, player_transform, rigid_body_component) in player_info.iter_mut() {
+    for (mut player, _player_transform, rigid_body_component) in player_info.iter_mut() {
         // player_transform.translation.y =
 
         let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8)
