@@ -9,10 +9,17 @@ pub struct GameData {
 }
 
 impl GameData {
-    pub fn player(data: Option<String>) -> Self {
+    pub fn player_online(data: Option<String>) -> Self {
         GameData {
             table: "player".to_string(),
             key: "online".to_string(),
+            data,
+        }
+    }
+    pub fn player_group_addr(group: u32, data: Option<String>) -> Self {
+        GameData {
+            table: "player".to_string(),
+            key: format!("group_addr_{}", group),
             data,
         }
     }

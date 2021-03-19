@@ -1,4 +1,5 @@
 use crate::data::game_db::{self, GameData};
+use crate::net::net_server;
 use bevy::{core::FixedTimestep, prelude::*};
 use bevy_rapier2d::{
     na::Vector2,
@@ -195,5 +196,6 @@ fn sync_data_system(player_query: Query<(&Player, &Transform)>) {
             "玩家: {}, 位置: {}",
             player.uid, player_transform.translation
         );
+        // net_server::multicast(1, "".to_string()).await.unwrap();
     }
 }
