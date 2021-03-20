@@ -92,6 +92,7 @@ pub fn engine_start() {
             let collider = colliders.get(ch).unwrap();
             println!("{:?}位置: {}", ch, collider.position().translation);
         }
+        // 用睡眠补充单帧间隔时间
         let frame_time = frame_start_time.elapsed().as_nanos();
         let sleep_time = 15000000f32 - frame_time as f32 - 500000f32;
         if sleep_time > 0f32 {
