@@ -90,9 +90,7 @@ pub fn engine_start() {
         );
         if let Some(ch) = colloder_handle {
             let collider = colliders.get(ch).unwrap();
-            let rb = bodies.get(collider.parent()).unwrap();
-            println!("刚体位置: {}", rb.position().translation);
-            println!("碰撞体位置: {}", collider.position().translation);
+            println!("{:?}位置: {}", ch, collider.position().translation);
         }
         let frame_time = frame_start_time.elapsed().as_nanos();
         let sleep_time = 15000000f32 - frame_time as f32 - 500000f32;
