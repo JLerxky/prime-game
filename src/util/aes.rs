@@ -1,21 +1,19 @@
-use libaes::Cipher;
-
 pub struct AESUtil {
     vi: [u8; 16],
-    cipher: Cipher,
+    cipher: libaes::Cipher,
 }
 
 impl AESUtil {
     pub fn init() -> AESUtil {
         AESUtil {
             vi: *b"i7tyo9a2b93g83y2",
-            cipher: Cipher::new_256(b"74t1vn02yu4-9[u1a0x,=35y-2vbn43y"),
+            cipher: libaes::Cipher::new_256(b"74t1vn02yu4-9[u1a0x,=35y-2vbn43y"),
         }
     }
     pub fn config(key: &[u8; 32], vi: &[u8; 16]) -> AESUtil {
         AESUtil {
             vi: *vi,
-            cipher: Cipher::new_256(key),
+            cipher: libaes::Cipher::new_256(key),
         }
     }
     pub fn encrypt(&self, data: &[u8]) -> String {
