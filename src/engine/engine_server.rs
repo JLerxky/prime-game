@@ -7,11 +7,9 @@ use rapier2d::{
     dynamics::{BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet},
     na::Isometry2,
 };
+use std::time::Instant;
 
 pub fn engine_start() {
-    use std::time::Instant;
-    let start_time = Instant::now();
-
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
@@ -34,7 +32,9 @@ pub fn engine_start() {
 
     let mut colloder_handle = None;
     // 物理引擎主循环
+    let start_time = Instant::now();
     for i in 0..60 {
+        let frame_start_time = Instant::now();
         if i == 0 {
             // 地面
             // 刚体类型
@@ -94,9 +94,12 @@ pub fn engine_start() {
             println!("刚体位置: {}", rb.position().translation);
             println!("碰撞体位置: {}", collider.position().translation);
         }
-        sleep(Duration::new(0, 14500000));
+        let frame_time = frame_start_time.elapsed().as_nanos();
+        let sleep_time = 15000000f32 - frame_time as f32 - 500000f32;
+        if sleep_time > 0f32 {
+            sleep(Duration::new(0, sleep_time as u32));
+        }
     }
-
     let time = start_time.elapsed().as_secs_f64();
     println!("{}", time);
 }
