@@ -1,101 +1,108 @@
-use bevy::{prelude::*, wgpu::WgpuPlugin, winit::WinitPlugin};
-use bevy_rapier2d::rapier::dynamics::{RigidBodyBuilder, RigidBodySet};
-use bevy_rapier2d::rapier::geometry::ColliderBuilder;
-use bevy_rapier2d::rapier::na::Vector2;
-use bevy_rapier2d::{
-    physics::{RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
-    render::RapierRenderPlugin,
+use bevy::{
+    app::{App, EventReader, Events, ScheduleRunnerSettings},
+    core::Time,
+    ecs::prelude::*,
+    MinimalPlugins,
 };
+use bevy_networking_turbulence::{NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
+
+use std::{net::SocketAddr, time::Duration};
+
+const SERVER_PORT: u16 = 14191;
+
+pub struct Args {
+    pub is_server: bool,
+}
+
+pub fn parse_args() -> Args {
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() < 2 {
+        panic!("Need to select to run as either a server (--server) or a client (--client).");
+    }
+
+    let connection_type = &args[1];
+
+    let is_server = match connection_type.as_str() {
+        "--server" | "-s" => true,
+        "--client" | "-c" => false,
+        _ => panic!("Need to select to run as either a server (--server) or a client (--client)."),
+    };
+
+    Args { is_server }
+}
 
 pub fn engine_start() {
     App::build()
-        .add_resource(ClearColor(Color::rgb(
-            0xF9 as f32 / 255.0,
-            0xF9 as f32 / 255.0,
-            0xFF as f32 / 255.0,
+        // minimal plugins necessary for timers + headless loop
+        .add_resource(ScheduleRunnerSettings::run_loop(Duration::from_secs_f64(
+            1.0 / 60.0,
         )))
-        .add_resource(Msaa { samples: 4 })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(WinitPlugin::default())
-        .add_plugin(WgpuPlugin::default())
-        .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
-        .add_startup_system(spawn_player.system())
-        .add_system(player_movement.system())
+        .add_plugins(MinimalPlugins)
+        // The NetworkingPlugin
+        .add_plugin(NetworkingPlugin::default())
+        // Our networking
+        .add_resource(parse_args())
+        .add_startup_system(startup.system())
+        .add_system(send_packets.system())
+        .init_resource::<NetworkReader>()
+        .add_system(handle_packets.system())
         .run();
 }
 
-struct Player(f32);
-struct CameraCtrl;
+fn startup(mut net: ResMut<NetworkResource>, args: Res<Args>) {
+    let ip_address =
+        bevy_networking_turbulence::find_my_ip_address().expect("can't find ip address");
+    let socket_address = SocketAddr::new(ip_address, SERVER_PORT);
 
-fn spawn_player(
-    commands: &mut Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut rapier_config: ResMut<RapierConfiguration>,
-) {
-    rapier_config.gravity = Vector2::zeros();
-    commands.spawn(Camera2dBundle::default()).with(CameraCtrl);
-
-    let sprite_size_x = 40.0;
-    let sprite_size_y = 40.0;
-
-    rapier_config.scale = 20.0;
-    let collider_size_x = sprite_size_x / rapier_config.scale;
-    let collider_size_y = sprite_size_y / rapier_config.scale;
-
-    /*
-     * The ground
-     */
-    let ground_size = 5.0;
-    let ground_height = 0.1;
-
-    let rigid_body = RigidBodyBuilder::new_static().translation(0.0, -ground_height);
-    let collider = ColliderBuilder::cuboid(ground_size, ground_height);
-    commands.spawn((rigid_body, collider));
-
-    commands
-        .spawn(SpriteBundle {
-            material: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
-            sprite: Sprite::new(Vec2::new(sprite_size_x, sprite_size_y)),
-            ..Default::default()
-        })
-        .with(RigidBodyBuilder::new_dynamic())
-        .with(ColliderBuilder::cuboid(
-            collider_size_x / 2.0,
-            collider_size_y / 2.0,
-        ))
-        .with(Player(300.0));
+    if args.is_server {
+        println!("Starting server");
+        net.listen(socket_address);
+    }
+    if !args.is_server {
+        println!("Starting client");
+        net.connect(socket_address);
+    }
 }
 
-fn player_movement(
-    keyboard_input: Res<Input<KeyCode>>,
-    rapier_parameters: Res<RapierConfiguration>,
-    mut rigid_bodies: ResMut<RigidBodySet>,
-    player_info: Query<(&Player, &Transform, &RigidBodyHandleComponent)>,
-    mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
+fn send_packets(mut net: ResMut<NetworkResource>, time: Res<Time>, args: Res<Args>) {
+    if !args.is_server {
+        if (time.seconds_since_startup() * 60.) as i64 % 60 == 0 {
+            println!("PING");
+            net.broadcast(Packet::from("PING"));
+        }
+    }
+}
+
+#[derive(Default)]
+struct NetworkReader {
+    network_events: EventReader<NetworkEvent>,
+}
+
+fn handle_packets(
+    mut net: ResMut<NetworkResource>,
+    time: Res<Time>,
+    mut state: ResMut<NetworkReader>,
+    network_events: Res<Events<NetworkEvent>>,
 ) {
-    let (_camera_ctrl, mut camera_transform) = camera_query.iter_mut().next().unwrap();
-    for (player, player_transform, rigid_body_component) in player_info.iter() {
-        let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8)
-            + (keyboard_input.pressed(KeyCode::D) as i8);
-        let y_axis = -(keyboard_input.pressed(KeyCode::S) as i8)
-            + (keyboard_input.pressed(KeyCode::W) as i8);
-
-        let mut move_delta = Vector2::new(x_axis as f32, y_axis as f32);
-        if move_delta != Vector2::zeros() {
-            move_delta /= move_delta.magnitude() * rapier_parameters.scale;
-        }
-
-        if let Some(rb) = rigid_bodies.get_mut(rigid_body_component.handle()) {
-            rb.set_linvel(move_delta * player.0, true);
-        }
-
-        if player_transform.translation.x >= (camera_transform.translation.x + 300.0)
-            || player_transform.translation.x <= (camera_transform.translation.x - 300.0)
-            || player_transform.translation.y >= (camera_transform.translation.y + 300.0)
-            || player_transform.translation.y <= (camera_transform.translation.y - 300.0)
-        {
-            camera_transform.translation += Vec3::new(move_delta.x, move_delta.y, 0.0) * player.0;
+    for event in state.network_events.iter(&network_events) {
+        match event {
+            NetworkEvent::Packet(handle, packet) => {
+                let message = String::from_utf8_lossy(packet);
+                println!("Got packet on [{}]: {}", handle, message);
+                if message == "PING" {
+                    let message = format!("PONG @ {}", time.seconds_since_startup());
+                    match net.send(*handle, Packet::from(message)) {
+                        Ok(()) => {
+                            println!("Sent PONG");
+                        }
+                        Err(error) => {
+                            println!("PONG send error: {}", error);
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

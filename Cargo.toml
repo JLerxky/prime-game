@@ -11,6 +11,7 @@ base64 = "0.13"
 bevy = "0.4"
 rapier2d = "0.6"
 bevy_rapier2d = "0.8"
+bevy_networking_turbulence = "0.2"
 clipboard = "0.5.0"
 libaes = "0.6"
 rand = "0.7"
@@ -31,3 +32,7 @@ path = "src/client.rs"
 [[bin]]
 name = "server"
 path = "src/server.rs"
+
+[[bin]]
+name = "client_test"
+path = "src/client_test.rs"
