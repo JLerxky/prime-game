@@ -1,12 +1,11 @@
 use std::{thread::sleep, time::Duration};
 
+use rapier2d::dynamics::{
+    BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
+};
 use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, SharedShape};
 use rapier2d::na::Vector2;
 use rapier2d::pipeline::PhysicsPipeline;
-use rapier2d::{
-    dynamics::{BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet},
-    na::Isometry2,
-};
 use std::time::Instant;
 
 pub fn engine_start() {
@@ -94,8 +93,8 @@ pub fn engine_start() {
         }
         // 用睡眠补充单帧间隔时间
         let frame_time = frame_start_time.elapsed().as_nanos();
-        let sleep_time = 15000000f32 - frame_time as f32 - 500000f32;
-        if sleep_time > 0f32 {
+        let sleep_time = 1f64 / 60f64 * 1000000000f64  - frame_time as f64 - 800000f64;
+        if sleep_time > 0f64 {
             sleep(Duration::new(0, sleep_time as u32));
         }
     }
