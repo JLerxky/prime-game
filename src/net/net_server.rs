@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 use std::{error::Error, str::FromStr};
 
 pub async fn start_server() -> Result<(), Box<dyn Error>> {
-    let game_server_socket = UdpSocket::bind("127.0.0.1:2101").await?;
+    let game_server_socket = UdpSocket::bind("0.0.0.0:2101").await?;
 
     let game_server_addr = game_server_socket.local_addr()?;
 
@@ -58,15 +58,17 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
 async fn start_listening(socket: &mut UdpFramed<BytesCodec>) {
     loop {
         if let Some(Ok((bytes, _addr))) = socket.next().await {
+            // println!("recv: {:?}", &bytes);
             let data_str = String::from_utf8_lossy(&bytes);
             println!("recv: {}", &data_str);
             let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
                 uid: 0,
                 event: GameEvent::Default,
             });
-            // TODO 转发事件
+            // 转发事件
             match packet.event {
                 GameEvent::Login(login_data) => {
+                    println!("登录事件: {:?}", &login_data);
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {
@@ -113,6 +115,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>) {
                     }
                 }
                 GameEvent::Logout(login_data) => {
+                    println!("登出事件: {:?}", &login_data);
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {

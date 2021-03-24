@@ -4,11 +4,12 @@ use bevy::{
     ecs::prelude::*,
     MinimalPlugins,
 };
+use crate::net;
 use bevy_networking_turbulence::{NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
 
 use std::{net::SocketAddr, time::Duration};
 
-const SERVER_PORT: u16 = 14191;
+const SERVER_PORT: u16 = 2101;
 
 pub struct Args {
     pub is_server: bool,
@@ -66,10 +67,20 @@ fn startup(mut net: ResMut<NetworkResource>, args: Res<Args>) {
 }
 
 fn send_packets(mut net: ResMut<NetworkResource>, time: Res<Time>, args: Res<Args>) {
+    let ip_address =
+        bevy_networking_turbulence::find_my_ip_address().expect("can't find ip address");
+    let socket_address = SocketAddr::new(ip_address, SERVER_PORT);
     if !args.is_server {
         if (time.seconds_since_startup() * 60.) as i64 % 60 == 0 {
-            println!("PING");
-            net.broadcast(Packet::from("PING"));
+            // println!("PING");
+            let packet= net::Packet {
+                uid: 21,
+                event: net::GameEvent::Login(net::LoginData {
+                    group: 1,
+                    addr: socket_address,
+                }),
+            };
+            net.broadcast(Packet::from(serde_json::to_string(&packet).unwrap()));
         }
     }
 }

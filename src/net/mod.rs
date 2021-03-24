@@ -5,13 +5,13 @@ use std::net::SocketAddr;
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Deserialize, Serialize)]
-struct Packet {
-    uid: u32,
-    event: GameEvent
+pub struct Packet {
+    pub uid: u32,
+    pub event: GameEvent
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
-enum GameEvent {
+pub enum GameEvent {
     Default,
     // 玩家登录
     Login(LoginData),
@@ -28,7 +28,7 @@ enum GameEvent {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
-struct LoginData {
-    group: u32,
-    addr: SocketAddr,
+pub struct LoginData {
+    pub group: u32,
+    pub addr: SocketAddr,
 }
