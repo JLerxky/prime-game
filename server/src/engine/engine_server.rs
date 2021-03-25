@@ -51,9 +51,9 @@ pub fn engine_start() {
         );
 
         // 处理运行后结果世界状态
-        for (colloder_handle, collider) in colliders.iter().next() {
+        for (colloder_handle, collider) in colliders.iter() {
             println!(
-                "{:?}位置: {}",
+                "{:?} 位置: {}",
                 colloder_handle,
                 collider.position().translation
             );
