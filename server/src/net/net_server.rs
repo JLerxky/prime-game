@@ -1,8 +1,11 @@
 use crate::data::game_db::{self, GameData};
 use crate::net;
 use net::{GameEvent, Packet};
-use tokio::io;
 use tokio::net::UdpSocket;
+use tokio::{
+    io,
+    sync::mpsc::{Receiver, Sender},
+};
 use tokio_stream::StreamExt;
 use tokio_util::codec::BytesCodec;
 use tokio_util::udp::UdpFramed;
@@ -12,7 +15,10 @@ use futures::SinkExt;
 use std::net::SocketAddr;
 use std::{error::Error, str::FromStr};
 
-pub async fn start_server() -> Result<(), Box<dyn Error>> {
+pub async fn start_server(
+    net_tx: Sender<usize>,
+    engine_rx: Receiver<usize>,
+) -> Result<(), Box<dyn Error>> {
     let game_server_socket = UdpSocket::bind("0.0.0.0:2101").await?;
 
     let game_server_addr = game_server_socket.local_addr()?;
@@ -21,9 +27,11 @@ pub async fn start_server() -> Result<(), Box<dyn Error>> {
 
     let mut game_server_framed = UdpFramed::new(game_server_socket, BytesCodec::new());
 
-    let game_server_future = start_listening(&mut game_server_framed);
+    let game_server_future = start_listening(&mut game_server_framed, net_tx);
 
-    tokio::join!(game_server_future);
+    let wait_for_send_future = wait_for_send(engine_rx);
+
+    tokio::join!(game_server_future, wait_for_send_future);
 
     Ok(())
 }
@@ -55,7 +63,15 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-async fn start_listening(socket: &mut UdpFramed<BytesCodec>) {
+async fn wait_for_send(mut engine_rx: Receiver<usize>) {
+    loop {
+        while let Some(item) = engine_rx.recv().await {
+            println!("{}", item);
+        }
+    }
+}
+
+async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<usize>) {
     loop {
         if let Some(Ok((bytes, _addr))) = socket.next().await {
             // println!("recv: {:?}", &bytes);
