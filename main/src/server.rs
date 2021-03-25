@@ -1,7 +1,6 @@
-
 use std::error::Error;
 
-use server::net::net_server::start_server;
+use server::{engine::engine_server::engine_start, net::net_server::start_server};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -11,7 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //     Ok(_) => println!("游戏服务器启动完成！"),
     //     Err(e) => println!("服务器启动失败: {}", e),
     // }
-    start_server().await.unwrap();
-    // engine_start();
+    // start_server().await.unwrap();
+    engine_start();
     Ok(())
 }

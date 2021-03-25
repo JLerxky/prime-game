@@ -1056,8 +1056,6 @@ dependencies = [
  "futures",
  "libaes",
  "rand",
- "rapier2d 0.6.1",
- "rocksdb",
  "rsa",
  "rustyline",
  "serde",
@@ -3800,17 +3798,12 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
- "bevy",
- "bevy_networking_turbulence",
- "bevy_rapier2d",
  "bytes",
- "clipboard",
+ "crossbeam",
  "futures",
- "libaes",
  "rand",
  "rapier2d 0.6.1",
  "rocksdb",
- "rsa",
  "rustyline",
  "serde",
  "serde_json",
@@ -4550,9 +4543,7 @@ name = "util"
 version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
- "bevy",
  "bytes",
- "clipboard",
  "libaes",
  "rand",
  "rsa",
