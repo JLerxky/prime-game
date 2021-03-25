@@ -1,5 +1,3 @@
-use std::{thread::sleep, time::Duration};
-
 use rapier2d::dynamics::{
     BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
 };
@@ -8,7 +6,7 @@ use rapier2d::na::Vector2;
 use rapier2d::pipeline::PhysicsPipeline;
 use std::time::Instant;
 
-pub fn engine_start() {
+pub async fn engine_start() {
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
@@ -34,8 +32,9 @@ pub fn engine_start() {
 
     // 物理引擎主循环
     let start_time = Instant::now();
-    for _i in 0..600 {
-        let frame_start_time = Instant::now();
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos((1f64 / 60f64 * 1000000000f64) as u64));
+    for _i in 0..60 {
+        interval.tick().await;
 
         // 运行物理引擎计算世界
         pipeline.step(
@@ -56,7 +55,7 @@ pub fn engine_start() {
                 // 只更新在运动的物体
                 if body.is_moving() && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32) {
                     println!(
-                        "{:?} 位置: {}, 旋转: {}, 线速度: {}, 角速度: {}",
+                        "{:?} 位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?}",
                         colloder_handle,
                         collider.position().translation,
                         collider.position().rotation,
@@ -65,13 +64,6 @@ pub fn engine_start() {
                     );
                 }
             }
-        }
-
-        // 用睡眠补充单帧间隔时间
-        let frame_time = frame_start_time.elapsed().as_nanos();
-        let sleep_time = 1f64 / 60f64 * 1000000000f64 - frame_time as f64 - 2000000f64;
-        if sleep_time > 0f64 {
-            sleep(Duration::new(0, sleep_time as u32));
         }
     }
     let time = start_time.elapsed().as_secs_f64();

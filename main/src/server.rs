@@ -11,6 +11,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //     Err(e) => println!("服务器启动失败: {}", e),
     // }
     // start_server().await.unwrap();
-    engine_start();
+    engine_start().await;
     Ok(())
 }
