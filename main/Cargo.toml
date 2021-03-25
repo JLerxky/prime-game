@@ -1,0 +1,24 @@
+[package]
+name = "main"
+version = "0.1.0"
+authors = ["JLer <472102489@qq.com>"]
+edition = "2018"
+
+[dependencies]
+server = { path = "../server" }
+client = { path = "../client" }
+util = { path = "../util" }
+
+tokio = { version = "1", features = ["full"] }
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[[bin]]
+name = "client_test"
+path = "src/client_test.rs"

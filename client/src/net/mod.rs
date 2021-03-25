@@ -1,5 +1,4 @@
 pub mod net_client;
-pub mod net_server;
 use std::net::SocketAddr;
 
 use serde::{Deserialize, Serialize};

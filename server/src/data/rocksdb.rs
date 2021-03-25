@@ -1,6 +1,5 @@
-use super::super::util::aes::AESUtil;
 use rocksdb::{ColumnFamilyDescriptor, Error, Options, DB};
-
+use util::aes::AESUtil;
 pub struct RocksDB {
     db: DB,
     aes: AESUtil,
