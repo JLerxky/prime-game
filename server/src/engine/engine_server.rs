@@ -34,7 +34,7 @@ pub fn engine_start() {
 
     // 物理引擎主循环
     let start_time = Instant::now();
-    for _i in 0..60 {
+    for _i in 0..600 {
         let frame_start_time = Instant::now();
 
         // 运行物理引擎计算世界
@@ -52,11 +52,19 @@ pub fn engine_start() {
 
         // 处理运行后结果世界状态
         for (colloder_handle, collider) in colliders.iter() {
-            println!(
-                "{:?} 位置: {}",
-                colloder_handle,
-                collider.position().translation
-            );
+            if let Some(body) = bodies.get(collider.parent()) {
+                // 只更新在运动的物体
+                if body.is_moving() && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32) {
+                    println!(
+                        "{:?} 位置: {}, 旋转: {}, 线速度: {}, 角速度: {}",
+                        colloder_handle,
+                        collider.position().translation,
+                        collider.position().rotation,
+                        body.linvel(),
+                        body.angvel()
+                    );
+                }
+            }
         }
 
         // 用睡眠补充单帧间隔时间
