@@ -31,9 +31,9 @@ pub async fn engine_start() {
     create_object(&mut bodies, &mut colliders);
 
     // 物理引擎主循环
-    let start_time = Instant::now();
+    // let start_time = Instant::now();
     let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos((1f64 / 60f64 * 1000000000f64) as u64));
-    for _i in 0..60 {
+    loop {
         interval.tick().await;
 
         // 运行物理引擎计算世界
@@ -50,13 +50,13 @@ pub async fn engine_start() {
         );
 
         // 处理运行后结果世界状态
-        for (colloder_handle, collider) in colliders.iter() {
+        for (_colloder_handle, collider) in colliders.iter() {
             if let Some(body) = bodies.get(collider.parent()) {
                 // 只更新在运动的物体
                 if body.is_moving() && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32) {
                     println!(
-                        "{:?} 位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?}",
-                        colloder_handle,
+                        "{:?} (位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?})",
+                        body.user_data,
                         collider.position().translation,
                         collider.position().rotation,
                         body.linvel(),
@@ -66,8 +66,8 @@ pub async fn engine_start() {
             }
         }
     }
-    let time = start_time.elapsed().as_secs_f64();
-    println!("{}", time);
+    // let time = start_time.elapsed().as_secs_f64();
+    // println!("{}", time);
 }
 
 fn create_object(bodies: &mut RigidBodySet, colliders: &mut ColliderSet) {
@@ -99,6 +99,7 @@ fn create_object(bodies: &mut RigidBodySet, colliders: &mut ColliderSet) {
         // 重力
         .gravity_scale(1.0)
         .can_sleep(true)
+        .user_data(472102489)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
