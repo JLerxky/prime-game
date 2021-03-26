@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct Packet {
     pub uid: u32,
     pub event: GameEvent
@@ -24,10 +24,19 @@ pub enum GameEvent {
     FlyDown,
     FlyLeft,
     FlyRight,
+    // 物体状态更新
+    Update(UpdateData),
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct LoginData {
     pub group: u32,
-    pub addr: SocketAddr,
 }
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+pub struct UpdateData {
+    pub id: u128,
+    pub translation: [f32; 2],
+    pub rotation: [f32; 2],
+}
+

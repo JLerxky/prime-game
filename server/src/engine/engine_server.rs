@@ -1,6 +1,6 @@
 use std::{error::Error, sync::Arc};
 
-use common::GameEvent;
+use common::{GameEvent, UpdateData};
 use rapier2d::dynamics::{
     BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
 };
@@ -33,7 +33,7 @@ pub async fn engine_start(
 }
 
 pub async fn engine_main_loop(
-    _engine_tx: Sender<GameEvent>,
+    engine_tx: Sender<GameEvent>,
     rigid_body_state: RigidBodyState,
     collider_state: ColliderState,
 ) -> Result<(), Box<dyn Error>> {
@@ -88,14 +88,26 @@ pub async fn engine_main_loop(
                 if body.is_moving()
                     && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
                 {
-                    println!(
-                        "{:?} (位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?})",
-                        body.user_data,
-                        collider.position().translation,
-                        collider.position().rotation,
-                        body.linvel(),
-                        body.angvel()
-                    );
+                    // println!(
+                    //     "{:?} (位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?})",
+                    //     body.user_data,
+                    //     collider.position().translation,
+                    //     collider.position().rotation,
+                    //     body.linvel(),
+                    //     body.angvel()
+                    // );
+                    let packet = GameEvent::Update(UpdateData {
+                        id: body.user_data,
+                        translation: [
+                            collider.position().translation.x,
+                            collider.position().translation.y,
+                        ],
+                        rotation: [
+                            collider.position().rotation.re,
+                            collider.position().rotation.im,
+                        ],
+                    });
+                    let _ = engine_tx.send(packet).await;
                 }
             }
         }
@@ -104,10 +116,7 @@ pub async fn engine_main_loop(
     // println!("{}", time);
 }
 
-async fn create_object(
-    rigid_body_state: RigidBodyState,
-    collider_state: ColliderState,
-) {
+async fn create_object(rigid_body_state: RigidBodyState, collider_state: ColliderState) {
     let bodies = &mut rigid_body_state.lock().await;
     let colliders = &mut collider_state.lock().await;
     // 地面

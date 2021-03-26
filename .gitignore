@@ -2,3 +2,4 @@
 *_game_db
 *.log
 *~
+.DS_Store

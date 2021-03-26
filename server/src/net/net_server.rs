@@ -51,7 +51,7 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
                 let uid_list: Vec<&str> = data.split(",").collect();
                 for index in 0..uid_list.len() {
                     let recv_addr = SocketAddr::from_str(uid_list[index])?;
-                    send(packet.clone(), recv_addr).await?;
+                    let _ = tokio::join!(send(packet.clone(), recv_addr));
                 }
             }
         }
@@ -64,15 +64,20 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
 
 async fn wait_for_send(mut engine_rx: Receiver<GameEvent>) {
     loop {
-        while let Some(item) = engine_rx.recv().await {
-            println!("{:?}", item);
+        while let Some(game_event) = engine_rx.recv().await {
+            // println!("{:?}", game_event);
+            let packet = Packet {
+                uid: 0,
+                event: game_event,
+            };
+            let _ = tokio::join!(multicast(0, serde_json::to_string(&packet).unwrap()));
         }
     }
 }
 
 async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<GameEvent>) {
     loop {
-        if let Some(Ok((bytes, _addr))) = socket.next().await {
+        if let Some(Ok((bytes, addr))) = socket.next().await {
             // println!("recv: {:?}", &bytes);
             let data_str = String::from_utf8_lossy(&bytes);
             println!("recv: {}", &data_str);
@@ -112,19 +117,19 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
                             if data.len() > 0 {
                                 let _ = game_db::save(GameData::player_group_addr(
                                     login_data.group,
-                                    Some(format!("{},{}", data, login_data.addr)),
+                                    Some(format!("{},{}", data, addr)),
                                 ));
                             } else {
                                 let _ = game_db::save(GameData::player_group_addr(
                                     login_data.group,
-                                    Some(format!("{}", login_data.addr)),
+                                    Some(format!("{}", addr)),
                                 ));
                             }
                         }
                         None => {
                             let _ = game_db::save(GameData::player_group_addr(
                                 login_data.group,
-                                Some(format!("{}", login_data.addr)),
+                                Some(format!("{}", addr)),
                             ));
                         }
                     }
@@ -160,7 +165,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
                                 let mut addr_list: Vec<&str> = data.split(",").collect();
                                 let mut rm_index = None;
                                 for index in 0..addr_list.len() {
-                                    if addr_list[index].eq(&login_data.addr.to_string()) {
+                                    if addr_list[index].eq(&addr.to_string()) {
                                         rm_index = Some(index);
                                         break;
                                     }

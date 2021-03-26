@@ -1,4 +1,4 @@
-use rocksdb::{ColumnFamilyDescriptor, Error, Options, DB};
+use rocksdb::{ColumnFamilyDescriptor, Error, IteratorMode, Options, DB};
 use util::aes::AESUtil;
 pub struct RocksDB {
     db: DB,
@@ -74,6 +74,19 @@ impl RocksDB {
         }
     }
 
+    // 打印所有原值
+    pub fn get_all_value(&self) {
+        for (key, data) in self.db.full_iterator(IteratorMode::Start).next() {
+            match String::from_utf8(key.to_vec()) {
+                Ok(key) => match String::from_utf8(data.to_vec()) {
+                    Ok(data) => println!("{}: {}", &key, data),
+                    Err(_) => {}
+                },
+                Err(_) => {}
+            };
+        }
+    }
+
     pub fn delete<K: AsRef<[u8]>>(&self, key: K) {
         match self.db.delete(key) {
             Ok(_) => {}
@@ -92,15 +105,22 @@ impl RocksDB {
 #[test]
 fn test() {
     let rocks_db = RocksDB::open();
-    for i in 0..100000 {
-        rocks_db
-            .put(format!("key-{}", i), format!("value-{}", i))
-            .unwrap();
-        match rocks_db.get_value(format!("key-{}", i)) {
-            Some(value) => println!("读取 -> {}", value),
-            None => {}
-        }
-        rocks_db.delete(format!("key-{}", i));
-    }
-    // let _ = rocks_db.destroy();
+    // for i in 0..100000 {
+    //     rocks_db
+    //         .put(format!("key-{}", i), format!("value-{}", i))
+    //         .unwrap();
+    //     match rocks_db.get_value(format!("key-{}", i)) {
+    //         Some(value) => println!("读取 -> {}", value),
+    //         None => {}
+    //     }
+    //     rocks_db.delete(format!("key-{}", i));
+    // }
+    let _ = rocks_db.destroy();
+}
+
+// 打印所有数据
+#[test]
+fn test1() {
+    let rocks_db = RocksDB::open();
+    rocks_db.get_all_value();
 }
