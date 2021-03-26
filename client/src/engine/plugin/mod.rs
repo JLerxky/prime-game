@@ -3,3 +3,4 @@ pub mod clipboard;
 pub mod fps;
 pub mod tile_map;
 pub mod player;
+pub mod network;

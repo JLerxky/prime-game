@@ -4,7 +4,9 @@ use bevy::{
     ecs::prelude::*,
     MinimalPlugins,
 };
-use bevy_networking_turbulence::{ConnectionHandle, NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
+use bevy_networking_turbulence::{
+    ConnectionHandle, NetworkEvent, NetworkResource, NetworkingPlugin, Packet,
+};
 use common::{GameEvent, LoginData};
 
 use std::{net::SocketAddr, time::Duration};
@@ -53,10 +55,10 @@ pub fn engine_start() {
 }
 
 fn startup(mut net: ResMut<NetworkResource>, args: Res<Args>) {
-    let ip_address =
-        bevy_networking_turbulence::find_my_ip_address().expect("can't find ip address");
-    let socket_address = SocketAddr::new(ip_address, SERVER_PORT);
-
+    let socket_address = SocketAddr::new(
+        std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 101, 198)),
+        SERVER_PORT,
+    );
     if args.is_server {
         println!("Starting server");
         net.listen(socket_address);
@@ -69,7 +71,7 @@ fn startup(mut net: ResMut<NetworkResource>, args: Res<Args>) {
 
 fn send_packets(mut net: ResMut<NetworkResource>, time: Res<Time>, args: Res<Args>) {
     if !args.is_server {
-        if (time.seconds_since_startup() * 60.) as i64 % 60000 == 0 {
+        if (time.seconds_since_startup() * 60.) as i64 % 60 == 0 {
             // println!("PING");
             let packet = common::Packet {
                 uid: 21,
@@ -99,23 +101,24 @@ fn handle_packets(
     network_events: Res<Events<NetworkEvent>>,
 ) {
     for event in state.network_events.iter(&network_events) {
+        println!("event [{:?}]", event);
         match event {
             NetworkEvent::Packet(handle, packet) => {
                 let message = String::from_utf8_lossy(packet);
                 println!("Got packet on [{}]: {}", handle, message);
-                // if message == "PING" {
-                //     let message = format!("PONG @ {}", time.seconds_since_startup());
-                //     match net.send(*handle, Packet::from(message)) {
-                //         Ok(()) => {
-                //             println!("Sent PONG");
-                //         }
-                //         Err(error) => {
-                //             println!("PONG send error: {}", error);
-                //         }
+                // let message = format!("PONG @ {}", time.seconds_since_startup());
+                // match net.send(*handle, Packet::from(message)) {
+                //     Ok(()) => {
+                //         println!("Sent PONG");
+                //     }
+                //     Err(error) => {
+                //         println!("PONG send error: {}", error);
                 //     }
                 // }
             }
-            _ => {}
+            
+            NetworkEvent::Connected(_) => {}
+            NetworkEvent::Disconnected(_) => {}
         }
     }
 }

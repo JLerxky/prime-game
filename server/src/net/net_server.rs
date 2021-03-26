@@ -18,7 +18,7 @@ pub async fn start_server(
     net_tx: Sender<GameEvent>,
     engine_rx: Receiver<GameEvent>,
 ) -> Result<(), Box<dyn Error>> {
-    let game_server_socket = UdpSocket::bind("0.0.0.0:2101").await?;
+    let game_server_socket = UdpSocket::bind("192.168.101.198:2101").await?;
 
     let game_server_addr = game_server_socket.local_addr()?;
 
@@ -35,11 +35,11 @@ pub async fn start_server(
     Ok(())
 }
 
-pub async fn send(packet: String, recv_addr: SocketAddr) -> Result<(), io::Error> {
-    let send_socket = UdpSocket::bind("0.0.0.0:0").await?;
+pub async fn send(packet: String, recv_addr: &SocketAddr) -> Result<(), Box<dyn Error>> {
+    let send_socket = UdpSocket::bind("192.168.101.198:2101").await?;
     let mut send_framed = UdpFramed::new(send_socket, BytesCodec::new());
 
-    send_framed.send((Bytes::from(packet), recv_addr)).await?;
+    send_framed.send((Bytes::from(packet), *recv_addr)).await?;
 
     Ok(())
 }
@@ -51,7 +51,7 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
                 let uid_list: Vec<&str> = data.split(",").collect();
                 for index in 0..uid_list.len() {
                     let recv_addr = SocketAddr::from_str(uid_list[index])?;
-                    let _ = tokio::join!(send(packet.clone(), recv_addr));
+                    let _ = tokio::join!(send(packet.clone(), &recv_addr));
                 }
             }
         }
@@ -89,14 +89,24 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
             match packet.event {
                 GameEvent::Login(login_data) => {
                     println!("{}登录事件: {:?}", &addr, &login_data);
+                    tokio::join!(send("packet".to_string(), &addr));
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {
                             if data.len() > 0 {
-                                let _ = game_db::save(GameData::player_online(Some(format!(
-                                    "{},{}",
-                                    data, packet.uid
-                                ))));
+                                let mut exist = false;
+                                for uid_db in data.split(",") {
+                                    if uid_db.eq(&packet.uid.to_string()) {
+                                        exist = true;
+                                        break;
+                                    }
+                                }
+                                if !exist {
+                                    let _ = game_db::save(GameData::player_online(Some(format!(
+                                        "{},{}",
+                                        data, packet.uid
+                                    ))));
+                                }
                             } else {
                                 let _ = game_db::save(GameData::player_online(Some(format!(
                                     "{}",
@@ -115,10 +125,19 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
                     match game_db::find(GameData::player_group_addr(login_data.group, None)) {
                         Some(data) => {
                             if data.len() > 0 {
-                                let _ = game_db::save(GameData::player_group_addr(
-                                    login_data.group,
-                                    Some(format!("{},{}", data, addr)),
-                                ));
+                                let mut exist = false;
+                                for addr_db in data.split(",") {
+                                    if addr_db.eq(&addr.to_string()) {
+                                        exist = true;
+                                        break;
+                                    }
+                                }
+                                if !exist {
+                                    let _ = game_db::save(GameData::player_group_addr(
+                                        login_data.group,
+                                        Some(format!("{},{}", data, addr)),
+                                    ));
+                                }
                             } else {
                                 let _ = game_db::save(GameData::player_group_addr(
                                     login_data.group,

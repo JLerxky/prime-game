@@ -6,16 +6,10 @@ use bevy_rapier2d::{
     render::RapierRenderPlugin,
 };
 
-use super::{
-    event::{
+use super::{event::{
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
         window_event::WindowEventPlugin,
-    },
-    plugin::{
-        camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, player::PlayerPlugin,
-        tile_map::TileMapPlugin,
-    },
-};
+    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::NetworkPlugin, player::PlayerPlugin, tile_map::TileMapPlugin}};
 
 pub fn engine_start() {
     App::build()
@@ -52,6 +46,8 @@ pub fn engine_start() {
         .add_plugin(RapierRenderPlugin)
         .add_startup_system(setup_graphics.system())
         .add_startup_system(enable_physics_profiling.system())
+        // 网络
+        .add_plugin(NetworkPlugin)
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
