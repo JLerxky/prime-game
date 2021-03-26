@@ -1,6 +1,5 @@
 use crate::data::game_db::{self, GameData};
-use crate::net;
-use net::{GameEvent, Packet};
+use common::{GameEvent, Packet};
 use tokio::net::UdpSocket;
 use tokio::{
     io,
@@ -16,8 +15,8 @@ use std::net::SocketAddr;
 use std::{error::Error, str::FromStr};
 
 pub async fn start_server(
-    net_tx: Sender<usize>,
-    engine_rx: Receiver<usize>,
+    net_tx: Sender<GameEvent>,
+    engine_rx: Receiver<GameEvent>,
 ) -> Result<(), Box<dyn Error>> {
     let game_server_socket = UdpSocket::bind("0.0.0.0:2101").await?;
 
@@ -63,15 +62,15 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-async fn wait_for_send(mut engine_rx: Receiver<usize>) {
+async fn wait_for_send(mut engine_rx: Receiver<GameEvent>) {
     loop {
         while let Some(item) = engine_rx.recv().await {
-            println!("{}", item);
+            println!("{:?}", item);
         }
     }
 }
 
-async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<usize>) {
+async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<GameEvent>) {
     loop {
         if let Some(Ok((bytes, _addr))) = socket.next().await {
             // println!("recv: {:?}", &bytes);

@@ -1053,6 +1053,7 @@ dependencies = [
  "bevy_rapier2d",
  "bytes",
  "clipboard",
+ "common",
  "futures",
  "libaes",
  "rand",
@@ -1155,6 +1156,13 @@ checksum = "cc4369b5e4c0cddf64ad8981c0111e7df4f7078f4d6ba98fb31f2e17c4c57b7e"
 dependencies = [
  "bytes",
  "memchr",
+]
+
+[[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -2536,6 +2544,7 @@ name = "main"
 version = "0.1.0"
 dependencies = [
  "client",
+ "common",
  "server",
  "tokio",
  "util",
@@ -3799,6 +3808,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
  "bytes",
+ "common",
  "crossbeam",
  "futures",
  "rand",

@@ -8,6 +8,7 @@ edition = "2018"
 server = { path = "../server" }
 client = { path = "../client" }
 util = { path = "../util" }
+common = { path = "../common" }
 
 tokio = { version = "1", features = ["full"] }
 

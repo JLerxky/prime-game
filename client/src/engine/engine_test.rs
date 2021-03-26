@@ -4,6 +4,7 @@ use bevy::{
     ecs::prelude::*,
     MinimalPlugins,
 };
+use common::{GameEvent, LoginData};
 use crate::net;
 use bevy_networking_turbulence::{NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
 
@@ -73,9 +74,9 @@ fn send_packets(mut net: ResMut<NetworkResource>, time: Res<Time>, args: Res<Arg
     if !args.is_server {
         if (time.seconds_since_startup() * 60.) as i64 % 60 == 0 {
             // println!("PING");
-            let packet= net::Packet {
+            let packet= common::Packet {
                 uid: 21,
-                event: net::GameEvent::Login(net::LoginData {
+                event: GameEvent::Login(LoginData {
                     group: 1,
                     addr: socket_address,
                 }),

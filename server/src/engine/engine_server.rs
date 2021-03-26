@@ -1,5 +1,6 @@
 use std::{error::Error, sync::Arc};
 
+use common::GameEvent;
 use rapier2d::dynamics::{
     BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
 };
@@ -15,8 +16,8 @@ type ColliderState = Arc<Mutex<ColliderSet>>;
 type RigidBodyState = Arc<Mutex<RigidBodySet>>;
 
 pub async fn engine_start(
-    engine_tx: Sender<usize>,
-    net_rx: Receiver<usize>,
+    engine_tx: Sender<GameEvent>,
+    net_rx: Receiver<GameEvent>,
 ) -> Result<(), Box<dyn Error>> {
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
@@ -32,7 +33,7 @@ pub async fn engine_start(
 }
 
 pub async fn engine_main_loop(
-    _engine_tx: Sender<usize>,
+    _engine_tx: Sender<GameEvent>,
     rigid_body_state: RigidBodyState,
     collider_state: ColliderState,
 ) -> Result<(), Box<dyn Error>> {
@@ -154,7 +155,7 @@ async fn create_object(
 }
 
 async fn wait_for_net(
-    mut _net_rx: Receiver<usize>,
+    mut _net_rx: Receiver<GameEvent>,
     rigid_body_state: RigidBodyState,
     collider_state: ColliderState,
 ) {
@@ -169,8 +170,6 @@ async fn wait_for_net(
         // 刚体类型
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
             .translation(2.0, 60.0)
-            // .rotation(0.0)
-            // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
             // 线速度
             .linvel(0.0, 0.0)
             // 角速度
@@ -185,8 +184,6 @@ async fn wait_for_net(
             .density(1.0)
             // 摩擦
             .friction(0.0)
-            // 是否为传感器
-            // .sensor(true)
             .build();
         let rb_handle = bodies.insert(rigid_body);
         colliders.insert(collider, rb_handle, bodies);
