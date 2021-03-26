@@ -36,7 +36,7 @@ pub async fn start_server(
 }
 
 pub async fn send(packet: String, recv_addr: SocketAddr) -> Result<(), io::Error> {
-    let send_socket = UdpSocket::bind("127.0.0.1:0").await?;
+    let send_socket = UdpSocket::bind("0.0.0.0:0").await?;
     let mut send_framed = UdpFramed::new(send_socket, BytesCodec::new());
 
     send_framed.send((Bytes::from(packet), recv_addr)).await?;
@@ -56,7 +56,7 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
             }
         }
         None => {
-            println!("{}组无玩家在线!", group);
+            // println!("{}组无玩家在线!", group);
         }
     }
     Ok(())
@@ -88,7 +88,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
             // 转发事件
             match packet.event {
                 GameEvent::Login(login_data) => {
-                    println!("登录事件: {:?}", &login_data);
+                    println!("{}登录事件: {:?}", &addr, &login_data);
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {
@@ -135,7 +135,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
                     }
                 }
                 GameEvent::Logout(login_data) => {
-                    println!("登出事件: {:?}", &login_data);
+                    println!("{}登出事件: {:?}", &addr, &login_data);
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {
@@ -182,7 +182,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
                         None => {}
                     }
                 }
-                _ => println!("收到事件未处理: {:?}", packet.event),
+                _ => println!("{}收到事件未处理: {:?}", &addr, packet.event),
             }
             // socket.send((Bytes::from("收到！"), addr)).await.unwrap();
         }
