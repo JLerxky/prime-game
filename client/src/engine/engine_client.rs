@@ -7,10 +7,20 @@ use bevy_rapier2d::{
 };
 use common::{GameEvent, UpdateData};
 
-use super::{event::{
+use super::{
+    event::{
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
         window_event::WindowEventPlugin,
-    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::{NetworkPlugin, NetWorkState}, player::PlayerPlugin, tile_map::TileMapPlugin}};
+    },
+    plugin::{
+        camera_ctrl::CameraCtrl,
+        clipboard::Clipboard,
+        fps::Fps,
+        network::{NetWorkState, NetworkPlugin},
+        player::PlayerPlugin,
+        tile_map::TileMapPlugin,
+    },
+};
 
 pub fn engine_start() {
     App::build()
@@ -89,9 +99,9 @@ fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
 }
 
 fn test_network(net: Res<NetWorkState>) {
-    let _ = net.engine_tx.try_send(GameEvent::Update(UpdateData {
-        id: 21,
-        translation: [1., 1.],
-        rotation: [0., 0.],
-    }));
+    // let _ = net.engine_tx.try_send(GameEvent::Update(UpdateData {
+    //     id: 21,
+    //     translation: [1., 1.],
+    //     rotation: [0., 0.],
+    // }));
 }

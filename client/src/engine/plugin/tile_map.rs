@@ -527,7 +527,7 @@ fn tile_map_clean_system(
             commands.despawn_recursive(tile_entity);
         }
     }
-    println!("垃圾回收完成，剩余实体数: {}", entity_query.iter().len());
+    // println!("垃圾回收完成，剩余实体数: {}", entity_query.iter().len());
     //     }
     //     _ => {}
     // }

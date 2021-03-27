@@ -28,6 +28,7 @@ pub async fn engine_start(
     // 物理引擎主循环
     let engine_future =
         engine_main_loop(engine_tx, rigid_body_state.clone(), collider_state.clone());
+    println!("物理引擎已启动!");
     let _ = tokio::join!(net_future, engine_future);
     Ok(())
 }

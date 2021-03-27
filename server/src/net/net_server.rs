@@ -1,57 +1,59 @@
 use crate::data::game_db::{self, GameData};
 use common::{GameEvent, Packet};
 use tokio::net::UdpSocket;
-use tokio::{
-    io,
-    sync::mpsc::{Receiver, Sender},
-};
-use tokio_stream::StreamExt;
-use tokio_util::codec::BytesCodec;
-use tokio_util::udp::UdpFramed;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use bytes::Bytes;
-use futures::SinkExt;
-use std::net::SocketAddr;
 use std::{error::Error, str::FromStr};
+use std::{net::SocketAddr, sync::Arc};
 
 pub async fn start_server(
     net_tx: Sender<GameEvent>,
     engine_rx: Receiver<GameEvent>,
 ) -> Result<(), Box<dyn Error>> {
     let game_server_socket = UdpSocket::bind(common::config::SERVER_ADDR).await?;
+    let game_server_addr = &game_server_socket.local_addr()?;
 
-    let game_server_addr = game_server_socket.local_addr()?;
+    println!("网络服务器已启动: {:?}", game_server_addr);
 
-    println!("游戏服务器地址: {:?}", game_server_addr);
+    let r = Arc::new(game_server_socket);
+    let s = r.clone();
 
-    let mut game_server_framed = UdpFramed::new(game_server_socket, BytesCodec::new());
+    // let game_server_framed = UdpFramed::new(**r, BytesCodec::new());
 
-    let game_server_future = start_listening(&mut game_server_framed, net_tx);
+    let game_server_future = start_listening(r, s.clone(), net_tx);
 
-    let wait_for_send_future = wait_for_send(engine_rx);
+    let wait_for_send_future = wait_for_send(s, engine_rx);
 
     tokio::join!(game_server_future, wait_for_send_future);
 
     Ok(())
 }
 
-pub async fn send(packet: String, recv_addr: &SocketAddr) -> Result<(), Box<dyn Error>> {
-    let send_socket = UdpSocket::bind(common::config::SERVER_ADDR).await?;
-    let mut send_framed = UdpFramed::new(send_socket, BytesCodec::new());
-
-    send_framed.send((Bytes::from(packet), *recv_addr)).await?;
+pub async fn send(
+    socket: Arc<UdpSocket>,
+    packet: String,
+    recv_addr: SocketAddr,
+) -> Result<(), Box<dyn Error>> {
+    socket.send_to(&Bytes::from(packet), recv_addr).await?;
+    println!("send ok");
 
     Ok(())
 }
 
-pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>> {
+pub async fn multicast(
+    socket: Arc<UdpSocket>,
+    group: u32,
+    packet: String,
+) -> Result<(), Box<dyn Error>> {
     match game_db::find(GameData::player_group_addr(group, None)) {
         Some(data) => {
             if data.len() > 0 {
                 let uid_list: Vec<&str> = data.split(",").collect();
                 for index in 0..uid_list.len() {
                     let recv_addr = SocketAddr::from_str(uid_list[index])?;
-                    let _ = tokio::join!(send(packet.clone(), &recv_addr));
+                    let socket = socket.clone();
+                    let _ = tokio::join!(send(socket, packet.clone(), recv_addr));
                 }
             }
         }
@@ -62,7 +64,7 @@ pub async fn multicast(group: u32, packet: String) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-async fn wait_for_send(mut engine_rx: Receiver<GameEvent>) {
+async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<GameEvent>) {
     loop {
         while let Some(game_event) = engine_rx.recv().await {
             // println!("{:?}", game_event);
@@ -70,17 +72,26 @@ async fn wait_for_send(mut engine_rx: Receiver<GameEvent>) {
                 uid: 0,
                 event: game_event,
             };
-            let _ = tokio::join!(multicast(0, serde_json::to_string(&packet).unwrap()));
+            let socket = socket.clone();
+            let _ = tokio::join!(multicast(
+                socket,
+                0,
+                serde_json::to_string(&packet).unwrap()
+            ));
         }
     }
 }
 
-async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<GameEvent>) {
+async fn start_listening(
+    socket: Arc<UdpSocket>,
+    send_socket: Arc<UdpSocket>,
+    _net_tx: Sender<GameEvent>,
+) {
+    let mut buf = [0; 1024];
     loop {
-        if let Some(Ok((bytes, addr))) = socket.next().await {
-            // println!("recv: {:?}", &bytes);
-            let data_str = String::from_utf8_lossy(&bytes);
-            println!("recv: {}", &data_str);
+        if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
+            println!("recv: {:?}", &buf[..len]);
+            let data_str = String::from_utf8_lossy(&buf[..len]);
             let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
                 uid: 0,
                 event: GameEvent::Default,
@@ -89,7 +100,7 @@ async fn start_listening(socket: &mut UdpFramed<BytesCodec>, _net_tx: Sender<Gam
             match packet.event {
                 GameEvent::Login(login_data) => {
                     println!("{}登录事件: {:?}", &addr, &login_data);
-                    tokio::join!(send("packet".to_string(), &addr));
+                    let _ = tokio::join!(send(send_socket.clone(), "packet".to_string(), addr));
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {
                         Some(data) => {
