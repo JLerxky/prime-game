@@ -5,11 +5,12 @@ use bevy_rapier2d::{
     rapier::pipeline::PhysicsPipeline,
     render::RapierRenderPlugin,
 };
+use common::{GameEvent, UpdateData};
 
 use super::{event::{
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
         window_event::WindowEventPlugin,
-    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::NetworkPlugin, player::PlayerPlugin, tile_map::TileMapPlugin}};
+    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::{NetworkPlugin, SenderState}, player::PlayerPlugin, tile_map::TileMapPlugin}};
 
 pub fn engine_start() {
     App::build()
@@ -48,6 +49,7 @@ pub fn engine_start() {
         .add_startup_system(enable_physics_profiling.system())
         // 网络
         .add_plugin(NetworkPlugin)
+        .add_system(test_network.system())
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
@@ -86,6 +88,10 @@ fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
 }
 
-// pub fn run_snake() {
-//     snake();
-// }
+fn test_network(net: Res<SenderState>) {
+    let _ = net.engine_tx.try_send(GameEvent::Update(UpdateData {
+        id: 21,
+        translation: [1., 1.],
+        rotation: [0., 0.],
+    }));
+}
