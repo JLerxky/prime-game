@@ -14,7 +14,7 @@ impl Plugin for NetworkPlugin {
         let (net_tx, net_rx) = mpsc::channel::<GameEvent>(1024);
         let (engine_tx, engine_rx) = mpsc::channel::<GameEvent>(1024);
         tokio::spawn(net_client_start(net_tx, engine_rx));
-        app.add_resource(SenderState { engine_tx, net_rx });
+        app.add_resource(NetWorkState { engine_tx, net_rx });
     }
 
     fn name(&self) -> &str {
@@ -29,7 +29,7 @@ async fn net_client_start(
     println!("客户端网络连接ing...");
     let sock = UdpSocket::bind("0.0.0.0:0").await?;
 
-    let remote_addr = "192.168.101.198:2101";
+    let remote_addr = common::config::SERVER_ADDR;
     sock.connect(remote_addr).await?;
     println!("客户端网络连接成功: {:?}", sock.local_addr());
     let r = Arc::new(sock);
@@ -57,7 +57,7 @@ async fn net_client_start(
     }
 }
 
-pub struct SenderState {
+pub struct NetWorkState {
     pub engine_tx: Sender<GameEvent>,
     pub net_rx: Receiver<GameEvent>,
 }

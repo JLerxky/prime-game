@@ -7,11 +7,9 @@ use bevy::{
 use bevy_networking_turbulence::{
     ConnectionHandle, NetworkEvent, NetworkResource, NetworkingPlugin, Packet,
 };
-use common::{GameEvent, LoginData};
+use common::{GameEvent, LoginData, config::SERVER_PORT};
 
 use std::{net::SocketAddr, time::Duration};
-
-const SERVER_PORT: u16 = 2101;
 
 pub struct Args {
     pub is_server: bool,

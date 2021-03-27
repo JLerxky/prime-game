@@ -1,3 +1,4 @@
+pub mod config;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]

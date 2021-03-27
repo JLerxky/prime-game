@@ -10,7 +10,7 @@ use common::{GameEvent, UpdateData};
 use super::{event::{
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
         window_event::WindowEventPlugin,
-    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::{NetworkPlugin, SenderState}, player::PlayerPlugin, tile_map::TileMapPlugin}};
+    }, plugin::{camera_ctrl::CameraCtrl, clipboard::Clipboard, fps::Fps, network::{NetworkPlugin, NetWorkState}, player::PlayerPlugin, tile_map::TileMapPlugin}};
 
 pub fn engine_start() {
     App::build()
@@ -88,7 +88,7 @@ fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
 }
 
-fn test_network(net: Res<SenderState>) {
+fn test_network(net: Res<NetWorkState>) {
     let _ = net.engine_tx.try_send(GameEvent::Update(UpdateData {
         id: 21,
         translation: [1., 1.],

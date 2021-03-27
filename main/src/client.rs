@@ -1,7 +1,6 @@
-
 use std::error::Error;
 
-use client::{engine::engine_client::engine_start, net::net_client::start_client};
+use client::engine::engine_client::engine_start;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

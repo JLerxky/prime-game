@@ -18,7 +18,7 @@ pub async fn start_server(
     net_tx: Sender<GameEvent>,
     engine_rx: Receiver<GameEvent>,
 ) -> Result<(), Box<dyn Error>> {
-    let game_server_socket = UdpSocket::bind("192.168.101.198:2101").await?;
+    let game_server_socket = UdpSocket::bind(common::config::SERVER_ADDR).await?;
 
     let game_server_addr = game_server_socket.local_addr()?;
 
@@ -36,7 +36,7 @@ pub async fn start_server(
 }
 
 pub async fn send(packet: String, recv_addr: &SocketAddr) -> Result<(), Box<dyn Error>> {
-    let send_socket = UdpSocket::bind("192.168.101.198:2101").await?;
+    let send_socket = UdpSocket::bind(common::config::SERVER_ADDR).await?;
     let mut send_framed = UdpFramed::new(send_socket, BytesCodec::new());
 
     send_framed.send((Bytes::from(packet), *recv_addr)).await?;
