@@ -36,7 +36,7 @@ pub async fn send(
     recv_addr: SocketAddr,
 ) -> Result<(), Box<dyn Error>> {
     socket.send_to(&Bytes::from(packet), recv_addr).await?;
-    println!("send ok");
+    // println!("send ok");
 
     Ok(())
 }

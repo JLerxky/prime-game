@@ -54,16 +54,20 @@ async fn net_client_start(tx: Sender<GameEvent>, mut rx: Receiver<GameEvent>) ->
 
     let mut buf = [0; 1024];
     loop {
-        println!("开始接收服务端数据ing");
         let len = r.recv(&mut buf).await?;
-        println!("接收来自服务器的 {:?} bytes", len);
-        // tx.send(GameEvent::Update(UpdateData {
-        //     id: 21,
-        //     translation: [1., 1.],
-        //     rotation: [0., 0.],
-        // }))
-        // .await
-        // .unwrap();
+        // println!("接收来自服务器的 {:?} bytes", len);
+        let data_str = String::from_utf8_lossy(&buf[..len]);
+        let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
+            uid: 0,
+            event: GameEvent::Default,
+        });
+        // 转发事件
+        match packet.event {
+            GameEvent::Update(update_data) => {
+                let _ = tokio::join!(tx.send(GameEvent::Update(update_data)));
+            }
+            _ => {}
+        }
     }
 }
 

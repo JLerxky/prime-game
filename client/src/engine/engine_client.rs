@@ -1,11 +1,11 @@
-use bevy::{prelude::*, winit::WinitPlugin};
+use bevy::{core::FixedTimestep, prelude::*, winit::WinitPlugin};
 use bevy_rapier2d::{
     na::Vector2,
     physics::{RapierConfiguration, RapierPhysicsPlugin},
     rapier::pipeline::PhysicsPipeline,
     render::RapierRenderPlugin,
 };
-use common::{GameEvent, UpdateData};
+use common::GameEvent;
 
 use super::{
     event::{
@@ -59,7 +59,16 @@ pub fn engine_start() {
         .add_startup_system(enable_physics_profiling.system())
         // 网络
         .add_plugin(NetworkPlugin)
-        .add_system(test_network.system())
+        // .add_system(network_synchronization.system())
+        .add_stage_after(
+            stage::UPDATE,
+            "network_synchronization_fixed_update",
+            SystemStage::parallel()
+                .with_run_criteria(
+                    FixedTimestep::step(0.05).with_label("network_synchronization_fixed_timestep"),
+                )
+                .with_system(network_synchronization.system()),
+        )
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
@@ -98,10 +107,62 @@ fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
 }
 
-fn test_network(net: Res<NetWorkState>) {
-    // let _ = net.engine_tx.try_send(GameEvent::Update(UpdateData {
-    //     id: 21,
-    //     translation: [1., 1.],
-    //     rotation: [0., 0.],
-    // }));
+fn network_synchronization(
+    commands: &mut Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut net: ResMut<NetWorkState>,
+    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
+) {
+    if let Some(game_event) = net.net_rx.blocking_recv() {
+        match game_event {
+            GameEvent::Update(update_data) => {
+                println!("{:?}", &update_data);
+                for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+                    if syn_entity.id == update_data.id {
+                        *transform = Transform {
+                            translation: Vec3::new(
+                                update_data.translation[0] * 10f32,
+                                update_data.translation[1] * 10f32,
+                                99.0,
+                            ),
+                            rotation: Quat::from([
+                                update_data.rotation[0],
+                                update_data.rotation[1],
+                                0.0,
+                                0.0,
+                            ]),
+                            scale: Vec3::new(1., 1., 1.),
+                        };
+                        return;
+                    }
+                }
+                commands
+                    .spawn(SpriteBundle {
+                        material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+                        sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+                        transform: Transform {
+                            translation: Vec3::new(
+                                update_data.translation[0] * 10f32,
+                                update_data.translation[1] * 10f32,
+                                99.0,
+                            ),
+                            rotation: Quat::from([
+                                update_data.rotation[0],
+                                update_data.rotation[1],
+                                0.0,
+                                0.0,
+                            ]),
+                            scale: Vec3::new(1., 1., 1.),
+                        },
+                        ..Default::default()
+                    })
+                    .with(SynEntity { id: update_data.id });
+            }
+            _ => {}
+        }
+    }
+}
+
+struct SynEntity {
+    pub id: u128,
 }
