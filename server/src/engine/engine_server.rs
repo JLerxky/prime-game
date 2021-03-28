@@ -62,7 +62,7 @@ pub async fn engine_main_loop(
     // 物理引擎主循环
     // let start_time = Instant::now();
     let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos(
-        (1f64 / 60f64 * 1000000000f64) as u64,
+        (1f64 / 30f64 * 1000000000f64) as u64,
     ));
     loop {
         interval.tick().await;
@@ -148,7 +148,7 @@ async fn create_object(rigid_body_state: RigidBodyState, collider_state: Collide
         // 重力
         .gravity_scale(10.0)
         // .can_sleep(true)
-        .user_data(0)
+        .user_data(1000)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
@@ -169,6 +169,7 @@ async fn wait_for_net(
     rigid_body_state: RigidBodyState,
     collider_state: ColliderState,
 ) {
+    let mut entity_id: u128 = 0;
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
     loop {
         // interval.tick().await;
@@ -177,11 +178,7 @@ async fn wait_for_net(
             let colliders = &mut collider_state.lock().await;
             match game_event {
                 GameEvent::Login(login_data) => {
-                    let mut body_id = 0u128;
-                    if let Some((_last_handle, last_body)) = bodies.iter().last() {
-                        body_id = last_body.user_data + 1u128;
-                    }
-                    println!("uid: {}", body_id);
+                    println!("uid: {}", &entity_id);
                     // 球
                     // 刚体类型
                     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -192,7 +189,7 @@ async fn wait_for_net(
                         .angvel(0.0)
                         // 重力
                         .gravity_scale(10.0)
-                        .user_data(body_id)
+                        .user_data(entity_id)
                         .build();
                     // 碰撞体类型
                     let collider = ColliderBuilder::new(SharedShape::ball(2.0))
@@ -203,6 +200,7 @@ async fn wait_for_net(
                         .build();
                     let rb_handle = bodies.insert(rigid_body);
                     colliders.insert(collider, rb_handle, bodies);
+                    entity_id += 1;
                 }
                 _ => {}
             }
