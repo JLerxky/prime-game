@@ -32,8 +32,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 1920f32,
-            height: 1080f32,
+            width: 800f32,
+            height: 450f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -57,18 +57,6 @@ pub fn engine_start() {
         .add_plugin(RapierRenderPlugin)
         .add_startup_system(setup_graphics.system())
         .add_startup_system(enable_physics_profiling.system())
-        // 网络
-        .add_plugin(NetworkPlugin)
-        // .add_system(network_synchronization.system())
-        .add_stage_after(
-            stage::UPDATE,
-            "network_synchronization_fixed_update",
-            SystemStage::parallel()
-                .with_run_criteria(
-                    FixedTimestep::step(0.05).with_label("network_synchronization_fixed_timestep"),
-                )
-                .with_system(network_synchronization.system()),
-        )
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
@@ -82,6 +70,17 @@ pub fn engine_start() {
         .add_plugin(TileMapPlugin)
         // 玩家
         .add_plugin(PlayerPlugin)
+        // 网络
+        .add_plugin(NetworkPlugin)
+        .add_stage_after(
+            stage::UPDATE,
+            "network_synchronization_fixed_update",
+            SystemStage::parallel()
+                .with_run_criteria(
+                    FixedTimestep::step(0.1).with_label("network_synchronization_fixed_timestep"),
+                )
+                .with_system(network_synchronization.system()),
+        )
         .run();
 }
 
@@ -116,13 +115,13 @@ fn network_synchronization(
     if let Some(game_event) = net.net_rx.blocking_recv() {
         match game_event {
             GameEvent::Update(update_data) => {
-                println!("{:?}", &update_data);
+                // println!("{:?}", &update_data);
                 for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
                     if syn_entity.id == update_data.id {
                         *transform = Transform {
                             translation: Vec3::new(
-                                update_data.translation[0] * 10f32,
-                                update_data.translation[1] * 10f32,
+                                update_data.translation[0],
+                                update_data.translation[1],
                                 99.0,
                             ),
                             rotation: Quat::from([
@@ -139,11 +138,11 @@ fn network_synchronization(
                 commands
                     .spawn(SpriteBundle {
                         material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
-                        sprite: Sprite::new(Vec2::new(100.0, 100.0)),
+                        sprite: Sprite::new(Vec2::new(50.0, 50.0)),
                         transform: Transform {
                             translation: Vec3::new(
-                                update_data.translation[0] * 10f32,
-                                update_data.translation[1] * 10f32,
+                                update_data.translation[0],
+                                update_data.translation[1],
                                 99.0,
                             ),
                             rotation: Quat::from([

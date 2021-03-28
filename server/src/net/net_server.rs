@@ -85,13 +85,13 @@ async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<GameEvent
 async fn start_listening(
     socket: Arc<UdpSocket>,
     send_socket: Arc<UdpSocket>,
-    _net_tx: Sender<GameEvent>,
+    net_tx: Sender<GameEvent>,
 ) {
     let mut buf = [0; 1024];
     loop {
         if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
-            println!("recv: {:?}", &buf[..len]);
             let data_str = String::from_utf8_lossy(&buf[..len]);
+            println!("服务器收到数据: {:?}", &data_str);
             let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
                 uid: 0,
                 event: GameEvent::Default,
@@ -100,6 +100,7 @@ async fn start_listening(
             match packet.event {
                 GameEvent::Login(login_data) => {
                     println!("{}登录事件: {:?}", &addr, &login_data);
+                    let _ = net_tx.try_send(packet.event);
                     let _ = tokio::join!(send(send_socket.clone(), "packet".to_string(), addr));
                     // 更新在线玩家表
                     match game_db::find(GameData::player_online(None)) {

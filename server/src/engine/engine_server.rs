@@ -146,9 +146,9 @@ async fn create_object(rigid_body_state: RigidBodyState, collider_state: Collide
         // 角速度
         .angvel(0.0)
         // 重力
-        .gravity_scale(1.0)
+        .gravity_scale(10.0)
         // .can_sleep(true)
-        .user_data(472102489)
+        .user_data(0)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
@@ -165,38 +165,47 @@ async fn create_object(rigid_body_state: RigidBodyState, collider_state: Collide
 }
 
 async fn wait_for_net(
-    mut _net_rx: Receiver<GameEvent>,
+    mut net_rx: Receiver<GameEvent>,
     rigid_body_state: RigidBodyState,
     collider_state: ColliderState,
 ) {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
+    // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
     loop {
-        interval.tick().await;
-        // while let Some(item) = net_rx.recv().await {
-        println!("net");
-        let bodies = &mut rigid_body_state.lock().await;
-        let colliders = &mut collider_state.lock().await;
-        // 球
-        // 刚体类型
-        let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-            .translation(2.0, 60.0)
-            // 线速度
-            .linvel(0.0, 0.0)
-            // 角速度
-            .angvel(0.0)
-            // 重力
-            .gravity_scale(2.0)
-            .user_data(123)
-            .build();
-        // 碰撞体类型
-        let collider = ColliderBuilder::new(SharedShape::ball(2.0))
-            // 密度
-            .density(1.0)
-            // 摩擦
-            .friction(0.0)
-            .build();
-        let rb_handle = bodies.insert(rigid_body);
-        colliders.insert(collider, rb_handle, bodies);
-        // }
+        // interval.tick().await;
+        if let Some(game_event) = net_rx.recv().await {
+            let bodies = &mut rigid_body_state.lock().await;
+            let colliders = &mut collider_state.lock().await;
+            match game_event {
+                GameEvent::Login(login_data) => {
+                    let mut body_id = 0u128;
+                    if let Some((_last_handle, last_body)) = bodies.iter().last() {
+                        body_id = last_body.user_data + 1u128;
+                    }
+                    println!("uid: {}", body_id);
+                    // 球
+                    // 刚体类型
+                    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
+                        .translation(2.0, 60.0)
+                        // 线速度
+                        .linvel(0.0, 0.0)
+                        // 角速度
+                        .angvel(0.0)
+                        // 重力
+                        .gravity_scale(10.0)
+                        .user_data(body_id)
+                        .build();
+                    // 碰撞体类型
+                    let collider = ColliderBuilder::new(SharedShape::ball(2.0))
+                        // 密度
+                        .density(1.0)
+                        // 摩擦
+                        .friction(0.0)
+                        .build();
+                    let rb_handle = bodies.insert(rigid_body);
+                    colliders.insert(collider, rb_handle, bodies);
+                }
+                _ => {}
+            }
+        }
     }
 }
