@@ -61,9 +61,7 @@ pub async fn engine_main_loop(
 
     // 物理引擎主循环
     // let start_time = Instant::now();
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos(
-        (1f64 / 30f64 * 1000000000f64) as u64,
-    ));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 30f64));
     loop {
         interval.tick().await;
         let mut bodies = &mut rigid_body_state.lock().await;

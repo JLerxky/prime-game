@@ -11,8 +11,8 @@ pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        let (net_tx, net_rx) = mpsc::channel::<GameEvent>(1024);
-        let (engine_tx, engine_rx) = mpsc::channel::<GameEvent>(1024);
+        let (net_tx, net_rx) = mpsc::channel::<GameEvent>(1);
+        let (engine_tx, engine_rx) = mpsc::channel::<GameEvent>(1);
         tokio::spawn(net_client_start(net_tx, engine_rx));
         app.add_resource(NetWorkState { engine_tx, net_rx });
     }
@@ -52,21 +52,24 @@ async fn net_client_start(tx: Sender<GameEvent>, mut rx: Receiver<GameEvent>) ->
         }
     });
 
+    // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 5f64));
     let mut buf = [0; 1024];
     loop {
-        let len = r.recv(&mut buf).await?;
-        // println!("接收来自服务器的 {:?} bytes", len);
-        let data_str = String::from_utf8_lossy(&buf[..len]);
-        let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
-            uid: 0,
-            event: GameEvent::Default,
-        });
-        // 转发事件
-        match packet.event {
-            GameEvent::Update(update_data) => {
-                let _ = tokio::join!(tx.send(GameEvent::Update(update_data)));
+        // interval.tick().await;
+        if let Ok(len) = r.try_recv(&mut buf) {
+            // println!("接收来自服务器的 {:?} bytes", len);
+            let data_str = String::from_utf8_lossy(&buf[..len]);
+            let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
+                uid: 0,
+                event: GameEvent::Default,
+            });
+            // 转发事件
+            match packet.event {
+                GameEvent::Update(update_data) => {
+                    let _ = tokio::join!(tx.send(GameEvent::Update(update_data)));
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 }
