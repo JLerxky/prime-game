@@ -77,7 +77,7 @@ pub fn engine_start() {
             "network_synchronization_fixed_update",
             SystemStage::parallel()
                 .with_run_criteria(
-                    FixedTimestep::step(1.0 / 10.0)
+                    FixedTimestep::step(1.0 / 5.0)
                         .with_label("network_synchronization_fixed_timestep"),
                 )
                 .with_system(network_synchronization.system()),
