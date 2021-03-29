@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let net_server = start_server(net_tx, engine_rx);
     let engine_server = engine_start(engine_tx, net_rx);
     match tokio::try_join!(engine_server, net_server) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => println!("服务器启动失败: {}", e),
     }
     Ok(())
