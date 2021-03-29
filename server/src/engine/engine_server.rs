@@ -62,6 +62,7 @@ pub async fn engine_main_loop(
     // 物理引擎主循环
     // let start_time = Instant::now();
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 30f64));
+    let mut frame_no: u128 = 0;
     loop {
         interval.tick().await;
         let mut bodies = &mut rigid_body_state.lock().await;
@@ -96,6 +97,7 @@ pub async fn engine_main_loop(
                     //     body.angvel()
                     // );
                     let packet = GameEvent::Update(UpdateData {
+                        frame_no,
                         id: body.user_data,
                         translation: [
                             collider.position().translation.x,
@@ -110,6 +112,7 @@ pub async fn engine_main_loop(
                 }
             }
         }
+        frame_no += 1;
     }
     // let time = start_time.elapsed().as_secs_f64();
     // println!("{}", time);

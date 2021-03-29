@@ -34,6 +34,7 @@ pub struct LoginData {
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct UpdateData {
+    pub frame_no: u128,
     pub id: u128,
     pub translation: [f32; 2],
     pub rotation: [f32; 2],
