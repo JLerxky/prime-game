@@ -51,8 +51,10 @@ fn test() {
     let packet: Packet = Packet::Game(GameRoute::Update(data::update_data::UpdateData {
         frame: 0,
         id: 1,
-        translation: [1.534563456f32, 0.132412f32],
-        rotation: [2f32, 2f32],
+        translation: (1.534563456f32, 0.132412f32),
+        rotation: (2f32, 2f32),
+        linvel: (3f32, 3f32),
+        angvel: (4f32, 4f32),
     }));
     println!("{:?}", packet.to_bytes().len());
     println!("{:?}", packet.to_bytes()[2..].len());
