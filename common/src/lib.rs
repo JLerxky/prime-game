@@ -1,5 +1,4 @@
 pub mod config;
-pub mod protocol;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]

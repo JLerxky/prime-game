@@ -3,6 +3,7 @@ members = [
     "server",
     "client",
     "common",
+    "protocol",
     "util",
     "main",
 ]
