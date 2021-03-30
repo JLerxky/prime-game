@@ -3,17 +3,17 @@ use super::Data;
 // 状态同步数据
 #[derive(Debug)]
 pub struct UpdateData {
-    // 长度16b[2..17]
+    // 长度16b[0..15]
     pub frame: u128,
-    // 长度16b[18..33]
+    // 长度16b[16..31]
     pub id: u128,
-    // 长度8b[34..41]
+    // 长度8b[32..39]
     pub translation: (f32, f32),
-    // 长度8b[42..49]
+    // 长度8b[40..47]
     pub rotation: (f32, f32),
-    // 线速度8b[50..57]
+    // 线速度8b[48..55]
     pub linvel: (f32, f32),
-    // 角速度8b[58..65]
+    // 角速度8b[56..63]
     pub angvel: (f32, f32),
 }
 
