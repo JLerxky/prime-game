@@ -1058,6 +1058,7 @@ dependencies = [
  "common",
  "futures",
  "libaes",
+ "protocol",
  "rand 0.8.3",
  "rsa",
  "rustyline",
@@ -2547,6 +2548,7 @@ version = "0.1.0"
 dependencies = [
  "client",
  "common",
+ "protocol",
  "server",
  "tokio",
  "util",
@@ -3857,6 +3859,7 @@ dependencies = [
  "common",
  "crossbeam",
  "futures",
+ "protocol",
  "rand 0.8.3",
  "rapier2d 0.6.1",
  "rocksdb",

@@ -1,10 +1,11 @@
-use data::Data;
+use data::{account_data::AccountData, update_data::UpdateData, Data};
 use route::{AccountRoute, GameRoute, HeartbeatRoute};
 
 pub mod data;
 pub mod route;
 
 // 数据包一级路由[0]
+#[derive(Debug, Clone)]
 pub enum Packet {
     Heartbeat(HeartbeatRoute),
     Account(AccountRoute),
@@ -12,7 +13,7 @@ pub enum Packet {
 }
 
 impl Packet {
-    fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let mut route = Vec::new();
         match self {
             Packet::Heartbeat(r) => {
@@ -26,8 +27,14 @@ impl Packet {
             Packet::Account(r) => {
                 route.push(1);
                 match r {
-                    AccountRoute::Login => route.push(0),
-                    AccountRoute::Logout => route.push(1),
+                    AccountRoute::Login(data) => {
+                        route.push(0);
+                        route.append(&mut data.data());
+                    }
+                    AccountRoute::Logout(data) => {
+                        route.push(1);
+                        route.append(&mut data.data());
+                    }
                 }
             }
             Packet::Game(r) => {
@@ -41,6 +48,47 @@ impl Packet {
             }
         }
         route
+    }
+    pub fn decode(data: &[u8]) -> Option<Packet> {
+        let route_1 = data[0];
+        let route_2 = data[1];
+        match route_1 {
+            0 => match route_2 {
+                0 => {
+                    return Some(Packet::Heartbeat(HeartbeatRoute::In));
+                }
+                1 => {
+                    return Some(Packet::Heartbeat(HeartbeatRoute::Out));
+                }
+                2 => {
+                    return Some(Packet::Heartbeat(HeartbeatRoute::Keep));
+                }
+                _ => {}
+            },
+            1 => match route_2 {
+                0 => {
+                    return Some(Packet::Account(AccountRoute::Login(AccountData::from(
+                        data[2..].to_vec(),
+                    ))));
+                }
+                1 => {
+                    return Some(Packet::Account(AccountRoute::Logout(AccountData::from(
+                        data[2..].to_vec(),
+                    ))));
+                }
+                _ => {}
+            },
+            2 => match route_2 {
+                0 => {
+                    return Some(Packet::Game(GameRoute::Update(UpdateData::from(
+                        data[2..].to_vec(),
+                    ))));
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+        None
     }
 }
 

@@ -1,6 +1,10 @@
 use std::{error::Error, sync::Arc};
 
-use common::{GameEvent, UpdateData};
+use protocol::{
+    data::update_data::{RigidBodyState, UpdateData},
+    route::GameRoute,
+    Packet,
+};
 use rapier2d::dynamics::{
     BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
 };
@@ -12,12 +16,12 @@ use tokio::sync::{
     Mutex,
 };
 
-type ColliderState = Arc<Mutex<ColliderSet>>;
-type RigidBodyState = Arc<Mutex<RigidBodySet>>;
+type ColliderSetState = Arc<Mutex<ColliderSet>>;
+type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
 
 pub async fn engine_start(
-    engine_tx: Sender<GameEvent>,
-    net_rx: Receiver<GameEvent>,
+    engine_tx: Sender<Packet>,
+    net_rx: Receiver<Packet>,
 ) -> Result<(), Box<dyn Error>> {
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
@@ -34,9 +38,9 @@ pub async fn engine_start(
 }
 
 pub async fn engine_main_loop(
-    engine_tx: Sender<GameEvent>,
-    rigid_body_state: RigidBodyState,
-    collider_state: ColliderState,
+    engine_tx: Sender<Packet>,
+    rigid_body_state: RigidBodySetState,
+    collider_state: ColliderSetState,
 ) -> Result<(), Box<dyn Error>> {
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
@@ -82,6 +86,7 @@ pub async fn engine_main_loop(
         );
 
         // 处理运行后结果世界状态
+        let mut states = Vec::new();
         for (_colloder_handle, collider) in colliders.iter() {
             if let Some(body) = bodies.get(collider.parent()) {
                 // 只更新在运动的物体
@@ -96,29 +101,34 @@ pub async fn engine_main_loop(
                     //     body.linvel(),
                     //     body.angvel()
                     // );
-                    let packet = GameEvent::Update(UpdateData {
-                        frame_no,
-                        id: body.user_data,
-                        translation: [
+                    states.push(RigidBodyState {
+                        id: body.user_data as u64,
+                        translation: (
                             collider.position().translation.x,
                             collider.position().translation.y,
-                        ],
-                        rotation: [
+                        ),
+                        rotation: (
                             collider.position().rotation.re,
                             collider.position().rotation.im,
-                        ],
+                        ),
+                        linvel: (body.linvel().x, body.linvel().y),
+                        angvel: (body.angvel(), body.angvel()),
                     });
-                    let _ = engine_tx.send(packet).await;
                 }
             }
         }
+        let packet = Packet::Game(GameRoute::Update(UpdateData {
+            frame: frame_no,
+            states,
+        }));
+        let _ = engine_tx.send(packet).await;
         frame_no += 1;
     }
     // let time = start_time.elapsed().as_secs_f64();
     // println!("{}", time);
 }
 
-async fn create_object(rigid_body_state: RigidBodyState, collider_state: ColliderState) {
+async fn create_object(rigid_body_state: RigidBodySetState, collider_state: ColliderSetState) {
     let bodies = &mut rigid_body_state.lock().await;
     let colliders = &mut collider_state.lock().await;
     // 地面
@@ -166,9 +176,9 @@ async fn create_object(rigid_body_state: RigidBodyState, collider_state: Collide
 }
 
 async fn wait_for_net(
-    mut net_rx: Receiver<GameEvent>,
-    rigid_body_state: RigidBodyState,
-    collider_state: ColliderState,
+    mut net_rx: Receiver<Packet>,
+    rigid_body_state: RigidBodySetState,
+    collider_state: ColliderSetState,
 ) {
     let mut entity_id: u128 = 0;
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
@@ -178,7 +188,7 @@ async fn wait_for_net(
             let bodies = &mut rigid_body_state.lock().await;
             let colliders = &mut collider_state.lock().await;
             match game_event {
-                GameEvent::Login(login_data) => {
+                Packet::Account(login_data) => {
                     println!("uid: {}", &entity_id);
                     // 球
                     // 刚体类型

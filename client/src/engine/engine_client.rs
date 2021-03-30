@@ -5,7 +5,7 @@ use bevy_rapier2d::{
     rapier::pipeline::PhysicsPipeline,
     render::RapierRenderPlugin,
 };
-use common::GameEvent;
+use protocol::Packet;
 
 use super::{
     event::{
@@ -113,54 +113,54 @@ fn network_synchronization(
     mut net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
 ) {
-    if let Some(game_event) = net.net_rx.blocking_recv() {
-        match game_event {
-            GameEvent::Update(update_data) => {
-                // println!("{:?}", &update_data);
-                for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
-                    if syn_entity.id == update_data.id {
-                        *transform = Transform {
-                            translation: Vec3::new(
-                                update_data.translation[0],
-                                update_data.translation[1],
-                                99.0,
-                            ),
-                            rotation: Quat::from([
-                                update_data.rotation[0],
-                                update_data.rotation[1],
-                                0.0,
-                                0.0,
-                            ]),
-                            scale: Vec3::new(1., 1., 1.),
-                        };
-                        return;
-                    }
-                }
-                commands
-                    .spawn(SpriteBundle {
-                        material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
-                        sprite: Sprite::new(Vec2::new(50.0, 50.0)),
-                        transform: Transform {
-                            translation: Vec3::new(
-                                update_data.translation[0],
-                                update_data.translation[1],
-                                99.0,
-                            ),
-                            rotation: Quat::from([
-                                update_data.rotation[0],
-                                update_data.rotation[1],
-                                0.0,
-                                0.0,
-                            ]),
-                            scale: Vec3::new(1., 1., 1.),
-                        },
-                        ..Default::default()
-                    })
-                    .with(SynEntity { id: update_data.id });
+    // println!("ing");
+    let mut rb_states = net.rb_states.lock().unwrap();
+    // println!("{:?}", &update_data);
+    'states: for rigid_body_state in rb_states.iter() {
+        for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+            if syn_entity.id == rigid_body_state.id.into() {
+                *transform = Transform {
+                    translation: Vec3::new(
+                        rigid_body_state.translation.0,
+                        rigid_body_state.translation.1,
+                        99.0,
+                    ),
+                    rotation: Quat::from([
+                        rigid_body_state.rotation.0,
+                        rigid_body_state.rotation.1,
+                        0.0,
+                        0.0,
+                    ]),
+                    scale: Vec3::new(1., 1., 1.),
+                };
+                continue 'states;
             }
-            _ => {}
         }
+        commands
+            .spawn(SpriteBundle {
+                material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+                sprite: Sprite::new(Vec2::new(50.0, 50.0)),
+                transform: Transform {
+                    translation: Vec3::new(
+                        rigid_body_state.translation.0,
+                        rigid_body_state.translation.1,
+                        99.0,
+                    ),
+                    rotation: Quat::from([
+                        rigid_body_state.rotation.0,
+                        rigid_body_state.rotation.1,
+                        0.0,
+                        0.0,
+                    ]),
+                    scale: Vec3::new(1., 1., 1.),
+                },
+                ..Default::default()
+            })
+            .with(SynEntity {
+                id: rigid_body_state.id.into(),
+            });
     }
+    rb_states.clear();
 }
 
 struct SynEntity {

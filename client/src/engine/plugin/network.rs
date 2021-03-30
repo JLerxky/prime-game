@@ -1,7 +1,14 @@
-use std::{io, sync::Arc};
+use std::{
+    io,
+    sync::{Arc, Mutex},
+};
 
 use bevy::prelude::*;
-use common::{GameEvent, LoginData, Packet, UpdateData};
+use protocol::{
+    data::{account_data::AccountData, update_data::RigidBodyState},
+    route::AccountRoute,
+    Packet,
+};
 use tokio::{
     net::UdpSocket,
     sync::mpsc::{self, Receiver, Sender},
@@ -11,10 +18,17 @@ pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        let (net_tx, net_rx) = mpsc::channel::<GameEvent>(1);
-        let (engine_tx, engine_rx) = mpsc::channel::<GameEvent>(1);
-        tokio::spawn(net_client_start(net_tx, engine_rx));
-        app.add_resource(NetWorkState { engine_tx, net_rx });
+        let (net_tx, net_rx) = mpsc::channel::<Packet>(1);
+        let (engine_tx, engine_rx) = mpsc::channel::<Packet>(1);
+        let rb_states: Vec<RigidBodyState> = Vec::new();
+        let rb_states = Arc::new(Mutex::new(rb_states));
+        let rb_states_c = rb_states.clone();
+        tokio::spawn(net_client_start(net_tx, engine_rx, rb_states_c));
+        app.add_resource(NetWorkState {
+            engine_tx,
+            net_rx,
+            rb_states,
+        });
     }
 
     fn name(&self) -> &str {
@@ -22,7 +36,11 @@ impl Plugin for NetworkPlugin {
     }
 }
 
-async fn net_client_start(tx: Sender<GameEvent>, mut rx: Receiver<GameEvent>) -> io::Result<()> {
+async fn net_client_start(
+    tx: Sender<Packet>,
+    mut rx: Receiver<Packet>,
+    mut rb_states: Arc<Mutex<Vec<RigidBodyState>>>,
+) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
     let sock = UdpSocket::bind("0.0.0.0:0").await?;
@@ -34,12 +52,11 @@ async fn net_client_start(tx: Sender<GameEvent>, mut rx: Receiver<GameEvent>) ->
 
     // 登录服务器
     s.send(
-        serde_json::to_string(&Packet {
-            uid: 21,
-            event: GameEvent::Login(LoginData { group: 0 }),
-        })
-        .unwrap()
-        .as_bytes(),
+        &Packet::Account(AccountRoute::Login(AccountData {
+            uid: 4721,
+            group: 0,
+        }))
+        .to_bytes()[0..],
     )
     .await
     .unwrap();
@@ -56,25 +73,32 @@ async fn net_client_start(tx: Sender<GameEvent>, mut rx: Receiver<GameEvent>) ->
     let mut buf = [0; 1024];
     loop {
         // interval.tick().await;
+        // println!("接收ing");
+        let mut rb_states = rb_states.lock().unwrap();
         if let Ok(len) = r.try_recv(&mut buf) {
             // println!("接收来自服务器的 {:?} bytes", len);
-            let data_str = String::from_utf8_lossy(&buf[..len]);
-            let packet = serde_json::from_slice(data_str.as_bytes()).unwrap_or(Packet {
-                uid: 0,
-                event: GameEvent::Default,
-            });
+            // let data_str = String::from_utf8_lossy(&buf[..len]);
+            let packet = Packet::decode(&buf[..len]);
             // 转发事件
-            match packet.event {
-                GameEvent::Update(update_data) => {
-                    let _ = tokio::join!(tx.send(GameEvent::Update(update_data)));
+            if let Some(packet) = packet {
+                let packet_c = packet.clone();
+                match packet {
+                    Packet::Game(game_route) => match game_route {
+                        protocol::route::GameRoute::Update(mut update_data) => {
+                            // let _ = tokio::join!(tx.send(packet_c));
+                            // println!("接收来自服务器的Update事件");
+                            rb_states.append(&mut update_data.states);
+                        }
+                    },
+                    _ => {}
                 }
-                _ => {}
             }
         }
     }
 }
 
 pub struct NetWorkState {
-    pub engine_tx: Sender<GameEvent>,
-    pub net_rx: Receiver<GameEvent>,
+    pub engine_tx: Sender<Packet>,
+    pub net_rx: Receiver<Packet>,
+    pub rb_states: Arc<Mutex<Vec<RigidBodyState>>>,
 }

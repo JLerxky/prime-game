@@ -1,7 +1,7 @@
 use super::Data;
 
 // 状态同步数据
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UpdateData {
     // 16b[0..15]
     pub frame: u128,
@@ -9,7 +9,7 @@ pub struct UpdateData {
     pub states: Vec<RigidBodyState>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 // 40b
 pub struct RigidBodyState {
     // 8b[0..7]

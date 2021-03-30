@@ -9,6 +9,7 @@ server = { path = "../server" }
 client = { path = "../client" }
 util = { path = "../util" }
 common = { path = "../common" }
+protocol = { path = "../protocol" }
 
 tokio = { version = "1", features = ["full"] }
 
