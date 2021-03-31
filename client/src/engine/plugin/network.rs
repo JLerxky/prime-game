@@ -4,11 +4,7 @@ use std::{
 };
 
 use bevy::prelude::*;
-use protocol::{
-    data::{account_data::AccountData, update_data::RigidBodyState},
-    route::AccountRoute,
-    Packet,
-};
+use protocol::{Packet, data::{account_data::AccountData, update_data::{RigidBodyState, UpdateData}}, route::AccountRoute};
 use tokio::{
     net::UdpSocket,
     sync::mpsc::{self, Receiver, Sender},
@@ -20,14 +16,14 @@ impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut AppBuilder) {
         let (net_tx, net_rx) = mpsc::channel::<Packet>(1);
         let (engine_tx, engine_rx) = mpsc::channel::<Packet>(1);
-        let rb_states: Vec<RigidBodyState> = Vec::new();
-        let rb_states = Arc::new(Mutex::new(rb_states));
-        let rb_states_c = rb_states.clone();
-        tokio::spawn(net_client_start(net_tx, engine_rx, rb_states_c));
+        let update_data_list: Vec<UpdateData> = Vec::new();
+        let update_data_list = Arc::new(Mutex::new(update_data_list));
+        let update_data_list_c = update_data_list.clone();
+        tokio::spawn(net_client_start(net_tx, engine_rx, update_data_list_c));
         app.add_resource(NetWorkState {
             engine_tx,
             net_rx,
-            rb_states,
+            update_data_list,
         });
     }
 
@@ -39,7 +35,7 @@ impl Plugin for NetworkPlugin {
 async fn net_client_start(
     tx: Sender<Packet>,
     mut rx: Receiver<Packet>,
-    mut rb_states: Arc<Mutex<Vec<RigidBodyState>>>,
+    mut update_data_list: Arc<Mutex<Vec<UpdateData>>>,
 ) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
@@ -73,9 +69,9 @@ async fn net_client_start(
     let mut buf = [0; 1024];
     loop {
         // interval.tick().await;
-        println!("接收ing");
+        // println!("接收ing");
         if let Ok(len) = r.recv(&mut buf).await {
-            println!("接收来自服务器的 {:?} bytes", len);
+            // println!("接收来自服务器的 {:?} bytes", len);
             // let data_str = String::from_utf8_lossy(&buf[..len]);
             let packet = Packet::decode(&buf[..len]);
             // 转发事件
@@ -86,8 +82,8 @@ async fn net_client_start(
                         protocol::route::GameRoute::Update(mut update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));
                             // println!("接收来自服务器的Update事件");
-                            if let Ok(mut rb_states) = rb_states.lock() {
-                                rb_states.append(&mut update_data.states);
+                            if let Ok(mut update_data_list) = update_data_list.lock() {
+                                update_data_list.push(update_data);
                             }
                         }
                     },
@@ -101,5 +97,5 @@ async fn net_client_start(
 pub struct NetWorkState {
     pub engine_tx: Sender<Packet>,
     pub net_rx: Receiver<Packet>,
-    pub rb_states: Arc<Mutex<Vec<RigidBodyState>>>,
+    pub update_data_list: Arc<Mutex<Vec<UpdateData>>>,
 }

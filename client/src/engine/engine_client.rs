@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use bevy::{core::FixedTimestep, prelude::*, winit::WinitPlugin};
 use bevy_rapier2d::{
     na::Vector2,
@@ -114,15 +116,17 @@ fn network_synchronization(
     mut net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
 ) {
-    // println!("1");
-    if let Ok(mut rb_states) = net.rb_states.lock() {
-        let rb_states_c = rb_states.clone();
-        rb_states.clear();
-        // println!("2");
-        'states: for rigid_body_state in rb_states_c.iter() {
-            // println!("3");
+    println!("1");
+    if let Ok(mut update_data_list) = net.update_data_list.lock() {
+        if update_data_list.is_empty() {
+            return;
+        }
+        let update_data = update_data_list[0].clone();
+        update_data_list.remove(0);
+        println!("2");
+        'update_data: for rigid_body_state in update_data.states {
             for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
-                // println!("4");
+                println!("3");
                 if syn_entity.id == rigid_body_state.id.into() {
                     *transform = Transform {
                         translation: Vec3::new(
@@ -138,10 +142,10 @@ fn network_synchronization(
                         ]),
                         scale: Vec3::new(1., 1., 1.),
                     };
-                    continue 'states;
+                    continue 'update_data;
                 }
             }
-            // println!("5");
+            println!("4");
             commands
                 .spawn(SpriteBundle {
                     material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
