@@ -4,7 +4,11 @@ use std::{
 };
 
 use bevy::prelude::*;
-use protocol::{Packet, data::{account_data::AccountData, update_data::{EntityState, UpdateData}}, route::AccountRoute};
+use protocol::{
+    data::{account_data::AccountData, update_data::UpdateData},
+    route::AccountRoute,
+    Packet,
+};
 use tokio::{
     net::UdpSocket,
     sync::mpsc::{self, Receiver, Sender},
@@ -35,7 +39,7 @@ impl Plugin for NetworkPlugin {
 async fn net_client_start(
     tx: Sender<Packet>,
     mut rx: Receiver<Packet>,
-    mut update_data_list: Arc<Mutex<Vec<UpdateData>>>,
+    update_data_list: Arc<Mutex<Vec<UpdateData>>>,
 ) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
@@ -61,7 +65,7 @@ async fn net_client_start(
         while let Some(game_event) = rx.recv().await {
             println!("网络模块收到引擎事件: {:?}", game_event);
             let len = s.send(b"1").await.unwrap();
-            println!("网络客户端发送: {}", "1");
+            println!("网络客户端发送: {}", len);
         }
     });
 
@@ -79,10 +83,13 @@ async fn net_client_start(
                 // let packet_c = packet.clone();
                 match packet {
                     Packet::Game(game_route) => match game_route {
-                        protocol::route::GameRoute::Update(mut update_data) => {
+                        protocol::route::GameRoute::Update(update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));
                             // println!("接收来自服务器的Update事件");
                             if let Ok(mut update_data_list) = update_data_list.lock() {
+                                if update_data_list.len() >= 10 {
+                                    update_data_list.remove(0);
+                                }
                                 update_data_list.push(update_data);
                             }
                         }
