@@ -134,7 +134,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 地面
     // 刚体类型
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
-        .translation(0.0, -10.0)
+        .translation(0.0, -40.0)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::cuboid(5000.0, 10.0))
@@ -160,6 +160,34 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         .gravity_scale(10.0)
         // .can_sleep(true)
         .user_data(1000)
+        .build();
+    // 碰撞体类型
+    let collider = ColliderBuilder::new(SharedShape::ball(5.0))
+        // 密度
+        .density(1.0)
+        // 摩擦
+        .friction(0.0)
+        // 是否为传感器
+        // .sensor(true)
+        .build();
+    let rb_handle = bodies.insert(rigid_body);
+
+    colliders.insert(collider, rb_handle, bodies);
+
+    // 旋转体
+    // 刚体类型
+    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
+        .translation(0.0, 50.0)
+        // .rotation(0.0)
+        // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
+        // 线速度
+        .linvel(0.0, 0.0)
+        // 角速度
+        .angvel(1.0)
+        // 重力
+        .gravity_scale(0.0)
+        // .can_sleep(true)
+        .user_data(1001)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
