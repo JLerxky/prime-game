@@ -1,7 +1,7 @@
 use std::{error::Error, sync::Arc};
 
 use protocol::{
-    data::update_data::{RigidBodyState, UpdateData},
+    data::update_data::{EntityState, UpdateData},
     route::GameRoute,
     Packet,
 };
@@ -93,15 +93,7 @@ pub async fn engine_main_loop(
                 if body.is_moving()
                     && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
                 {
-                    // println!(
-                    //     "{:?} (位置: {:?}, 旋转: {:?}, 线速度: {:?}, 角速度: {:?})",
-                    //     body.user_data,
-                    //     collider.position().translation,
-                    //     collider.position().rotation,
-                    //     body.linvel(),
-                    //     body.angvel()
-                    // );
-                    states.push(RigidBodyState {
+                    let mut state = EntityState {
                         id: body.user_data as u64,
                         translation: (
                             collider.position().translation.x,
@@ -113,7 +105,11 @@ pub async fn engine_main_loop(
                         ),
                         linvel: (body.linvel().x, body.linvel().y),
                         angvel: (body.angvel(), body.angvel()),
-                    });
+                        texture: (0, 0),
+                        entity_type: 0,
+                    };
+                    state.make_up_data(body.user_data);
+                    states.push(state);
                 }
             }
         }
@@ -177,7 +173,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 旋转体
     // 刚体类型
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-        .translation(0.0, 50.0)
+        .translation(0.0, 100.0)
         // .rotation(0.0)
         // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
         // 线速度

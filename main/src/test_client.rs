@@ -11,7 +11,7 @@ async fn main() -> io::Result<()> {
     let mut buf = [255; 1024];
     // u128
     // let data: u128 = 340282366920938463463374607431768211455;
-    // let _ = sock.send(&data.to_ne_bytes()).await?;
+    // let _ = sock.send(&data.to_le_bytes()).await?;
     // 字符
     let data: &str = ",";
     let _ = sock.send(data.as_bytes()).await?;

@@ -12,8 +12,8 @@ pub struct AccountData {
 impl Data for AccountData {
     fn data(&self) -> Vec<u8> {
         let mut route: Vec<u8> = Vec::new();
-        route.append(&mut self.uid.to_ne_bytes().to_vec());
-        route.append(&mut self.group.to_ne_bytes().to_vec());
+        route.append(&mut self.uid.to_le_bytes().to_vec());
+        route.append(&mut self.group.to_le_bytes().to_vec());
         route
     }
 }

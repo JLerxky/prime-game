@@ -4,7 +4,7 @@ use std::{
 };
 
 use bevy::prelude::*;
-use protocol::{Packet, data::{account_data::AccountData, update_data::{RigidBodyState, UpdateData}}, route::AccountRoute};
+use protocol::{Packet, data::{account_data::AccountData, update_data::{EntityState, UpdateData}}, route::AccountRoute};
 use tokio::{
     net::UdpSocket,
     sync::mpsc::{self, Receiver, Sender},
