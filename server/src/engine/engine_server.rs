@@ -65,7 +65,7 @@ pub async fn engine_main_loop(
 
     // 物理引擎主循环
     // let start_time = Instant::now();
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 30f64));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 60f64));
     let mut frame_no: u128 = 0;
     loop {
         interval.tick().await;

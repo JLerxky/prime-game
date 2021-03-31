@@ -5,7 +5,7 @@ use bevy_rapier2d::{
     rapier::pipeline::PhysicsPipeline,
     render::RapierRenderPlugin,
 };
-use protocol::Packet;
+// use protocol::Packet;
 
 use super::{
     event::{
@@ -37,8 +37,8 @@ pub fn engine_start() {
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
-            cursor_locked: true,
-            cursor_visible: false,
+            // cursor_locked: true,
+            // cursor_visible: false,
             ..Default::default()
         })
         .add_resource(Msaa { samples: 4 })
@@ -65,23 +65,24 @@ pub fn engine_start() {
         // 事件
         .add_plugin(KeyboardEventPlugin)
         .add_plugin(MapEventPlugin)
-        .add_plugin(WindowEventPlugin)
+        // .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)
         // 玩家
         .add_plugin(PlayerPlugin)
         // 网络
         .add_plugin(NetworkPlugin)
-        .add_stage_after(
-            stage::UPDATE,
-            "network_synchronization_fixed_update",
-            SystemStage::parallel()
-                .with_run_criteria(
-                    FixedTimestep::step(1.0 / 2.0)
-                        .with_label("network_synchronization_fixed_timestep"),
-                )
-                .with_system(network_synchronization.system()),
-        )
+        .add_system(network_synchronization.system())
+        // .add_stage_after(
+        //     stage::UPDATE,
+        //     "network_synchronization_fixed_update",
+        //     SystemStage::parallel()
+        //         .with_run_criteria(
+        //             FixedTimestep::step(1.0 / 1.0)
+        //                 .with_label("network_synchronization_fixed_timestep"),
+        //         )
+        //         .with_system(network_synchronization.system()),
+        // )
         .run();
 }
 
@@ -113,54 +114,59 @@ fn network_synchronization(
     mut net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
 ) {
-    // println!("ing");
-    let mut rb_states = net.rb_states.lock().unwrap();
-    // println!("{:?}", &update_data);
-    'states: for rigid_body_state in rb_states.iter() {
-        for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
-            if syn_entity.id == rigid_body_state.id.into() {
-                *transform = Transform {
-                    translation: Vec3::new(
-                        rigid_body_state.translation.0,
-                        rigid_body_state.translation.1,
-                        99.0,
-                    ),
-                    rotation: Quat::from([
-                        rigid_body_state.rotation.0,
-                        rigid_body_state.rotation.1,
-                        0.0,
-                        0.0,
-                    ]),
-                    scale: Vec3::new(1., 1., 1.),
-                };
-                continue 'states;
+    // println!("1");
+    if let Ok(mut rb_states) = net.rb_states.lock() {
+        let rb_states_c = rb_states.clone();
+        rb_states.clear();
+        // println!("2");
+        'states: for rigid_body_state in rb_states_c.iter() {
+            // println!("3");
+            for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+                // println!("4");
+                if syn_entity.id == rigid_body_state.id.into() {
+                    *transform = Transform {
+                        translation: Vec3::new(
+                            rigid_body_state.translation.0,
+                            rigid_body_state.translation.1,
+                            99.0,
+                        ),
+                        rotation: Quat::from([
+                            rigid_body_state.rotation.0,
+                            rigid_body_state.rotation.1,
+                            0.0,
+                            0.0,
+                        ]),
+                        scale: Vec3::new(1., 1., 1.),
+                    };
+                    continue 'states;
+                }
             }
+            // println!("5");
+            commands
+                .spawn(SpriteBundle {
+                    material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+                    sprite: Sprite::new(Vec2::new(50.0, 50.0)),
+                    transform: Transform {
+                        translation: Vec3::new(
+                            rigid_body_state.translation.0,
+                            rigid_body_state.translation.1,
+                            99.0,
+                        ),
+                        rotation: Quat::from([
+                            rigid_body_state.rotation.0,
+                            rigid_body_state.rotation.1,
+                            0.0,
+                            0.0,
+                        ]),
+                        scale: Vec3::new(1., 1., 1.),
+                    },
+                    ..Default::default()
+                })
+                .with(SynEntity {
+                    id: rigid_body_state.id.into(),
+                });
         }
-        commands
-            .spawn(SpriteBundle {
-                material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
-                sprite: Sprite::new(Vec2::new(50.0, 50.0)),
-                transform: Transform {
-                    translation: Vec3::new(
-                        rigid_body_state.translation.0,
-                        rigid_body_state.translation.1,
-                        99.0,
-                    ),
-                    rotation: Quat::from([
-                        rigid_body_state.rotation.0,
-                        rigid_body_state.rotation.1,
-                        0.0,
-                        0.0,
-                    ]),
-                    scale: Vec3::new(1., 1., 1.),
-                },
-                ..Default::default()
-            })
-            .with(SynEntity {
-                id: rigid_body_state.id.into(),
-            });
     }
-    rb_states.clear();
 }
 
 struct SynEntity {

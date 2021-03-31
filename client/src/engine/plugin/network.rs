@@ -73,21 +73,22 @@ async fn net_client_start(
     let mut buf = [0; 1024];
     loop {
         // interval.tick().await;
-        // println!("接收ing");
-        let mut rb_states = rb_states.lock().unwrap();
-        if let Ok(len) = r.try_recv(&mut buf) {
-            // println!("接收来自服务器的 {:?} bytes", len);
+        println!("接收ing");
+        if let Ok(len) = r.recv(&mut buf).await {
+            println!("接收来自服务器的 {:?} bytes", len);
             // let data_str = String::from_utf8_lossy(&buf[..len]);
             let packet = Packet::decode(&buf[..len]);
             // 转发事件
             if let Some(packet) = packet {
-                let packet_c = packet.clone();
+                // let packet_c = packet.clone();
                 match packet {
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Update(mut update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));
                             // println!("接收来自服务器的Update事件");
-                            rb_states.append(&mut update_data.states);
+                            if let Ok(mut rb_states) = rb_states.lock() {
+                                rb_states.append(&mut update_data.states);
+                            }
                         }
                     },
                     _ => {}
