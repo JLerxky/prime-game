@@ -144,6 +144,15 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 球
     // 刚体类型
+    let rb_state = EntityState {
+        id: 0,
+        translation: (0., 0.),
+        rotation: (0., 0.),
+        linvel: (0., 0.),
+        angvel: (0., 0.),
+        texture: (1, 4),
+        entity_type: 1,
+    };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
         .translation(0.0, 50.0)
         // .rotation(0.0)
@@ -155,7 +164,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         // 重力
         .gravity_scale(10.0)
         // .can_sleep(true)
-        .user_data(1000)
+        .user_data(rb_state.get_data())
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
@@ -172,6 +181,15 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 旋转体
     // 刚体类型
+    let rb_state = EntityState {
+        id: 1,
+        translation: (0., 0.),
+        rotation: (0., 0.),
+        linvel: (0., 0.),
+        angvel: (0., 0.),
+        texture: (1, 4),
+        entity_type: 1,
+    };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
         .translation(0.0, 100.0)
         // .rotation(0.0)
@@ -183,7 +201,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         // 重力
         .gravity_scale(0.0)
         // .can_sleep(true)
-        .user_data(1001)
+        .user_data(rb_state.get_data())
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::ball(5.0))
@@ -204,7 +222,7 @@ async fn wait_for_net(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
 ) {
-    let mut entity_id: u128 = 0;
+    let mut entity_id: u64 = 2;
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
     loop {
         // interval.tick().await;
@@ -216,6 +234,15 @@ async fn wait_for_net(
                     println!("uid: {}", &entity_id);
                     // 球
                     // 刚体类型
+                    let rb_state = EntityState {
+                        id: entity_id,
+                        translation: (0., 0.),
+                        rotation: (0., 0.),
+                        linvel: (0., 0.),
+                        angvel: (0., 0.),
+                        texture: (1, 4),
+                        entity_type: 1,
+                    };
                     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
                         .translation(2.0, 60.0)
                         // 线速度
@@ -224,7 +251,7 @@ async fn wait_for_net(
                         .angvel(0.0)
                         // 重力
                         .gravity_scale(10.0)
-                        .user_data(entity_id)
+                        .user_data(rb_state.get_data())
                         .build();
                     // 碰撞体类型
                     let collider = ColliderBuilder::new(SharedShape::ball(2.0))

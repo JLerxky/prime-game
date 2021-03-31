@@ -32,16 +32,32 @@ impl EntityState {
     pub fn make_up_data(&mut self, user_data: u128) {
         let data: [u8; 16] = user_data.to_le_bytes();
 
-        let ptr: *const u8 = data[0..3].as_ptr();
+        let ptr: *const u8 = data[0..7].as_ptr();
+        let ptr: *const u64 = ptr as *const u64;
+        let id = unsafe { *ptr };
+
+        let ptr: *const u8 = data[8..11].as_ptr();
         let ptr: *const u32 = ptr as *const u32;
         let texture0 = unsafe { *ptr };
 
-        let texture1 = data[4];
+        let texture1 = data[12];
 
-        let entity_type = data[5];
+        let entity_type = data[13];
 
+        self.id = id;
         self.texture = (texture0, texture1);
         self.entity_type = entity_type;
+    }
+    pub fn get_data(&self) -> u128 {
+        let mut data = self.id.to_le_bytes().to_vec();
+        data.append(&mut self.texture.0.to_le_bytes().to_vec());
+        data.append(&mut self.texture.1.to_le_bytes().to_vec());
+        data.append(&mut self.entity_type.to_le_bytes().to_vec());
+        data.append(&mut [0u8; 2].to_vec());
+
+        let ptr: *const u8 = data[0..15].as_ptr();
+        let ptr: *const u128 = ptr as *const u128;
+        unsafe { *ptr }
     }
 }
 

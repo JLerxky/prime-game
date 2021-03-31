@@ -1,19 +1,14 @@
-use std::sync::Mutex;
-
-use bevy::{core::FixedTimestep, prelude::*, winit::WinitPlugin};
+use bevy::{prelude::*, winit::WinitPlugin};
 use bevy_rapier2d::{
     na::Vector2,
     physics::{RapierConfiguration, RapierPhysicsPlugin},
-    rapier::pipeline::PhysicsPipeline,
+    rapier::{dynamics::RigidBodySet, pipeline::PhysicsPipeline},
     render::RapierRenderPlugin,
 };
 // use protocol::Packet;
 
 use super::{
-    event::{
-        keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
-        window_event::WindowEventPlugin,
-    },
+    event::{keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin},
     plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
@@ -85,6 +80,7 @@ pub fn engine_start() {
         //         )
         //         .with_system(network_synchronization.system()),
         // )
+        .add_system(animate_system.system())
         .run();
 }
 
@@ -110,8 +106,28 @@ fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
 }
 
+fn animate_system(
+    time: Res<Time>,
+    mut animate_entity_query: Query<
+        (&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>),
+        With<SynEntity>,
+    >,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+) {
+    for (mut timer, mut sprite, texture_atlas_handle) in animate_entity_query.iter_mut() {
+        timer.tick(time.delta_seconds());
+        if timer.finished() {
+            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+            sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+        }
+    }
+}
+
 fn network_synchronization(
     commands: &mut Commands,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    window: Res<WindowDescriptor>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
@@ -146,10 +162,21 @@ fn network_synchronization(
                 }
             }
             // println!("4");
+
+            let texture_handle = asset_server
+                .load(format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str());
+            // let tile_size = Vec2::new(100.0, 120.0);
+            let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 4f32);
+            let texture_atlas = TextureAtlas::from_grid(
+                texture_handle,
+                tile_size,
+                rigid_body_state.texture.1.into(),
+                1,
+            );
+            let texture_atlas_handle = texture_atlases.add(texture_atlas);
             commands
-                .spawn(SpriteBundle {
-                    material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
-                    sprite: Sprite::new(Vec2::new(50.0, 50.0)),
+                .spawn(SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handle,
                     transform: Transform {
                         translation: Vec3::new(
                             rigid_body_state.translation.0,
@@ -166,6 +193,7 @@ fn network_synchronization(
                     },
                     ..Default::default()
                 })
+                .with(Timer::from_seconds(0.1, true))
                 .with(SynEntity {
                     id: rigid_body_state.id.into(),
                 });
