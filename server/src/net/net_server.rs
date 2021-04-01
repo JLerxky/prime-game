@@ -3,7 +3,6 @@ use protocol::Packet;
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use bytes::Bytes;
 use std::{error::Error, str::FromStr};
 use std::{net::SocketAddr, sync::Arc};
 

@@ -2,7 +2,7 @@ use bevy::{prelude::*, winit::WinitPlugin};
 use bevy_rapier2d::{
     na::Vector2,
     physics::{RapierConfiguration, RapierPhysicsPlugin},
-    rapier::{dynamics::RigidBodySet, pipeline::PhysicsPipeline},
+    rapier::pipeline::PhysicsPipeline,
     render::RapierRenderPlugin,
 };
 // use protocol::Packet;
@@ -14,7 +14,6 @@ use super::{
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin},
-        player::PlayerPlugin,
         tile_map::TileMapPlugin,
     },
 };
@@ -129,8 +128,7 @@ fn network_synchronization(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     window: Res<WindowDescriptor>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut net: ResMut<NetWorkState>,
+    net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
 ) {
     // println!("1");

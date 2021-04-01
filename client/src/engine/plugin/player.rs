@@ -76,7 +76,7 @@ fn player_movement(
     mut map_events: ResMut<Events<MapEvent>>,
 ) {
     if let Some((_camera_ctrl, mut camera_transform)) = camera_query.iter_mut().next() {
-        for (mut player, _player_transform, rigid_body_component) in player_info.iter_mut() {
+        for (player, _player_transform, rigid_body_component) in player_info.iter_mut() {
             // player_transform.translation.y =
 
             let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8)

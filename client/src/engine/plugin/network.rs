@@ -37,7 +37,7 @@ impl Plugin for NetworkPlugin {
 }
 
 async fn net_client_start(
-    tx: Sender<Packet>,
+    _tx: Sender<Packet>,
     mut rx: Receiver<Packet>,
     update_data_list: Arc<Mutex<Vec<UpdateData>>>,
 ) -> io::Result<()> {
