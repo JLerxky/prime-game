@@ -30,15 +30,15 @@ pub struct Tile {
 }
 
 impl Tile {
-    fn name(&self) -> String {
-        format!("{}_{}_{}", self.layer, self.row, self.row)
-    }
-    fn filename(&self) -> String {
-        format!(
-            "textures/tiles/{}_{}_{}.png",
-            self.layer, self.row, self.row
-        )
-    }
+    // fn name(&self) -> String {
+    //     format!("{}_{}_{}", self.layer, self.row, self.row)
+    // }
+    // fn filename(&self) -> String {
+    //     format!(
+    //         "textures/tiles/{}_{}_{}.png",
+    //         self.layer, self.row, self.row
+    //     )
+    // }
 }
 
 // 位置
@@ -494,11 +494,11 @@ fn tile_map_produce_system(
 
 fn tile_map_clean_system(
     commands: &mut Commands,
-    entity_query: Query<Entity>,
+    _entity_query: Query<Entity>,
     slot_query: Query<(Entity, &Transform), With<Slot>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     window: Res<WindowDescriptor>,
-    map_state: Res<MapState>,
+    _map_state: Res<MapState>,
     // mut map_event_reader: Local<EventReader<MapEvent>>,
     // map_events: Res<Events<MapEvent>>,
 ) {
