@@ -52,11 +52,11 @@ async fn net_client_start(
 
     // 登录服务器
     s.send(
-        &Packet::Account(AccountRoute::Login(AccountData {
+        &bincode::serialize(&Packet::Account(AccountRoute::Login(AccountData {
             uid: 4721,
             group: 0,
-        }))
-        .to_bytes()[0..],
+        })))
+        .unwrap()[0..],
     )
     .await
     .unwrap();
@@ -77,9 +77,9 @@ async fn net_client_start(
         if let Ok(len) = r.recv(&mut buf).await {
             // println!("接收来自服务器的 {:?} bytes", len);
             // let data_str = String::from_utf8_lossy(&buf[..len]);
-            let packet = Packet::decode(&buf[..len]);
+            let packet = bincode::deserialize(&buf[..len]);
             // 转发事件
-            if let Some(packet) = packet {
+            if let Ok(packet) = packet {
                 // let packet_c = packet.clone();
                 match packet {
                     Packet::Game(game_route) => match game_route {

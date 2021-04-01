@@ -68,7 +68,7 @@ async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) 
         while let Some(packet) = engine_rx.recv().await {
             // println!("{:?}", game_event);
             let socket = socket.clone();
-            let _ = tokio::join!(multicast(socket, 0, packet.to_bytes()));
+            let _ = tokio::join!(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
         }
     }
 }
@@ -82,8 +82,8 @@ async fn start_listening(
     loop {
         if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
             println!("服务器收到数据: {}", &len);
-            let packet = Packet::decode(&buf[..len]);
-            if let Some(packet) = packet {
+            let packet = bincode::deserialize(&buf[..len]);
+            if let Ok(packet) = packet {
                 // 转发事件
                 match packet {
                     Packet::Account(account_route) => match account_route {

@@ -1,6 +1,5 @@
 use bevy::{core::FixedTimestep, prelude::*};
 use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
-use serde::{Deserialize, Serialize};
 
 use crate::engine::event::map_event::MapEvent;
 
@@ -14,7 +13,7 @@ pub struct Position {
 }
 
 // 瓷砖
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug)]
 pub struct Tile {
     // 文件名作为name
     pub id: u32,
@@ -42,7 +41,7 @@ impl Tile {
 }
 
 // 位置
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug)]
 pub struct Slot {
     // 位置
     pub position: Vec3,
