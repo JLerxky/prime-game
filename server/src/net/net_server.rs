@@ -207,6 +207,13 @@ async fn start_listening(
                             }
                         }
                     },
+                    Packet::Game(game_route) => match game_route {
+                        protocol::route::GameRoute::Control(control_data) => {
+                            println!("{}控制: {:?}", &addr, &control_data);
+                            
+                        }
+                        _ => {}
+                    }
                     _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
                 }
                 // socket.send((Bytes::from("收到！"), addr)).await.unwrap();

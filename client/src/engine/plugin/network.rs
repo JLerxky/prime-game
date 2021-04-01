@@ -20,9 +20,11 @@ impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut AppBuilder) {
         let (net_tx, net_rx) = mpsc::channel::<Packet>(1);
         let (engine_tx, engine_rx) = mpsc::channel::<Packet>(1);
+
         let update_data_list: Vec<UpdateData> = Vec::new();
         let update_data_list = Arc::new(Mutex::new(update_data_list));
         let update_data_list_c = update_data_list.clone();
+        
         tokio::spawn(net_client_start(net_tx, engine_rx, update_data_list_c));
         app.add_resource(NetWorkState {
             engine_tx,
