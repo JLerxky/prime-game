@@ -15,17 +15,18 @@ fn keyboard_event_system(
     keyboard_events: Res<Events<KeyboardInput>>,
     mut player_info: Query<&mut Player>,
 ) {
-    let mut player = player_info.iter_mut().next().unwrap();
-    for event in keyboard_event_reader.iter(&keyboard_events) {
-        match event.key_code {
-            Some(KeyCode::Space) => match event.state {
-                bevy::input::ElementState::Pressed => {}
-                bevy::input::ElementState::Released => {
-                    player.jumped = false;
-                }
-            },
-            Some(_) => {}
-            None => {}
+    if let Some(mut player) = player_info.iter_mut().next() {
+        for event in keyboard_event_reader.iter(&keyboard_events) {
+            match event.key_code {
+                Some(KeyCode::Space) => match event.state {
+                    bevy::input::ElementState::Pressed => {}
+                    bevy::input::ElementState::Released => {
+                        player.jumped = false;
+                    }
+                },
+                Some(_) => {}
+                None => {}
+            }
         }
     }
 }

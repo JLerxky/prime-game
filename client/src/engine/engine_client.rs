@@ -66,7 +66,7 @@ pub fn engine_start() {
         // 地图初始化
         .add_plugin(TileMapPlugin)
         // 玩家
-        .add_plugin(PlayerPlugin)
+        // .add_plugin(PlayerPlugin)
         // 网络
         .add_plugin(NetworkPlugin)
         .add_system(network_synchronization.system())
@@ -117,8 +117,9 @@ fn animate_system(
     for (mut timer, mut sprite, texture_atlas_handle) in animate_entity_query.iter_mut() {
         timer.tick(time.delta_seconds());
         if timer.finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+            if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
+                sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+            }
         }
     }
 }

@@ -502,29 +502,30 @@ fn tile_map_clean_system(
     // mut map_event_reader: Local<EventReader<MapEvent>>,
     // map_events: Res<Events<MapEvent>>,
 ) {
-    let camera_transform = camera_transform_query.iter().next().unwrap();
-    // for map_event in map_event_reader.iter(&map_events) {
-    // match map_event {
-    //     MapEvent::Clean => {
+    if let Some(camera_transform) = camera_transform_query.iter().next() {
+        // for map_event in map_event_reader.iter(&map_events) {
+        // match map_event {
+        //     MapEvent::Clean => {
 
-    // println!(
-    //     "window: {},{}; map_state: {:?}",
-    //     window.width, window.height, map_state.tile_size
-    // );
-    let tile_size = Vec2::new(
-        window.width / 1920f32 * 64f32,
-        window.height / 1080f32 * 64f32,
-    );
-    let w = window.width / 2f32 + (tile_size.x * 2f32);
-    let h = window.height / 2f32 + (tile_size.y * 2f32);
-    for (tile_entity, tile_transform) in slot_query.iter() {
-        if tile_transform.translation.x > camera_transform.translation.x + w
-            || tile_transform.translation.x < camera_transform.translation.x - w
-            || tile_transform.translation.y > camera_transform.translation.y + h
-            || tile_transform.translation.y < camera_transform.translation.y - h
-        {
-            // println!("Clean: {:?}", tile_transform);
-            commands.despawn_recursive(tile_entity);
+        // println!(
+        //     "window: {},{}; map_state: {:?}",
+        //     window.width, window.height, map_state.tile_size
+        // );
+        let tile_size = Vec2::new(
+            window.width / 1920f32 * 64f32,
+            window.height / 1080f32 * 64f32,
+        );
+        let w = window.width / 2f32 + (tile_size.x * 2f32);
+        let h = window.height / 2f32 + (tile_size.y * 2f32);
+        for (tile_entity, tile_transform) in slot_query.iter() {
+            if tile_transform.translation.x > camera_transform.translation.x + w
+                || tile_transform.translation.x < camera_transform.translation.x - w
+                || tile_transform.translation.y > camera_transform.translation.y + h
+                || tile_transform.translation.y < camera_transform.translation.y - h
+            {
+                // println!("Clean: {:?}", tile_transform);
+                commands.despawn_recursive(tile_entity);
+            }
         }
     }
     // println!("垃圾回收完成，剩余实体数: {}", entity_query.iter().len());

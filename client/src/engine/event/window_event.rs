@@ -32,21 +32,21 @@ fn keyboard_event_system(
     mut windows: ResMut<Windows>,
     mut app_exit_events: ResMut<Events<AppExit>>,
 ) {
-    let window = windows.get_primary_mut().unwrap();
+    if let Some(window) = windows.get_primary_mut() {
+        // 鼠标显示
+        if keyboard_input.just_pressed(KeyCode::LAlt) {
+            window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
+            window.set_cursor_lock_mode(false);
+            window.set_cursor_visibility(true);
+        }
+        if keyboard_input.just_released(KeyCode::LAlt) {
+            window.set_cursor_lock_mode(true);
+            window.set_cursor_visibility(false);
+        }
 
-    // 鼠标显示
-    if keyboard_input.just_pressed(KeyCode::LAlt) {
-        window.set_cursor_position(Vec2::new(window.width() / 2f32, window.height() / 2f32));
-        window.set_cursor_lock_mode(false);
-        window.set_cursor_visibility(true);
-    }
-    if keyboard_input.just_released(KeyCode::LAlt) {
-        window.set_cursor_lock_mode(true);
-        window.set_cursor_visibility(false);
-    }
-
-    // ESC退出游戏
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        app_exit_events.send(AppExit);
+        // ESC退出游戏
+        if keyboard_input.just_pressed(KeyCode::Escape) {
+            app_exit_events.send(AppExit);
+        }
     }
 }
