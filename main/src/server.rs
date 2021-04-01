@@ -1,4 +1,4 @@
-use protocol::Packet;
+use protocol::packet::Packet;
 use std::error::Error;
 use tokio::sync::mpsc;
 

@@ -9,6 +9,6 @@ async fn main() -> io::Result<()> {
         let (len, addr) = sock.recv_from(&mut buf).await?;
         println!("{:?}:{:?}", addr, String::from_utf8((&buf[..len]).to_vec()));
 
-        let len = sock.send_to(&buf[..len], addr).await?;
+        let _len = sock.send_to(&buf[..len], addr).await?;
     }
 }

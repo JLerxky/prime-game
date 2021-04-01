@@ -2,8 +2,8 @@ use std::{error::Error, sync::Arc};
 
 use protocol::{
     data::update_data::{EntityState, UpdateData},
+    packet::Packet,
     route::GameRoute,
-    Packet,
 };
 use rapier2d::dynamics::{
     BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,

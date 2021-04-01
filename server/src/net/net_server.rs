@@ -1,5 +1,5 @@
 use crate::data::game_db::{self, GameData};
-use protocol::Packet;
+use protocol::packet::Packet;
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
 

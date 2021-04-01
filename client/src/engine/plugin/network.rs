@@ -6,8 +6,8 @@ use std::{
 use bevy::prelude::*;
 use protocol::{
     data::{account_data::AccountData, update_data::UpdateData},
+    packet::Packet,
     route::AccountRoute,
-    Packet,
 };
 use tokio::{
     net::UdpSocket,
@@ -93,6 +93,7 @@ async fn net_client_start(
                                 update_data_list.push(update_data);
                             }
                         }
+                        _ => {}
                     },
                     _ => {}
                 }
