@@ -244,13 +244,13 @@ async fn wait_for_net(
                         entity_type: 1,
                     };
                     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                        .translation(2.0, 60.0)
+                        .translation(2.0, 1000.0)
                         // 线速度
                         .linvel(0.0, 0.0)
                         // 角速度
                         .angvel(0.0)
                         // 重力
-                        .gravity_scale(10.0)
+                        .gravity_scale(1.0)
                         .user_data(rb_state.get_data())
                         .build();
                     // 碰撞体类型

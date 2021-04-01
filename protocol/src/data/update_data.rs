@@ -9,6 +9,8 @@ pub struct UpdateData {
     pub states: Vec<EntityState>,
 }
 
+const HEAD_LENGTH: usize = 16;
+
 #[derive(Debug, Clone, Copy)]
 // 46b
 pub struct EntityState {
@@ -27,6 +29,8 @@ pub struct EntityState {
     // 1b[45]
     pub entity_type: u8,
 }
+
+const ENTITY_STATE_LENGTH: usize = 46;
 
 impl EntityState {
     pub fn make_up_data(&mut self, user_data: u128) {
@@ -90,10 +94,10 @@ impl UpdateData {
         let frame = unsafe { *ptr };
         let mut states = Vec::new();
 
-        let state_no = (data.len() - 16) / 40;
+        let state_no = (data.len() - HEAD_LENGTH) / ENTITY_STATE_LENGTH;
 
         for i in 0..state_no {
-            let i = i + (i * 45) + 16;
+            let i = (i * ENTITY_STATE_LENGTH) + HEAD_LENGTH;
             let ptr: *const u8 = data[i..(i + 7)].as_ptr();
             let ptr: *const u64 = ptr as *const u64;
             let id = unsafe { *ptr };
