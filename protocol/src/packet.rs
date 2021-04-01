@@ -1,4 +1,6 @@
-use crate::data::{account_data::AccountData, update_data::UpdateData, Data};
+use crate::data::{
+    account_data::AccountData, control_data::ControlData, update_data::UpdateData, Data,
+};
 use crate::route::{AccountRoute, GameRoute, HeartbeatRoute};
 
 // 数据包一级路由[0]
@@ -41,7 +43,10 @@ impl Packet {
                         route.push(0);
                         route.append(&mut data.data());
                     }
-                    GameRoute::Move(_) => {}
+                    GameRoute::Control(data) => {
+                        route.push(1);
+                        route.append(&mut data.data());
+                    }
                 }
             }
         }
@@ -82,6 +87,11 @@ impl Packet {
                         data[2..].to_vec(),
                     ))));
                 }
+                1 => {
+                    return Some(Packet::Game(GameRoute::Control(ControlData::from(
+                        data[2..].to_vec(),
+                    ))));
+                }
                 _ => {}
             },
             _ => {}
@@ -119,6 +129,21 @@ fn test() {
     println!("{}", packet.len());
     println!("{:?}", packet);
     println!("{:?}", UpdateData::from(packet[2..].to_vec()));
+}
+
+#[test]
+fn test_control() {
+    // let i: u128 = 340282366920938463463374607431768211455;
+    // println!("{}{}", Packet::Heartbeat as u8, i / 120);
+    let packet: Packet = Packet::Game(GameRoute::Control(ControlData {
+        uid: 123,
+        direction: (-1., 0.11),
+        action: 1,
+    }));
+    let packet = packet.to_bytes();
+    println!("{}", packet.len());
+    println!("{:?}", packet);
+    println!("{:?}", ControlData::from(packet[2..].to_vec()));
 }
 
 #[test]

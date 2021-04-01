@@ -1,4 +1,4 @@
-use crate::data::{account_data::AccountData, move_data::MoveData, update_data::UpdateData};
+use crate::data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData};
 
 // 数据包二级路由[1]
 // 心跳包路由
@@ -18,5 +18,5 @@ pub enum AccountRoute {
 #[derive(Debug, Clone)]
 pub enum GameRoute {
     Update(UpdateData),
-    Move(MoveData),
+    Control(ControlData),
 }
