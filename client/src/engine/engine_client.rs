@@ -7,13 +7,20 @@ use bevy_rapier2d::{
 };
 // use protocol::Packet;
 
-use super::{event::{control_event::ControlEventPlugin, keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin}, plugin::{
+use super::{
+    event::{
+        control_event::{ControlEventPlugin},
+        keyboard_event::KeyboardEventPlugin,
+        map_event::MapEventPlugin,
+    },
+    plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin},
         tile_map::TileMapPlugin,
-    }};
+    },
+};
 
 pub fn engine_start() {
     App::build()
@@ -131,70 +138,88 @@ fn network_synchronization(
 ) {
     // println!("1");
     if let Ok(mut update_data_list) = net.update_data_list.lock() {
-        if update_data_list.is_empty() {
-            return;
-        }
-        let update_data = update_data_list[0].clone();
-        update_data_list.remove(0);
-        // println!("2");
-        'update_data: for rigid_body_state in update_data.states {
-            for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
-                // println!("3");
-                if syn_entity.id == rigid_body_state.id.into() {
-                    *transform = Transform {
-                        translation: Vec3::new(
-                            rigid_body_state.translation.0,
-                            rigid_body_state.translation.1,
-                            99.0,
-                        ),
-                        rotation: Quat::from([
-                            rigid_body_state.rotation.0,
-                            rigid_body_state.rotation.1,
-                            0.0,
-                            0.0,
-                        ]),
-                        scale: Vec3::new(1., 1., 1.),
-                    };
-                    continue 'update_data;
+        // 同步服务器发来的状态
+        if !update_data_list.is_empty() {
+            let update_data = update_data_list[0].clone();
+            update_data_list.remove(0);
+            // println!("2");
+            'update_data: for rigid_body_state in update_data.states {
+                for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+                    // println!("3");
+                    if syn_entity.id == rigid_body_state.id.into() {
+                        *transform = Transform {
+                            translation: Vec3::new(
+                                rigid_body_state.translation.0,
+                                rigid_body_state.translation.1,
+                                99.0,
+                            ),
+                            rotation: Quat::from([
+                                rigid_body_state.rotation.0,
+                                rigid_body_state.rotation.1,
+                                0.0,
+                                0.0,
+                            ]),
+                            scale: Vec3::new(1., 1., 1.),
+                        };
+                        continue 'update_data;
+                    }
                 }
-            }
-            // println!("4");
+                // println!("4");
 
-            let texture_handle = asset_server
-                .load(format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str());
-            // let tile_size = Vec2::new(100.0, 120.0);
-            let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 4f32);
-            let texture_atlas = TextureAtlas::from_grid(
-                texture_handle,
-                tile_size,
-                rigid_body_state.texture.1.into(),
-                1,
-            );
-            let texture_atlas_handle = texture_atlases.add(texture_atlas);
-            commands
-                .spawn(SpriteSheetBundle {
-                    texture_atlas: texture_atlas_handle,
-                    transform: Transform {
-                        translation: Vec3::new(
-                            rigid_body_state.translation.0,
-                            rigid_body_state.translation.1,
-                            99.0,
-                        ),
-                        rotation: Quat::from([
-                            rigid_body_state.rotation.0,
-                            rigid_body_state.rotation.1,
-                            0.0,
-                            0.0,
-                        ]),
-                        scale: Vec3::new(1., 1., 1.),
-                    },
-                    ..Default::default()
-                })
-                .with(Timer::from_seconds(0.1, true))
-                .with(SynEntity {
-                    id: rigid_body_state.id.into(),
-                });
+                let texture_handle = asset_server
+                    .load(format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str());
+                // let tile_size = Vec2::new(100.0, 120.0);
+                let tile_size =
+                    Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 4f32);
+                let texture_atlas = TextureAtlas::from_grid(
+                    texture_handle,
+                    tile_size,
+                    rigid_body_state.texture.1.into(),
+                    1,
+                );
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+                commands
+                    .spawn(SpriteSheetBundle {
+                        texture_atlas: texture_atlas_handle,
+                        transform: Transform {
+                            translation: Vec3::new(
+                                rigid_body_state.translation.0,
+                                rigid_body_state.translation.1,
+                                99.0,
+                            ),
+                            rotation: Quat::from([
+                                rigid_body_state.rotation.0,
+                                rigid_body_state.rotation.1,
+                                0.0,
+                                0.0,
+                            ]),
+                            scale: Vec3::new(1., 1., 1.),
+                        },
+                        ..Default::default()
+                    })
+                    .with(Timer::from_seconds(0.1, true))
+                    .with(SynEntity {
+                        id: rigid_body_state.id.into(),
+                    });
+            }
         }
+        // 向服务器发送玩家操作
+        // println!("1");
+        // if let Ok(mut control_queue) = net.control_queue.lock() {
+        //     // println!("2");
+        //     let control_queue_c = control_queue.clone();
+        //     control_queue.clear();
+        //     for control_data in control_queue_c.iter() {
+        //         // println!("3");
+        //         let engine_tx = net.engine_tx.clone();
+        //         let control_data = control_data.clone();
+        //         tokio::spawn(async move {
+        //             let _ = engine_tx
+        //                 .send(Packet::Game(GameRoute::Control(control_data)))
+        //                 .await;
+        //         });
+        //     }
+        // }
     }
 }
 

@@ -1,17 +1,13 @@
-use std::sync::{Arc, Mutex};
-
 use bevy::prelude::*;
 use protocol::data::control_data::ControlData;
+
+use crate::engine::plugin::network::NetWorkState;
 
 pub struct ControlEventPlugin;
 
 impl Plugin for ControlEventPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        let control_queue: Vec<ControlData> = Vec::new();
-        let control_queue = Arc::new(Mutex::new(control_queue));
-
-        app.add_resource(ControlState { control_queue })
-            .add_event::<ControlEvent>()
+        app.add_event::<ControlEvent>()
             .add_system(event_listener_system.system());
     }
 }
@@ -24,18 +20,14 @@ pub struct ControlEvent {
     pub action: u8,
 }
 
-pub struct ControlState {
-    control_queue: Arc<Mutex<Vec<ControlData>>>,
-}
-
 fn event_listener_system(
     mut control_event_reader: Local<EventReader<ControlEvent>>,
     control_events: Res<Events<ControlEvent>>,
-    control_state: ResMut<ControlState>,
+    net_state: ResMut<NetWorkState>,
     // player_state: Res<PlayerState>,
 ) {
     for control_event in control_event_reader.iter(&control_events) {
-        if let Ok(mut control_queue) = control_state.control_queue.lock() {
+        if let Ok(mut control_queue) = net_state.control_queue.lock() {
             if let Some(control_data) = control_queue.last() {
                 if control_data.direction == control_event.direction
                     && control_data.action == control_event.action

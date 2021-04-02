@@ -5,9 +5,9 @@ use std::{
 
 use bevy::prelude::*;
 use protocol::{
-    data::{account_data::AccountData, update_data::UpdateData},
+    data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData},
     packet::Packet,
-    route::AccountRoute,
+    route::{AccountRoute, GameRoute},
 };
 use tokio::{
     net::UdpSocket,
@@ -24,12 +24,22 @@ impl Plugin for NetworkPlugin {
         let update_data_list: Vec<UpdateData> = Vec::new();
         let update_data_list = Arc::new(Mutex::new(update_data_list));
         let update_data_list_c = update_data_list.clone();
-        
-        tokio::spawn(net_client_start(net_tx, engine_rx, update_data_list_c));
+
+        let control_queue: Vec<ControlData> = Vec::new();
+        let control_queue = Arc::new(Mutex::new(control_queue));
+        let control_queue_c = control_queue.clone();
+
+        tokio::spawn(net_client_start(
+            net_tx,
+            engine_rx,
+            update_data_list_c,
+            control_queue_c,
+        ));
         app.add_resource(NetWorkState {
             engine_tx,
             net_rx,
             update_data_list,
+            control_queue,
         });
     }
 
@@ -39,9 +49,10 @@ impl Plugin for NetworkPlugin {
 }
 
 async fn net_client_start(
-    _tx: Sender<Packet>,
-    mut rx: Receiver<Packet>,
+    _net_tx: Sender<Packet>,
+    _engine_rx: Receiver<Packet>,
     update_data_list: Arc<Mutex<Vec<UpdateData>>>,
+    control_queue: Arc<Mutex<Vec<ControlData>>>,
 ) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
@@ -63,13 +74,30 @@ async fn net_client_start(
     .await
     .unwrap();
 
-    tokio::spawn(async move {
-        while let Some(game_event) = rx.recv().await {
-            println!("网络模块收到引擎事件: {:?}", game_event);
-            let len = s.send(b"1").await.unwrap();
-            println!("网络客户端发送: {}", len);
-        }
-    });
+    // tokio::spawn(async move {
+    //     loop {
+    //         if let Ok(control_queue) = control_queue.lock() {
+    //             for control_data in control_queue.iter() {
+    //                 s.send(
+    //                     &bincode::serialize(&Packet::Game(GameRoute::Control(*control_data)))
+    //                         .unwrap()[0..],
+    //                 )
+    //                 .await.unwrap();
+    //             }
+    //         }
+    //     }
+    // });
+
+    // tokio::join!()(async move {
+    //     while let Some(game_event) = engine_rx.recv().await {
+    //         println!("网络模块收到引擎事件: {:?}", game_event);
+    //         let len = s
+    //             .send(&bincode::serialize(&game_event).unwrap()[0..])
+    //             .await
+    //             .unwrap();
+    //         println!("网络客户端发送: {}", len);
+    //     }
+    // });
 
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 5f64));
     let mut buf = [0; 1024];
@@ -101,6 +129,26 @@ async fn net_client_start(
                 }
             }
         }
+
+        if let Ok(mut control_queue) = control_queue.lock() {
+            let control_queue_c = control_queue.clone();
+            control_queue.clear();
+            if let Some((last, elements)) = control_queue_c.split_last() {
+                control_queue.push(*last);
+                for control_data in elements.iter() {
+                    let s = s.clone();
+                    let control_data = control_data.clone();
+                    tokio::spawn(async move {
+                        s.send(
+                            &bincode::serialize(&Packet::Game(GameRoute::Control(control_data)))
+                                .unwrap()[0..],
+                        )
+                        .await
+                        .unwrap();
+                    });
+                }
+            }
+        }
     }
 }
 
@@ -108,4 +156,5 @@ pub struct NetWorkState {
     pub engine_tx: Sender<Packet>,
     pub net_rx: Receiver<Packet>,
     pub update_data_list: Arc<Mutex<Vec<UpdateData>>>,
+    pub control_queue: Arc<Mutex<Vec<ControlData>>>,
 }

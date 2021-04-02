@@ -1,4 +1,4 @@
-use bevy::{input::keyboard::KeyboardInput, prelude::*};
+use bevy::prelude::*;
 
 use super::control_event::ControlEvent;
 
@@ -11,8 +11,6 @@ impl Plugin for KeyboardEventPlugin {
 }
 
 fn keyboard_event_system(
-    mut _keyboard_event_reader: Local<EventReader<KeyboardInput>>,
-    _keyboard_events: Res<Events<KeyboardInput>>,
     mut control_events: ResMut<Events<ControlEvent>>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
