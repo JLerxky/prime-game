@@ -16,6 +16,7 @@ impl Plugin for ControlEventPlugin {
     }
 }
 
+#[derive(Debug)]
 pub struct ControlEvent {
     //方向 模拟输入
     pub direction: (f32, f32),
@@ -30,8 +31,24 @@ pub struct ControlState {
 fn event_listener_system(
     mut control_event_reader: Local<EventReader<ControlEvent>>,
     control_events: Res<Events<ControlEvent>>,
+    control_state: ResMut<ControlState>,
+    // player_state: Res<PlayerState>,
 ) {
     for control_event in control_event_reader.iter(&control_events) {
-        println!("{}", control_event.action);
+        if let Ok(mut control_queue) = control_state.control_queue.lock() {
+            if let Some(control_data) = control_queue.last() {
+                if control_data.direction == control_event.direction
+                    && control_data.action == control_event.action
+                {
+                    continue;
+                }
+            }
+            control_queue.push(ControlData {
+                uid: 21,
+                direction: control_event.direction,
+                action: control_event.action,
+            });
+            println!("收到控制事件: {:?}", control_event);
+        }
     }
 }

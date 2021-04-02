@@ -7,16 +7,13 @@ use bevy_rapier2d::{
 };
 // use protocol::Packet;
 
-use super::{
-    event::{keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin},
-    plugin::{
+use super::{event::{control_event::ControlEventPlugin, keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin}, plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin},
         tile_map::TileMapPlugin,
-    },
-};
+    }};
 
 pub fn engine_start() {
     App::build()
@@ -59,6 +56,7 @@ pub fn engine_start() {
         .add_plugin(Fps)
         .add_plugin(Clipboard)
         // 事件
+        .add_plugin(ControlEventPlugin)
         .add_plugin(KeyboardEventPlugin)
         .add_plugin(MapEventPlugin)
         // .add_plugin(WindowEventPlugin)

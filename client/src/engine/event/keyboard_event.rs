@@ -1,6 +1,6 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 
-use crate::engine::plugin::player::Player;
+use super::control_event::ControlEvent;
 
 pub struct KeyboardEventPlugin;
 
@@ -11,22 +11,27 @@ impl Plugin for KeyboardEventPlugin {
 }
 
 fn keyboard_event_system(
-    mut keyboard_event_reader: Local<EventReader<KeyboardInput>>,
-    keyboard_events: Res<Events<KeyboardInput>>,
-    mut player_info: Query<&mut Player>,
+    mut _keyboard_event_reader: Local<EventReader<KeyboardInput>>,
+    _keyboard_events: Res<Events<KeyboardInput>>,
+    mut control_events: ResMut<Events<ControlEvent>>,
+    keyboard_input: Res<Input<KeyCode>>,
 ) {
-    if let Some(mut player) = player_info.iter_mut().next() {
-        for event in keyboard_event_reader.iter(&keyboard_events) {
-            match event.key_code {
-                Some(KeyCode::Space) => match event.state {
-                    bevy::input::ElementState::Pressed => {}
-                    bevy::input::ElementState::Released => {
-                        player.jumped = false;
-                    }
-                },
-                Some(_) => {}
-                None => {}
-            }
-        }
+    let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8) as f32
+        + (keyboard_input.pressed(KeyCode::D) as i8) as f32;
+    let y_axis = keyboard_input.pressed(KeyCode::Space) as i8 as f32;
+    let mut action = 1u8;
+    if y_axis != 0f32 {
+        action = 2u8;
+    }
+    if x_axis != 0f32 || y_axis != 0f32 {
+        control_events.send(ControlEvent {
+            direction: (x_axis, y_axis),
+            action,
+        });
+    } else {
+        control_events.send(ControlEvent {
+            direction: (x_axis, y_axis),
+            action: 0u8,
+        });
     }
 }
