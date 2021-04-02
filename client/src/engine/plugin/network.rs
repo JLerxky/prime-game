@@ -4,6 +4,7 @@ use std::{
 };
 
 use bevy::prelude::*;
+use common::config::UID;
 use protocol::{
     data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData},
     packet::Packet,
@@ -66,7 +67,7 @@ async fn net_client_start(
     // 登录服务器
     s.send(
         &bincode::serialize(&Packet::Account(AccountRoute::Login(AccountData {
-            uid: 4721,
+            uid: UID,
             group: 0,
         })))
         .unwrap()[0..],
