@@ -209,8 +209,8 @@ async fn start_listening(
                         }
                     },
                     Packet::Game(game_route) => match game_route {
-                        protocol::route::GameRoute::Control(_) => {
-                            // println!("{}控制: {:?}", &addr, &control_data);
+                        protocol::route::GameRoute::Control(control_data) => {
+                            println!("{}控制: {:?}", &addr, &control_data);
                             let _ = net_tx.try_send(packet_2);
                         }
                         _ => {}
