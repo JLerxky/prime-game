@@ -1,4 +1,4 @@
-use std::{error::Error, sync::Arc};
+use std::{collections::HashMap, error::Error, sync::Arc};
 
 use protocol::{
     data::update_data::{EntityState, UpdateData},
@@ -6,7 +6,7 @@ use protocol::{
     route::GameRoute,
 };
 use rapier2d::dynamics::{
-    BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
+    BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
 };
 use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, SharedShape};
 use rapier2d::na::Vector2;
@@ -18,6 +18,7 @@ use tokio::sync::{
 
 type ColliderSetState = Arc<Mutex<ColliderSet>>;
 type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
+type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
 pub async fn engine_start(
     engine_tx: Sender<Packet>,
@@ -26,8 +27,16 @@ pub async fn engine_start(
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
 
+    let player_handle_map: HashMap<u32, RigidBodyHandle> = HashMap::new();
+    let player_handle_state = Arc::new(Mutex::new(player_handle_map));
+
     // 监听网络模块传过来的消息
-    let net_future = wait_for_net(net_rx, rigid_body_state.clone(), collider_state.clone());
+    let net_future = wait_for_net(
+        net_rx,
+        rigid_body_state.clone(),
+        collider_state.clone(),
+        player_handle_state,
+    );
 
     // 物理引擎主循环
     let engine_future =
@@ -221,6 +230,7 @@ async fn wait_for_net(
     mut net_rx: Receiver<Packet>,
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
+    player_handle_state: PlayerHandleMapState,
 ) {
     let mut entity_id: u64 = 2;
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
@@ -229,41 +239,68 @@ async fn wait_for_net(
         if let Some(game_event) = net_rx.recv().await {
             let bodies = &mut rigid_body_state.lock().await;
             let colliders = &mut collider_state.lock().await;
+            let player_handle_map = &mut player_handle_state.lock().await;
             match game_event {
-                Packet::Account(_login_data) => {
-                    println!("uid: {}", &entity_id);
-                    // 球
-                    // 刚体类型
-                    let rb_state = EntityState {
-                        id: entity_id,
-                        translation: (0., 0.),
-                        rotation: (0., 0.),
-                        linvel: (0., 0.),
-                        angvel: (0., 0.),
-                        texture: (1, 4),
-                        entity_type: 1,
-                    };
-                    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                        .translation(2.0, 1000.0)
-                        // 线速度
-                        .linvel(0.0, 0.0)
-                        // 角速度
-                        .angvel(0.0)
-                        // 重力
-                        .gravity_scale(1.0)
-                        .user_data(rb_state.get_data())
-                        .build();
-                    // 碰撞体类型
-                    let collider = ColliderBuilder::new(SharedShape::ball(2.0))
-                        // 密度
-                        .density(1.0)
-                        // 摩擦
-                        .friction(0.0)
-                        .build();
-                    let rb_handle = bodies.insert(rigid_body);
-                    colliders.insert(collider, rb_handle, bodies);
-                    entity_id += 1;
-                }
+                // 玩家登录生成角色
+                Packet::Account(account_route) => match account_route {
+                    protocol::route::AccountRoute::Login(login_data) => {
+                        println!("uid: {}", &entity_id);
+                        // 球
+                        // 刚体类型
+                        let rb_state = EntityState {
+                            id: entity_id,
+                            translation: (0., 0.),
+                            rotation: (0., 0.),
+                            linvel: (0., 0.),
+                            angvel: (0., 0.),
+                            texture: (1, 4),
+                            entity_type: 1,
+                        };
+                        let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
+                            .translation(2.0, 100.0)
+                            // 线速度
+                            .linvel(0.0, 0.0)
+                            // 角速度
+                            .angvel(0.0)
+                            // 重力
+                            .gravity_scale(1.0)
+                            .user_data(rb_state.get_data())
+                            .build();
+                        // 碰撞体类型
+                        let collider = ColliderBuilder::new(SharedShape::ball(2.0))
+                            // 密度
+                            .density(1.0)
+                            // 摩擦
+                            .friction(0.0)
+                            .build();
+                        let rb_handle = bodies.insert(rigid_body);
+                        colliders.insert(collider, rb_handle, bodies);
+                        player_handle_map.insert(login_data.uid, rb_handle);
+                        println!("{:?}", player_handle_map);
+                        entity_id += 1;
+                    }
+                    protocol::route::AccountRoute::Logout(_) => {}
+                },
+                // 玩家控制
+                Packet::Game(game_route) => match game_route {
+                    protocol::route::GameRoute::Control(control_data) => {
+                        // println!("1");
+                        if let Some(handle) = player_handle_map.get(&control_data.uid) {
+                            // println!("2");
+                            if let Some(body) = bodies.get_mut(*handle) {
+                                body.set_linvel(
+                                    Vector2::new(
+                                        control_data.direction.0 * 100f32,
+                                        control_data.direction.1 * 0f32,
+                                    ),
+                                    true,
+                                );
+                                // println!("控制移动");
+                            }
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }

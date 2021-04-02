@@ -81,15 +81,16 @@ async fn start_listening(
     let mut buf = [0; 1024];
     loop {
         if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
-            println!("服务器收到数据: {}", &len);
-            let packet = bincode::deserialize(&buf[..len]);
-            if let Ok(packet) = packet {
+            // println!("服务器收到数据: {}", &len);
+            if let Ok(packet) = bincode::deserialize::<Packet>(&buf[..len]) {
                 // 转发事件
+                let packet_1 = packet.clone();
+                let packet_2 = packet.clone();
                 match packet {
                     Packet::Account(account_route) => match account_route {
                         protocol::route::AccountRoute::Login(account_data) => {
                             println!("{}登录事件: {:?}", &addr, &account_data);
-                            let _ = net_tx.try_send(packet.clone());
+                            let _ = net_tx.try_send(packet_1);
                             let _ = tokio::join!(send(send_socket.clone(), &buf[..len], addr));
                             // 更新在线玩家表
                             match game_db::find(GameData::player_online(None)) {
@@ -208,12 +209,12 @@ async fn start_listening(
                         }
                     },
                     Packet::Game(game_route) => match game_route {
-                        protocol::route::GameRoute::Control(control_data) => {
-                            println!("{}控制: {:?}", &addr, &control_data);
-                            
+                        protocol::route::GameRoute::Control(_) => {
+                            // println!("{}控制: {:?}", &addr, &control_data);
+                            let _ = net_tx.try_send(packet_2);
                         }
                         _ => {}
-                    }
+                    },
                     _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
                 }
                 // socket.send((Bytes::from("收到！"), addr)).await.unwrap();
