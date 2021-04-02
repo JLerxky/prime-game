@@ -8,7 +8,7 @@ pub struct RocksDB {
 }
 
 impl RocksDB {
-    pub fn open() -> RocksDB {
+    pub fn open() -> Result<RocksDB, Error> {
         let path = "rocks_game_db";
         let mut cf_opts = Options::default();
         cf_opts.set_keep_log_file_num(3);
@@ -18,14 +18,14 @@ impl RocksDB {
         db_opts.set_keep_log_file_num(3);
         db_opts.create_missing_column_families(true);
         db_opts.create_if_missing(true);
-        let db = DB::open_cf_descriptors(&db_opts, path, vec![cf]).unwrap();
+        let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
         let aes = AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
-        RocksDB {
+        Ok(RocksDB {
             db,
             aes,
             opts: db_opts,
             path: String::from(path),
-        }
+        })
     }
 
     // 加密存储
@@ -39,12 +39,15 @@ impl RocksDB {
     }
 
     // 无加密存储
-    pub fn put_value<K, V>(&self, key: K, value: V) -> Result<(), Error>
+    pub fn put_value<K, V>(&self, key: K, value: V) -> Result<(), Box<dyn std::error::Error>>
     where
         K: AsRef<[u8]>,
         V: AsRef<[u8]>,
     {
-        self.db.put(key, value)
+        match self.db.put(key, value) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 
     // 读取加密值
@@ -104,7 +107,7 @@ impl RocksDB {
 
 #[test]
 fn test() {
-    let rocks_db = RocksDB::open();
+    // let rocks_db = RocksDB::open()?;
     // for i in 0..100000 {
     //     rocks_db
     //         .put(format!("key-{}", i), format!("value-{}", i))
@@ -115,12 +118,12 @@ fn test() {
     //     }
     //     rocks_db.delete(format!("key-{}", i));
     // }
-    let _ = rocks_db.destroy();
+    // let _ = rocks_db.destroy();
 }
 
 // 打印所有数据
 #[test]
 fn test1() {
-    let rocks_db = RocksDB::open();
-    rocks_db.get_all_value();
+    // let rocks_db = RocksDB::open();
+    // rocks_db.get_all_value();
 }

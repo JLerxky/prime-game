@@ -24,49 +24,56 @@ pub async fn start_server(
 
     let wait_for_send_future = wait_for_send(s, engine_rx);
 
-    tokio::join!(game_server_future, wait_for_send_future);
+    tokio::spawn(async move { wait_for_send_future.await });
+    tokio::join!(game_server_future);
 
     Ok(())
 }
 
-pub async fn send(
-    socket: Arc<UdpSocket>,
-    packet: &[u8],
-    recv_addr: SocketAddr,
-) -> Result<(), Box<dyn Error>> {
-    socket.send_to(packet, recv_addr).await?;
-    // println!("send ok");
-
-    Ok(())
+pub async fn send(socket: Arc<UdpSocket>, packet: &[u8], recv_addr: SocketAddr) {
+    match socket.send_to(packet, recv_addr).await {
+        Ok(_) => {
+            // println!("send ok");
+        }
+        Err(_) => {
+            // println!("send err");
+        }
+    };
 }
 
-pub async fn multicast(
-    socket: Arc<UdpSocket>,
-    group: u32,
-    packet: Vec<u8>,
-) -> Result<(), Box<dyn Error>> {
+pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
+    let mut senders = Vec::new();
     match game_db::find(GameData::player_group_addr(group, None)) {
-        Some(data) => {
+        Ok(data) => {
+            // println!("1");
             if data.len() > 0 {
                 let uid_list: Vec<&str> = data.split(",").collect();
                 for index in 0..uid_list.len() {
-                    let recv_addr = SocketAddr::from_str(uid_list[index])?;
+                    let recv_addr = SocketAddr::from_str(uid_list[index]).unwrap();
                     let socket = socket.clone();
-                    let _ = tokio::join!(send(socket, &packet, recv_addr));
+                    let sender = send(socket, &packet, recv_addr);
+                    senders.push(sender);
                 }
             }
         }
-        None => {
+        Err(_e) => {
+            // println!("{}", e);
             // println!("{}组无玩家在线!", group);
         }
     }
-    Ok(())
+    for sender in senders {
+        // tokio::join!(sender);
+        sender.await;
+        // println!("sended");
+    }
 }
 
 async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) {
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
     loop {
-        while let Some(packet) = engine_rx.recv().await {
-            // println!("{:?}", game_event);
+        interval.tick().await;
+        if let Some(packet) = engine_rx.recv().await {
+            // println!("{:?}", packet);
             let socket = socket.clone();
             let _ = tokio::join!(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
         }
@@ -79,10 +86,14 @@ async fn start_listening(
     net_tx: Sender<Packet>,
 ) {
     let mut buf = [0; 1024];
+    // let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos(10));
     loop {
-        if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
+        // interval.tick().await;
+        // println!("接收ing");
+        if let Ok((len, addr)) = socket.try_recv_from(&mut buf) {
             // println!("服务器收到数据: {}", &len);
             if let Ok(packet) = bincode::deserialize::<Packet>(&buf[..len]) {
+                // println!("服务器收到数据: {:?}", &packet);
                 // 转发事件
                 let packet_1 = packet.clone();
                 let packet_2 = packet.clone();
@@ -101,7 +112,7 @@ async fn start_listening(
                             let _ = tokio::join!(send(send_socket.clone(), &buf[..len], addr));
                             // 更新在线玩家表
                             match game_db::find(GameData::player_online(None)) {
-                                Some(data) => {
+                                Ok(data) => {
                                     if data.len() > 0 {
                                         let mut exist = false;
                                         for uid_db in data.split(",") {
@@ -121,7 +132,7 @@ async fn start_listening(
                                         )));
                                     }
                                 }
-                                None => {
+                                Err(_) => {
                                     let _ = game_db::save(GameData::player_online(Some(format!(
                                         "{}",
                                         account_data.uid
@@ -133,7 +144,7 @@ async fn start_listening(
                                 account_data.group,
                                 None,
                             )) {
-                                Some(data) => {
+                                Ok(data) => {
                                     if data.len() > 0 {
                                         let mut exist = false;
                                         for addr_db in data.split(",") {
@@ -155,7 +166,7 @@ async fn start_listening(
                                         ));
                                     }
                                 }
-                                None => {
+                                Err(_) => {
                                     let _ = game_db::save(GameData::player_group_addr(
                                         account_data.group,
                                         Some(format!("{}", addr)),
@@ -167,7 +178,7 @@ async fn start_listening(
                             println!("{}登出事件: {:?}", &addr, &account_data);
                             // 更新在线玩家表
                             match game_db::find(GameData::player_online(None)) {
-                                Some(data) => {
+                                Ok(data) => {
                                     if data.len() > 0 {
                                         let mut uid_list: Vec<&str> = data.split(",").collect();
                                         let mut rm_index = None;
@@ -185,14 +196,14 @@ async fn start_listening(
                                         }
                                     }
                                 }
-                                None => {}
+                                Err(_) => {}
                             }
                             // 更新玩家组ip地址
                             match game_db::find(GameData::player_group_addr(
                                 account_data.group,
                                 None,
                             )) {
-                                Some(data) => {
+                                Ok(data) => {
                                     if data.len() > 0 {
                                         let mut addr_list: Vec<&str> = data.split(",").collect();
                                         let mut rm_index = None;
@@ -211,7 +222,7 @@ async fn start_listening(
                                         }
                                     }
                                 }
-                                None => {}
+                                Err(_) => {}
                             }
                         }
                     },

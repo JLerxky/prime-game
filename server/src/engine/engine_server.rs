@@ -1,5 +1,6 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
+use crate::net;
 use protocol::{
     data::update_data::{EntityState, UpdateData},
     packet::Packet,
@@ -12,7 +13,7 @@ use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, 
 use rapier2d::na::Vector2;
 use rapier2d::pipeline::PhysicsPipeline;
 use tokio::sync::{
-    mpsc::{Receiver, Sender},
+    mpsc::{self, Receiver, Sender},
     Mutex,
 };
 
@@ -20,15 +21,22 @@ type ColliderSetState = Arc<Mutex<ColliderSet>>;
 type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
 type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
-pub async fn engine_start(
-    engine_tx: Sender<Packet>,
-    net_rx: Receiver<Packet>,
-) -> Result<(), Box<dyn Error>> {
+pub async fn engine_start() -> Result<(), Box<dyn Error>> {
+    let (net_tx, net_rx) = mpsc::channel::<Packet>(100);
+    let (engine_tx, engine_rx) = mpsc::channel::<Packet>(100);
+
+    // let _ = tokio::join!(net_server);
+
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
 
     let player_handle_map: HashMap<u32, RigidBodyHandle> = HashMap::new();
     let player_handle_state = Arc::new(Mutex::new(player_handle_map));
+
+    // 物理引擎主循环
+    let engine_future =
+        engine_main_loop(engine_tx, rigid_body_state.clone(), collider_state.clone());
+    tokio::spawn(async move { engine_future.await.unwrap() });
 
     // 监听网络模块传过来的消息
     let net_future = wait_for_net(
@@ -37,12 +45,12 @@ pub async fn engine_start(
         collider_state.clone(),
         player_handle_state,
     );
+    tokio::spawn(async move { net_future.await });
 
-    // 物理引擎主循环
-    let engine_future =
-        engine_main_loop(engine_tx, rigid_body_state.clone(), collider_state.clone());
-    println!("物理引擎已启动!");
-    let _ = tokio::join!(net_future, engine_future);
+    // 网络监听
+    let net_server = net::net_server::start_server(net_tx, engine_rx);
+
+    let _ = net_server.await;
     Ok(())
 }
 
@@ -51,6 +59,7 @@ pub async fn engine_main_loop(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
 ) -> Result<(), Box<dyn Error>> {
+    println!("物理引擎已启动!");
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
@@ -76,8 +85,12 @@ pub async fn engine_main_loop(
     // let start_time = Instant::now();
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 60f64));
     let mut frame_no: u128 = 0;
+    // println!("main_0");
     loop {
+        // println!("main_1");
+        // println!("{}", &frame_no);
         interval.tick().await;
+        // println!("main_2");
         let mut bodies = &mut rigid_body_state.lock().await;
         let mut colliders = &mut collider_state.lock().await;
 
@@ -295,7 +308,7 @@ async fn wait_for_net(
                                     ),
                                     true,
                                 );
-                                // println!("控制移动");
+                                println!("控制移动");
                             }
                         }
                     }

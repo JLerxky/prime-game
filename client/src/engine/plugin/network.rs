@@ -78,7 +78,9 @@ async fn net_client_start(
     .unwrap();
 
     tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64));
         loop {
+            interval.tick().await;
             s1.send(
                 &bincode::serialize(&Packet::Heartbeat(HeartbeatRoute::Keep(
                     SystemTime::now()
@@ -90,6 +92,7 @@ async fn net_client_start(
             )
             .await
             .unwrap();
+            // println!("发送Heartbeat");
         }
     });
 
@@ -120,13 +123,13 @@ async fn net_client_start(
                     Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
                         protocol::route::HeartbeatRoute::In => {}
                         protocol::route::HeartbeatRoute::Out => {}
-                        protocol::route::HeartbeatRoute::Keep(time) => {
-                            let time = SystemTime::now()
-                                .duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap()
-                                .as_millis()
-                                - time;
-                            println!("网络延时: {}", time);
+                        protocol::route::HeartbeatRoute::Keep(_time) => {
+                            // let time = SystemTime::now()
+                            //     .duration_since(SystemTime::UNIX_EPOCH)
+                            //     .unwrap()
+                            //     .as_millis()
+                            //     - time;
+                            // println!("网络延时: {}", time);
                         }
                     },
                     Packet::Game(game_route) => match game_route {
@@ -148,18 +151,22 @@ async fn net_client_start(
         }
 
         if let Ok(mut control_queue) = control_queue.lock() {
+            // println!("0");
             let control_queue_c = control_queue.clone();
             control_queue.clear();
             for control_data in control_queue_c.iter() {
+                // println!("1");
                 let s = s.clone();
                 let control_data = control_data.clone();
                 tokio::spawn(async move {
+                    // println!("2");
                     s.send(
                         &bincode::serialize(&Packet::Game(GameRoute::Control(control_data)))
                             .unwrap()[0..],
                     )
                     .await
                     .unwrap();
+                    // println!("3");
                 });
             }
         }
