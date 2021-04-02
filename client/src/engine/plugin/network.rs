@@ -1,6 +1,7 @@
 use std::{
     io,
     sync::{Arc, Mutex},
+    time::SystemTime,
 };
 
 use bevy::prelude::*;
@@ -8,7 +9,7 @@ use common::config::UID;
 use protocol::{
     data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData},
     packet::Packet,
-    route::{AccountRoute, GameRoute},
+    route::{AccountRoute, GameRoute, HeartbeatRoute},
 };
 use tokio::{
     net::UdpSocket,
@@ -63,6 +64,7 @@ async fn net_client_start(
     println!("客户端网络连接成功: {:?}", sock.local_addr());
     let r = Arc::new(sock);
     let s = r.clone();
+    let s1 = r.clone();
 
     // 登录服务器
     s.send(
@@ -75,19 +77,21 @@ async fn net_client_start(
     .await
     .unwrap();
 
-    // tokio::spawn(async move {
-    //     loop {
-    //         if let Ok(control_queue) = control_queue.lock() {
-    //             for control_data in control_queue.iter() {
-    //                 s.send(
-    //                     &bincode::serialize(&Packet::Game(GameRoute::Control(*control_data)))
-    //                         .unwrap()[0..],
-    //                 )
-    //                 .await.unwrap();
-    //             }
-    //         }
-    //     }
-    // });
+    tokio::spawn(async move {
+        loop {
+            s1.send(
+                &bincode::serialize(&Packet::Heartbeat(HeartbeatRoute::Keep(
+                    SystemTime::now()
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis(),
+                )))
+                .unwrap()[0..],
+            )
+            .await
+            .unwrap();
+        }
+    });
 
     // tokio::join!()(async move {
     //     while let Some(game_event) = engine_rx.recv().await {
@@ -113,6 +117,18 @@ async fn net_client_start(
             if let Ok(packet) = packet {
                 // let packet_c = packet.clone();
                 match packet {
+                    Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
+                        protocol::route::HeartbeatRoute::In => {}
+                        protocol::route::HeartbeatRoute::Out => {}
+                        protocol::route::HeartbeatRoute::Keep(time) => {
+                            let time = SystemTime::now()
+                                .duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap()
+                                .as_millis()
+                                - time;
+                            println!("网络延时: {}", time);
+                        }
+                    },
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Update(update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));

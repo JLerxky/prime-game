@@ -87,6 +87,13 @@ async fn start_listening(
                 let packet_1 = packet.clone();
                 let packet_2 = packet.clone();
                 match packet {
+                    Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
+                        protocol::route::HeartbeatRoute::In => {}
+                        protocol::route::HeartbeatRoute::Out => {}
+                        protocol::route::HeartbeatRoute::Keep(_) => {
+                            let _ = tokio::join!(send(send_socket.clone(), &buf[..len], addr));
+                        }
+                    },
                     Packet::Account(account_route) => match account_route {
                         protocol::route::AccountRoute::Login(account_data) => {
                             println!("{}登录事件: {:?}", &addr, &account_data);
@@ -215,7 +222,7 @@ async fn start_listening(
                         }
                         _ => {}
                     },
-                    _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
+                    // _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
                 }
                 // socket.send((Bytes::from("收到！"), addr)).await.unwrap();
             }

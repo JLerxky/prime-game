@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub enum HeartbeatRoute {
     In,
     Out,
-    Keep,
+    Keep(u128),
 }
 // 账号中心路由
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
