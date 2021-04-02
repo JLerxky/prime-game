@@ -133,20 +133,17 @@ async fn net_client_start(
         if let Ok(mut control_queue) = control_queue.lock() {
             let control_queue_c = control_queue.clone();
             control_queue.clear();
-            if let Some((last, elements)) = control_queue_c.split_last() {
-                control_queue.push(*last);
-                for control_data in elements.iter() {
-                    let s = s.clone();
-                    let control_data = control_data.clone();
-                    tokio::spawn(async move {
-                        s.send(
-                            &bincode::serialize(&Packet::Game(GameRoute::Control(control_data)))
-                                .unwrap()[0..],
-                        )
-                        .await
-                        .unwrap();
-                    });
-                }
+            for control_data in control_queue_c.iter() {
+                let s = s.clone();
+                let control_data = control_data.clone();
+                tokio::spawn(async move {
+                    s.send(
+                        &bincode::serialize(&Packet::Game(GameRoute::Control(control_data)))
+                            .unwrap()[0..],
+                    )
+                    .await
+                    .unwrap();
+                });
             }
         }
     }
