@@ -30,19 +30,19 @@ pub async fn start_server(
     Ok(())
 }
 
-pub async fn send(socket: Arc<UdpSocket>, packet: &[u8], recv_addr: SocketAddr) {
-    match socket.send_to(packet, recv_addr).await {
+pub async fn send(socket: Arc<UdpSocket>, packet: Vec<u8>, recv_addr: SocketAddr) {
+    match socket.send_to(&packet[..], recv_addr).await {
         Ok(_) => {
             // println!("send ok");
         }
         Err(_) => {
-            // println!("send err");
+            println!("send err");
         }
     };
 }
 
 pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
-    let mut senders = Vec::new();
+    // let mut senders = Vec::new();
     match game_db::find(GameData::player_group_addr(group, None)) {
         Ok(data) => {
             // println!("1");
@@ -51,31 +51,34 @@ pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
                 for index in 0..uid_list.len() {
                     let recv_addr = SocketAddr::from_str(uid_list[index]).unwrap();
                     let socket = socket.clone();
-                    let sender = send(socket, &packet, recv_addr);
-                    senders.push(sender);
+                    let packet = packet.clone();
+                    tokio::spawn(send(socket, packet, recv_addr));
+                    // senders.push(sender);
                 }
             }
         }
         Err(_e) => {
-            // println!("{}", e);
+            println!("{}", _e);
             // println!("{}组无玩家在线!", group);
         }
     }
-    for sender in senders {
-        // tokio::join!(sender);
-        sender.await;
-        // println!("sended");
-    }
+    // for sender in senders {
+    //     tokio::spawn(sender);
+    // sender.await;
+    // println!("sended");
+    // }
+    // println!("sended");
 }
 
 async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) {
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
+    // let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
     loop {
-        interval.tick().await;
+        // interval.tick().await;
         if let Some(packet) = engine_rx.recv().await {
             // println!("{:?}", packet);
             let socket = socket.clone();
-            let _ = tokio::join!(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
+            tokio::spawn(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
+            // let _ = tokio::join!(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
         }
     }
 }
@@ -102,14 +105,16 @@ async fn start_listening(
                         protocol::route::HeartbeatRoute::In => {}
                         protocol::route::HeartbeatRoute::Out => {}
                         protocol::route::HeartbeatRoute::Keep(_) => {
-                            let _ = tokio::join!(send(send_socket.clone(), &buf[..len], addr));
+                            let _ =
+                                tokio::spawn(send(send_socket.clone(), buf[..len].to_vec(), addr));
                         }
                     },
                     Packet::Account(account_route) => match account_route {
                         protocol::route::AccountRoute::Login(account_data) => {
                             println!("{}登录事件: {:?}", &addr, &account_data);
                             let _ = net_tx.try_send(packet_1);
-                            let _ = tokio::join!(send(send_socket.clone(), &buf[..len], addr));
+                            let _ =
+                                tokio::spawn(send(send_socket.clone(), buf[..len].to_vec(), addr));
                             // 更新在线玩家表
                             match game_db::find(GameData::player_online(None)) {
                                 Ok(data) => {
@@ -228,8 +233,10 @@ async fn start_listening(
                     },
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Control(control_data) => {
-                            println!("{}控制: {:?}", &addr, &control_data);
-                            let _ = net_tx.try_send(packet_2);
+                            // println!("{}控制: {:?}", &addr, &control_data);
+                            if let Ok(_) = net_tx.try_send(packet_2) {
+                                println!("{}转递控制: {:?}", &addr, &control_data);
+                            }
                         }
                         _ => {}
                     },

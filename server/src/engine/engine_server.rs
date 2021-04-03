@@ -139,7 +139,8 @@ pub async fn engine_main_loop(
             frame: frame_no,
             states,
         }));
-        let _ = engine_tx.send(packet).await;
+        let _ = engine_tx.send(packet.clone()).await;
+        // println!("{:?}", &packet);
         frame_no += 1;
     }
     // let time = start_time.elapsed().as_secs_f64();

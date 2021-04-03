@@ -123,19 +123,19 @@ async fn net_client_start(
                     Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
                         protocol::route::HeartbeatRoute::In => {}
                         protocol::route::HeartbeatRoute::Out => {}
-                        protocol::route::HeartbeatRoute::Keep(_time) => {
-                            // let time = SystemTime::now()
-                            //     .duration_since(SystemTime::UNIX_EPOCH)
-                            //     .unwrap()
-                            //     .as_millis()
-                            //     - time;
-                            // println!("网络延时: {}", time);
+                        protocol::route::HeartbeatRoute::Keep(time) => {
+                            let time = SystemTime::now()
+                                .duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap()
+                                .as_millis()
+                                - time;
+                            println!("网络延时: {}", time);
                         }
                     },
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Update(update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));
-                            // println!("接收来自服务器的Update事件");
+                            println!("接收来自服务器的Update事件");
                             if let Ok(mut update_data_list) = update_data_list.lock() {
                                 if update_data_list.len() >= 10 {
                                     update_data_list.remove(0);

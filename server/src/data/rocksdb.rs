@@ -18,7 +18,25 @@ impl RocksDB {
         db_opts.set_keep_log_file_num(3);
         db_opts.create_missing_column_families(true);
         db_opts.create_if_missing(true);
+        // let db = DB::open_for_read_only(&db_opts, path, false)?;
         let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
+        let aes = AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
+        Ok(RocksDB {
+            db,
+            aes,
+            opts: db_opts,
+            path: String::from(path),
+        })
+    }
+    pub fn open_for_read_only() -> Result<RocksDB, Error> {
+        let path = "rocks_game_db";
+
+        let mut db_opts = Options::default();
+        db_opts.set_keep_log_file_num(3);
+        db_opts.create_missing_column_families(true);
+        db_opts.create_if_missing(true);
+        let db = DB::open_for_read_only(&db_opts, path, false)?;
+        // let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
         let aes = AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
         Ok(RocksDB {
             db,

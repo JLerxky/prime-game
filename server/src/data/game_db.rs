@@ -26,7 +26,7 @@ impl GameData {
 }
 
 pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open_for_read_only()?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(
@@ -42,7 +42,7 @@ pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn find_and_lock(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open_for_read_only()?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(
