@@ -56,7 +56,7 @@ fn event_listener_system(
                 direction: control_event.direction,
                 action: control_event.action,
             };
-            println!("收到控制事件: {:?}", control_event);
+            // println!("收到控制事件: {:?}", control_event);
         }
     }
 }

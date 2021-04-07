@@ -258,7 +258,7 @@ async fn wait_for_net(
                 // 玩家登录生成角色
                 Packet::Account(account_route) => match account_route {
                     protocol::route::AccountRoute::Login(login_data) => {
-                        println!("uid: {}", &entity_id);
+                        println!("玩家加入: {}", &entity_id);
                         // 球
                         // 刚体类型
                         let rb_state = EntityState {
@@ -290,7 +290,7 @@ async fn wait_for_net(
                         let rb_handle = bodies.insert(rigid_body);
                         colliders.insert(collider, rb_handle, bodies);
                         player_handle_map.insert(login_data.uid, rb_handle);
-                        println!("{:?}", player_handle_map);
+                        // println!("{:?}", player_handle_map);
                         entity_id += 1;
                     }
                     protocol::route::AccountRoute::Logout(_) => {}
@@ -309,7 +309,7 @@ async fn wait_for_net(
                                     ),
                                     true,
                                 );
-                                println!("控制移动");
+                                // println!("控制移动");
                             }
                         }
                     }

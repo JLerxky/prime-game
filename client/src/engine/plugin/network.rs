@@ -129,7 +129,7 @@ async fn net_client_start(
                                 .unwrap()
                                 .as_millis()
                                 - time;
-                            println!("网络延时: {}", time);
+                            println!("ping: {}", time);
                         }
                     },
                     Packet::Game(game_route) => match game_route {

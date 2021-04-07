@@ -23,6 +23,27 @@ impl GameData {
             data,
         }
     }
+    pub fn player_addr_health(addr: String, data: Option<String>) -> Self {
+        GameData {
+            table: "player".to_string(),
+            key: format!("addr_health_{}", addr),
+            data,
+        }
+    }
+    pub fn player_addr_uid(addr: String, data: Option<String>) -> Self {
+        GameData {
+            table: "player".to_string(),
+            key: format!("addr_uid_{}", addr),
+            data,
+        }
+    }
+    pub fn player_queue_uid(data: Option<String>) -> Self {
+        GameData {
+            table: "player".to_string(),
+            key: "queue_uid".to_string(),
+            data,
+        }
+    }
 }
 
 pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
@@ -34,6 +55,22 @@ pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
             "无数据!",
         ))),
     }
+}
+
+pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
+    let rocks_db = RocksDB::open()?;
+    match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
+        Some(result) => {
+            if let Ok(mut next) = result.parse::<u64>() {
+                next += 1;
+                save(GameData::player_queue_uid(Some(format!("{}", next))))?;
+                return Ok(next);
+            }
+        }
+        None => {}
+    }
+    save(GameData::player_queue_uid(Some(format!("{}", 0))))?;
+    Ok(0)
 }
 
 pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
