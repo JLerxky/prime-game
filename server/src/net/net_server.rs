@@ -1,5 +1,5 @@
 use crate::data::game_db::{self, GameData};
-use protocol::packet::Packet;
+use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
 
@@ -207,8 +207,6 @@ async fn start_listening(
             if let Ok(packet) = bincode::deserialize::<Packet>(&buf[..len]) {
                 // println!("服务器收到数据: {:?}", &packet);
                 // 转发事件
-                let packet_1 = packet.clone();
-                let packet_2 = packet.clone();
                 match packet {
                     Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
                         protocol::route::HeartbeatRoute::In => {}
@@ -233,7 +231,6 @@ async fn start_listening(
                     Packet::Account(account_route) => match account_route {
                         protocol::route::AccountRoute::Login(account_data) => {
                             println!("{}登录事件: {:?}", &addr, &account_data);
-                            let _ = net_tx.try_send(packet_1);
                             let _ =
                                 tokio::spawn(send(send_socket.clone(), buf[..len].to_vec(), addr));
 
@@ -341,6 +338,15 @@ async fn start_listening(
                                         .as_millis()
                                 )),
                             ));
+                            // 发送生成玩家实体事件到引擎
+                            let packet_login =
+                                Packet::Account(protocol::route::AccountRoute::Login(
+                                    protocol::data::account_data::AccountData {
+                                        uid,
+                                        group: account_data.group,
+                                    },
+                                ));
+                            let _ = net_tx.try_send(packet_login);
                         }
                         protocol::route::AccountRoute::Logout(account_data) => {
                             println!("{}登出事件: {:?}", &addr, &account_data);
@@ -409,9 +415,28 @@ async fn start_listening(
                         }
                     },
                     Packet::Game(game_route) => match game_route {
-                        protocol::route::GameRoute::Control(_control_data) => {
+                        protocol::route::GameRoute::Control(control_data) => {
                             // println!("{}控制: {:?}", &addr, &control_data);
-                            if let Ok(_) = net_tx.try_send(packet_2) {
+                            // 根据玩家ip注册或获取uid
+                            let uid;
+                            match game_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                                Ok(data) => {
+                                    if let Ok(id) = data.parse::<u32>() {
+                                        uid = id;
+                                    } else {
+                                        return;
+                                    }
+                                }
+                                Err(_) => {
+                                    return;
+                                }
+                            }
+                            let packet_control = Packet::Game(GameRoute::Control(ControlData {
+                                uid,
+                                direction: control_data.direction,
+                                action: control_data.action,
+                            }));
+                            if let Ok(_) = net_tx.try_send(packet_control) {
                                 // println!("{}转递控制: {:?}", &addr, &control_data);
                             }
                         }

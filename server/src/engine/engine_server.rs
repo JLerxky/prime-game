@@ -158,7 +158,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::cuboid(5000.0, 10.0))
         // 摩擦
-        .friction(0.0)
+        .friction(1.0)
         // 是否为传感器
         // .sensor(true)
         .build();
@@ -194,7 +194,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         // 密度
         .density(1.0)
         // 摩擦
-        .friction(0.0)
+        .friction(10.0)
         // 是否为传感器
         // .sensor(true)
         .build();
@@ -231,7 +231,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         // 密度
         .density(1.0)
         // 摩擦
-        .friction(0.0)
+        .friction(1.0)
         // 是否为传感器
         // .sensor(true)
         .build();
