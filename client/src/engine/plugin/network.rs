@@ -135,7 +135,7 @@ async fn net_client_start(
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Update(update_data) => {
                             // let _ = tokio::join!(tx.send(packet_c));
-                            println!("接收来自服务器的Update事件");
+                            // println!("接收来自服务器的Update事件");
                             if let Ok(mut update_data_list) = update_data_list.lock() {
                                 if update_data_list.len() >= 10 {
                                     update_data_list.remove(0);

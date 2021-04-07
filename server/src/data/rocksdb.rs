@@ -1,4 +1,6 @@
-use rocksdb::{ColumnFamilyDescriptor, Error, IteratorMode, Options, DB};
+use std::error::Error;
+
+use rocksdb::{ColumnFamilyDescriptor, Error as RocksdbError, IteratorMode, Options, DB};
 use util::aes::AESUtil;
 pub struct RocksDB {
     db: DB,
@@ -6,48 +8,48 @@ pub struct RocksDB {
     opts: Options,
     path: String,
 }
+pub static mut ROCKS_DB: Option<RocksDB> = None;
 
 impl RocksDB {
-    pub fn open() -> Result<RocksDB, Error> {
-        let path = "rocks_game_db";
-        let mut cf_opts = Options::default();
-        cf_opts.set_keep_log_file_num(3);
-        let cf = ColumnFamilyDescriptor::new("cf1", cf_opts);
+    pub fn open() -> Result<&'static RocksDB, Box<dyn Error>> {
+        unsafe {
+            match &ROCKS_DB {
+                Some(db) => Ok(db),
+                None => {
+                    let path = "rocks_game_db";
+                    let mut cf_opts = Options::default();
+                    cf_opts.set_keep_log_file_num(3);
+                    let cf = ColumnFamilyDescriptor::new("cf1", cf_opts);
 
-        let mut db_opts = Options::default();
-        db_opts.set_keep_log_file_num(3);
-        db_opts.create_missing_column_families(true);
-        db_opts.create_if_missing(true);
-        // let db = DB::open_for_read_only(&db_opts, path, false)?;
-        let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
-        let aes = AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
-        Ok(RocksDB {
-            db,
-            aes,
-            opts: db_opts,
-            path: String::from(path),
-        })
-    }
-    pub fn open_for_read_only() -> Result<RocksDB, Error> {
-        let path = "rocks_game_db";
-
-        let mut db_opts = Options::default();
-        db_opts.set_keep_log_file_num(3);
-        db_opts.create_missing_column_families(true);
-        db_opts.create_if_missing(true);
-        let db = DB::open_for_read_only(&db_opts, path, false)?;
-        // let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
-        let aes = AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
-        Ok(RocksDB {
-            db,
-            aes,
-            opts: db_opts,
-            path: String::from(path),
-        })
+                    let mut db_opts = Options::default();
+                    db_opts.set_keep_log_file_num(3);
+                    db_opts.create_missing_column_families(true);
+                    db_opts.create_if_missing(true);
+                    // let db = DB::open_for_read_only(&db_opts, path, false)?;
+                    let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
+                    let aes =
+                        AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
+                    ROCKS_DB = Some(RocksDB {
+                        db,
+                        aes,
+                        opts: db_opts,
+                        path: String::from(path),
+                    });
+                    if let Some(db) = &ROCKS_DB {
+                        Ok(db)
+                    } else {
+                        Err(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            "打开数据库失败!",
+                        )))
+                    }
+                }
+            }
+        }
     }
 
     // 加密存储
-    pub fn put<K, V>(&self, key: K, value: V) -> Result<(), Error>
+    pub fn put<K, V>(&self, key: K, value: V) -> Result<(), RocksdbError>
     where
         K: AsRef<[u8]>,
         V: AsRef<[u8]>,

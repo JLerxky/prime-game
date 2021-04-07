@@ -58,7 +58,7 @@ pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
             }
         }
         Err(_e) => {
-            println!("{}", _e);
+            // println!("{}", _e);
             // println!("{}组无玩家在线!", group);
         }
     }
