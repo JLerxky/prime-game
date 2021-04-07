@@ -9,15 +9,14 @@ use bevy_rapier2d::{
 
 use super::{
     event::{
-        control_event::{ControlEventPlugin},
-        keyboard_event::KeyboardEventPlugin,
+        control_event::ControlEventPlugin, keyboard_event::KeyboardEventPlugin,
         map_event::MapEventPlugin,
     },
     plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
         fps::Fps,
-        network::{NetWorkState, NetworkPlugin},
+        network::{NetWorkState, NetworkPlugin, UID},
         tile_map::TileMapPlugin,
     },
 };
@@ -135,6 +134,7 @@ fn network_synchronization(
     window: Res<WindowDescriptor>,
     net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
+    mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
 ) {
     // println!("1");
     if let Ok(mut update_data_list) = net.update_data_list.lock() {
@@ -161,6 +161,21 @@ fn network_synchronization(
                             ]),
                             scale: Vec3::new(1., 1., 1.),
                         };
+                        unsafe {
+                            if rigid_body_state.entity_type == 1
+                                && UID == rigid_body_state.id as u32
+                            {
+                                if let Some((_camera_ctrl, mut camera_transform)) =
+                                    camera_query.iter_mut().next()
+                                {
+                                    camera_transform.translation = Vec3::new(
+                                        rigid_body_state.translation.0,
+                                        rigid_body_state.translation.1,
+                                        99.0,
+                                    );
+                                }
+                            }
+                        }
                         continue 'update_data;
                     }
                 }

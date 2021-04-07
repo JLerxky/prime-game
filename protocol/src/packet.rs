@@ -25,7 +25,7 @@ fn test_1() {
 fn test_bincode() {
     use crate::data::control_data::ControlData;
     let packet: Packet = Packet::Game(GameRoute::Control(ControlData {
-        uid: 123,
+        uid: 0,
         direction: (-1., 0.11),
         action: 1,
     }));

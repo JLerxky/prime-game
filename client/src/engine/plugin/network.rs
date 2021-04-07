@@ -5,7 +5,6 @@ use std::{
 };
 
 use bevy::prelude::*;
-use common::config::UID;
 use protocol::{
     data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData},
     packet::Packet,
@@ -15,6 +14,9 @@ use tokio::{
     net::UdpSocket,
     sync::mpsc::{self, Receiver, Sender},
 };
+
+// 当前玩家uid
+pub static mut UID: u32 = 0;
 
 pub struct NetworkPlugin;
 
@@ -69,7 +71,7 @@ async fn net_client_start(
     // 登录服务器
     s.send(
         &bincode::serialize(&Packet::Account(AccountRoute::Login(AccountData {
-            uid: UID,
+            uid: 0,
             group: 0,
         })))
         .unwrap()[0..],
@@ -131,6 +133,9 @@ async fn net_client_start(
                                 - time;
                             println!("ping: {}", time);
                         }
+                    },
+                    Packet::Account(AccountRoute::Login(login_data)) => unsafe {
+                        UID = login_data.uid;
                     },
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Update(update_data) => {

@@ -231,9 +231,6 @@ async fn start_listening(
                     Packet::Account(account_route) => match account_route {
                         protocol::route::AccountRoute::Login(account_data) => {
                             println!("{}登录事件: {:?}", &addr, &account_data);
-                            let _ =
-                                tokio::spawn(send(send_socket.clone(), buf[..len].to_vec(), addr));
-
                             // 根据玩家ip注册或获取uid
                             let mut uid = account_data.uid;
                             match game_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
@@ -346,7 +343,12 @@ async fn start_listening(
                                         group: account_data.group,
                                     },
                                 ));
-                            let _ = net_tx.try_send(packet_login);
+                            let _ = net_tx.try_send(packet_login.clone());
+                            let _ = tokio::spawn(send(
+                                send_socket.clone(),
+                                bincode::serialize(&packet_login).unwrap(),
+                                addr,
+                            ));
                         }
                         protocol::route::AccountRoute::Logout(account_data) => {
                             println!("{}登出事件: {:?}", &addr, &account_data);

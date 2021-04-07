@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use common::config::UID;
 use protocol::data::control_data::ControlData;
 
 use crate::engine::plugin::network::NetWorkState;
@@ -10,7 +9,7 @@ impl Plugin for ControlEventPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(ControlLastOne {
             control: ControlData {
-                uid: UID,
+                uid: 0,
                 direction: (0., 0.),
                 action: 0,
             },
@@ -47,12 +46,12 @@ fn event_listener_system(
                 continue;
             }
             control_queue.push(ControlData {
-                uid: UID,
+                uid: 0,
                 direction: control_event.direction,
                 action: control_event.action,
             });
             control_last_one.control = ControlData {
-                uid: UID,
+                uid: 0,
                 direction: control_event.direction,
                 action: control_event.action,
             };

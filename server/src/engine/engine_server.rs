@@ -174,7 +174,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         linvel: (0., 0.),
         angvel: (0., 0.),
         texture: (1, 4),
-        entity_type: 1,
+        entity_type: 2,
     };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
         .translation(0.0, 50.0)
@@ -211,7 +211,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         linvel: (0., 0.),
         angvel: (0., 0.),
         texture: (1, 4),
-        entity_type: 1,
+        entity_type: 2,
     };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
         .translation(0.0, 100.0)
@@ -246,7 +246,7 @@ async fn wait_for_net(
     collider_state: ColliderSetState,
     player_handle_state: PlayerHandleMapState,
 ) {
-    let mut entity_id: u64 = 2;
+    // let mut entity_id: u64 = 1000;
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
     loop {
         // interval.tick().await;
@@ -258,11 +258,11 @@ async fn wait_for_net(
                 // 玩家登录生成角色
                 Packet::Account(account_route) => match account_route {
                     protocol::route::AccountRoute::Login(login_data) => {
-                        println!("玩家加入: {}", &entity_id);
+                        println!("玩家加入: {}", &login_data.uid);
                         // 球
                         // 刚体类型
                         let rb_state = EntityState {
-                            id: entity_id,
+                            id: login_data.uid as u64,
                             translation: (0., 0.),
                             rotation: (0., 0.),
                             linvel: (0., 0.),
@@ -291,7 +291,7 @@ async fn wait_for_net(
                         colliders.insert(collider, rb_handle, bodies);
                         player_handle_map.insert(login_data.uid, rb_handle);
                         // println!("{:?}", player_handle_map);
-                        entity_id += 1;
+                        // entity_id += 1;
                     }
                     protocol::route::AccountRoute::Logout(_) => {}
                 },
