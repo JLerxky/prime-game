@@ -249,7 +249,7 @@ async fn wait_for_net(
                             .user_data(rb_state.get_data())
                             .build();
                         // 碰撞体类型
-                        let collider = ColliderBuilder::capsule_y(64.0, 1.0)
+                        let collider = ColliderBuilder::cuboid(32.0, 64.0)
                             // 密度
                             .density(1.0)
                             // 摩擦
