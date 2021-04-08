@@ -125,10 +125,7 @@ pub async fn engine_main_loop(
                             collider.position().translation.x,
                             collider.position().translation.y,
                         ),
-                        rotation: (
-                            collider.position().rotation.re,
-                            collider.position().rotation.im,
-                        ),
+                        rotation: collider.position().rotation.angle(),
                         linvel: (body.linvel().x, body.linvel().y),
                         angvel: (body.angvel(), body.angvel()),
                         texture: (0, 0),
@@ -157,7 +154,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 地面
     // 刚体类型
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
-        .translation(0.0, -40.0)
+        .translation(0.0, -10.0)
         .build();
     // 碰撞体类型
     let collider = ColliderBuilder::new(SharedShape::cuboid(5000.0, 10.0))
@@ -174,14 +171,14 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     let rb_state = EntityState {
         id: 1000,
         translation: (0., 0.),
-        rotation: (0., 0.),
+        rotation: 0.,
         linvel: (0., 0.),
         angvel: (0., 0.),
-        texture: (1, 4),
+        texture: (0, 4),
         entity_type: 2,
     };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-        .translation(0.0, 100.0)
+        .translation(0.0, 200.0)
         // .rotation(0.0)
         // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
         // 线速度
@@ -232,14 +229,14 @@ async fn wait_for_net(
                         let rb_state = EntityState {
                             id: login_data.uid as u64,
                             translation: (0., 0.),
-                            rotation: (0., 0.),
+                            rotation: 0.,
                             linvel: (0., 0.),
                             angvel: (0., 0.),
-                            texture: (1, 4),
+                            texture: (1, 8),
                             entity_type: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                            .translation(2.0, 100.0)
+                            .translation(0.0, 100.0)
                             // 线速度
                             .linvel(0.0, 0.0)
                             // 角速度
@@ -250,7 +247,7 @@ async fn wait_for_net(
                             .user_data(rb_state.get_data())
                             .build();
                         // 碰撞体类型
-                        let collider = ColliderBuilder::capsule_y(10.0, 10.0)
+                        let collider = ColliderBuilder::capsule_y(64.0, 0.0)
                             // 密度
                             .density(1.0)
                             // 摩擦
@@ -274,10 +271,7 @@ async fn wait_for_net(
                                             collider.position().translation.x,
                                             collider.position().translation.y,
                                         ),
-                                        rotation: (
-                                            collider.position().rotation.re,
-                                            collider.position().rotation.im,
-                                        ),
+                                        rotation: collider.position().rotation.angle(),
                                         linvel: (body.linvel().x, body.linvel().y),
                                         angvel: (body.angvel(), body.angvel()),
                                         texture: (0, 0),

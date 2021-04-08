@@ -17,7 +17,7 @@ pub struct EntityState {
     // 8b[8..15]
     pub translation: (f32, f32),
     // 8b[16..23]
-    pub rotation: (f32, f32),
+    pub rotation: f32,
     // 8b[24..31]
     pub linvel: (f32, f32),
     // 8b[32..39]

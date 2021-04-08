@@ -31,8 +31,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 800f32,
-            height: 450f32,
+            width: 1600f32,
+            height: 900f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -153,12 +153,7 @@ fn network_synchronization(
                                 rigid_body_state.translation.1,
                                 99.0,
                             ),
-                            rotation: Quat::from([
-                                rigid_body_state.rotation.0,
-                                rigid_body_state.rotation.1,
-                                0.0,
-                                0.0,
-                            ]),
+                            rotation: Quat::from_rotation_z(rigid_body_state.rotation),
                             scale: Vec3::new(1., 1., 1.),
                         };
                         unsafe {
@@ -181,11 +176,46 @@ fn network_synchronization(
                 }
                 // println!("4");
 
-                let texture_handle = asset_server
-                    .load(format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str());
-                // let tile_size = Vec2::new(100.0, 120.0);
-                let tile_size =
-                    Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 4f32);
+                // 未生成的实体根据实体类型生成新实体
+                let mut texture_handle = asset_server.load("textures/chars/0.png");
+                let mut tile_size =
+                    Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
+
+                match rigid_body_state.entity_type {
+                    // tile
+                    0 => {
+                        texture_handle = asset_server.load(
+                            format!("textures/tile/{}.png", rigid_body_state.texture.0).as_str(),
+                        );
+                    }
+                    // 玩家实体
+                    1 => {
+                        texture_handle = asset_server.load(
+                            format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str(),
+                        );
+                        tile_size *= 2f32;
+                    }
+                    // 可动实体
+                    2 => {
+                        texture_handle = asset_server.load(
+                            format!("textures/movable/{}.png", rigid_body_state.texture.0).as_str(),
+                        );
+                        tile_size =
+                            Vec2::new(window.width / 21f32 * 0.5f32, window.height / 13f32 * 1f32);
+                    }
+                    // 不可动实体
+                    3 => {
+                        texture_handle = asset_server.load(
+                            format!("textures/unmovable/{}.png", rigid_body_state.texture.0)
+                                .as_str(),
+                        );
+                    }
+                    // 其它
+                    _ => {}
+                }
+
+                let scale = Vec3::new(1., 1., 0.);
+
                 let texture_atlas = TextureAtlas::from_grid(
                     texture_handle,
                     tile_size,
@@ -202,13 +232,8 @@ fn network_synchronization(
                                 rigid_body_state.translation.1,
                                 99.0,
                             ),
-                            rotation: Quat::from([
-                                rigid_body_state.rotation.0,
-                                rigid_body_state.rotation.1,
-                                0.0,
-                                0.0,
-                            ]),
-                            scale: Vec3::new(1., 1., 1.),
+                            rotation: Quat::from_rotation_z(rigid_body_state.rotation),
+                            scale,
                         },
                         ..Default::default()
                     })
