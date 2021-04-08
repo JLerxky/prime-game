@@ -39,7 +39,7 @@ impl Plugin for NetworkPlugin {
             update_data_list_c,
             control_queue_c,
         ));
-        app.add_resource(NetWorkState {
+        app.insert_resource(NetWorkState {
             engine_tx,
             net_rx,
             update_data_list,

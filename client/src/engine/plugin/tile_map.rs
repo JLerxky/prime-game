@@ -191,41 +191,40 @@ impl Slot {
     }
 }
 
-#[derive(Reflect, Default)]
-#[reflect(Component)]
 pub struct MapState {
     tile_center: Vec3,
 }
 
 pub struct TileMapPlugin;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct BuildMapFixedUpdateStage;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct CleanMapFixedUpdateStage;
+
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.register_type::<MapState>()
-            .add_resource(MapState {
-                tile_center: Vec3::new(0f32, 0f32, 0f32),
-            })
-            .add_startup_system(setup.system())
-            // .add_system(tile_map_produce_system.system())
-            // .add_system(tile_map_clean_system.system())
-            .add_stage_after(
-                stage::UPDATE,
-                "build_map_fixed_update",
-                SystemStage::parallel()
-                    .with_run_criteria(
-                        FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"),
-                    )
-                    .with_system(tile_map_produce_system.system()),
-            )
-            .add_stage_after(
-                stage::UPDATE,
-                "clean_map_fixed_update",
-                SystemStage::parallel()
-                    .with_run_criteria(
-                        FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"),
-                    )
-                    .with_system(tile_map_clean_system.system()),
-            );
+        app.insert_resource(MapState {
+            tile_center: Vec3::new(0f32, 0f32, 0f32),
+        })
+        .add_startup_system(setup.system())
+        // .add_system(tile_map_produce_system.system())
+        // .add_system(tile_map_clean_system.system())
+        .add_stage_after(
+            CoreStage::Update,
+            BuildMapFixedUpdateStage,
+            SystemStage::parallel()
+                .with_run_criteria(FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"))
+                .with_system(tile_map_produce_system.system()),
+        )
+        .add_stage_after(
+            CoreStage::Update,
+            CleanMapFixedUpdateStage,
+            SystemStage::parallel()
+                .with_run_criteria(FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"))
+                .with_system(tile_map_clean_system.system()),
+        );
     }
 }
 
@@ -235,8 +234,8 @@ fn test() {
     println!("{:?}", 1920 as i32 / 100i32);
 }
 
-fn setup<'a>(
-    commands: &mut Commands,
+fn setup(
+    mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
     map_state: ResMut<MapState>,
@@ -264,22 +263,22 @@ fn setup<'a>(
      * The ground
      */
     commands
-        .spawn(SpriteBundle {
+        .spawn_bundle(SpriteBundle {
             material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
             sprite: Sprite::new(Vec2::new(300.0, 10.0)),
             ..Default::default()
         })
-        .with(RigidBodyBuilder::new_static().translation(400.0, -tile_size.y / 2f32))
-        .with(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
+        .insert(RigidBodyBuilder::new_static().translation(400.0, -tile_size.y / 2f32))
+        .insert(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
 
     commands
-        .spawn(SpriteBundle {
+        .spawn_bundle(SpriteBundle {
             material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
             sprite: Sprite::new(Vec2::new(300.0, 10.0)),
             ..Default::default()
         })
-        .with(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 1f32))
-        .with(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
+        .insert(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 1f32))
+        .insert(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
 
     // commands
     //     .spawn(SpriteBundle {
@@ -322,15 +321,15 @@ fn setup<'a>(
                     let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
 
                     commands
-                        .spawn(SpriteBundle {
+                        .spawn_bundle(SpriteBundle {
                             material: texture_handle.clone(),
                             sprite: Sprite::new(tile_size),
                             transform: Transform::from_translation(tile_position),
                             ..Default::default()
                         })
-                        .with(rigid_body)
-                        .with(collider.friction(0.0))
-                        .with(Slot {
+                        .insert(rigid_body)
+                        .insert(collider.friction(0.0))
+                        .insert(Slot {
                             position: tile_position,
                             is_collapsed: true,
                             superposition: [None; 13],
@@ -345,13 +344,13 @@ fn setup<'a>(
                             .into(),
                     );
                     commands
-                        .spawn(SpriteBundle {
+                        .spawn_bundle(SpriteBundle {
                             material: texture_handle.clone(),
                             sprite: Sprite::new(tile_size),
                             transform: Transform::from_translation(tile_position),
                             ..Default::default()
                         })
-                        .with(Slot {
+                        .insert(Slot {
                             position: tile_position,
                             is_collapsed: true,
                             superposition: [None; 13],
@@ -365,22 +364,21 @@ fn setup<'a>(
 }
 
 fn tile_map_produce_system(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut map_state: ResMut<MapState>,
     slot_exist_query: Query<(Entity, &Transform), With<Slot>>,
     // player_transform_query: Query<&Transform, With<Player>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
     window: Res<WindowDescriptor>,
-    mut map_event_reader: Local<EventReader<MapEvent>>,
-    mut map_events: ResMut<Events<MapEvent>>,
+    mut map_event_reader: EventReader<MapEvent>,
     asset_server: Res<AssetServer>,
 ) {
     let mut has_event = false;
-    for _ in map_event_reader.iter(&map_events) {
+    for _ in map_event_reader.iter() {
         has_event = true;
     }
-    map_events.clear();
+    // map_events.clear();
     if has_event {
         println!("生成事件！");
         let camera_transform = camera_transform_query.iter().next().unwrap();
@@ -433,15 +431,15 @@ fn tile_map_produce_system(
                             ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
 
                         commands
-                            .spawn(SpriteBundle {
+                            .spawn_bundle(SpriteBundle {
                                 material: texture_handle.clone(),
                                 sprite: Sprite::new(tile_size),
                                 transform: Transform::from_translation(tile_position),
                                 ..Default::default()
                             })
-                            .with(rigid_body)
-                            .with(collider.friction(0.0))
-                            .with(Slot {
+                            .insert(rigid_body)
+                            .insert(collider.friction(0.0))
+                            .insert(Slot {
                                 position: tile_position,
                                 is_collapsed: true,
                                 superposition: [None; 13],
@@ -461,13 +459,13 @@ fn tile_map_produce_system(
                                 .into(),
                         );
                         commands
-                            .spawn(SpriteBundle {
+                            .spawn_bundle(SpriteBundle {
                                 material: texture_handle.clone(),
                                 sprite: Sprite::new(tile_size),
                                 transform: Transform::from_translation(tile_position),
                                 ..Default::default()
                             })
-                            .with(Slot {
+                            .insert(Slot {
                                 position: tile_position,
                                 is_collapsed: true,
                                 superposition: [None; 13],
@@ -492,7 +490,7 @@ fn tile_map_produce_system(
 }
 
 fn tile_map_clean_system(
-    commands: &mut Commands,
+    mut commands: Commands,
     _entity_query: Query<Entity>,
     slot_query: Query<(Entity, &Transform), With<Slot>>,
     camera_transform_query: Query<&Transform, With<CameraCtrl>>,
@@ -523,7 +521,7 @@ fn tile_map_clean_system(
                 || tile_transform.translation.y < camera_transform.translation.y - h
             {
                 // println!("Clean: {:?}", tile_transform);
-                commands.despawn_recursive(tile_entity);
+                commands.entity(tile_entity).despawn_recursive();
             }
         }
     }

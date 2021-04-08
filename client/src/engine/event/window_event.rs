@@ -16,10 +16,10 @@ enum WindowEvent {
 }
 
 fn event_listener_system(
-    mut window_event_reader: Local<EventReader<WindowEvent>>,
-    window_events: Res<Events<WindowEvent>>,
+    mut window_event_reader: EventReader<WindowEvent>,
+    _window_events: Res<WindowEvent>,
 ) {
-    for window_event in window_event_reader.iter(&window_events) {
+    for window_event in window_event_reader.iter() {
         println!("{:?}", window_event);
         match window_event {
             WindowEvent::_QUIT => {}
@@ -30,7 +30,7 @@ fn event_listener_system(
 fn keyboard_event_system(
     keyboard_input: Res<Input<KeyCode>>,
     mut windows: ResMut<Windows>,
-    mut app_exit_events: ResMut<Events<AppExit>>,
+    mut app_exit_events: EventWriter<AppExit>,
 ) {
     if let Some(window) = windows.get_primary_mut() {
         // 鼠标显示

@@ -30,7 +30,7 @@ pub struct Player {
 }
 
 fn setup(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     window: Res<WindowDescriptor>,
@@ -42,7 +42,7 @@ fn setup(
     let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 8, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
-        .spawn(SpriteSheetBundle {
+        .spawn_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             transform: Transform {
                 translation: Vec3::new(0.0, 220.0, 10.0),
@@ -51,19 +51,19 @@ fn setup(
             },
             ..Default::default()
         })
-        .with(
+        .insert(
             RigidBodyBuilder::new_dynamic()
                 .gravity_scale(8.0)
                 .lock_rotations(),
         )
-        .with(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
-        .with(Player {
+        .insert(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
+        .insert(Player {
             uid: 0,
             velocity: Vec3::new(40f32, 12000f32, 0f32),
             show_size: tile_size * scale,
             jumped: false,
         })
-        .with(Timer::from_seconds(0.1, true));
+        .insert(Timer::from_seconds(0.1, true));
 }
 
 fn player_movement(
@@ -73,7 +73,7 @@ fn player_movement(
     mut player_info: Query<(&mut Player, &Transform, &RigidBodyHandleComponent)>,
     mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
     // window: Res<WindowDescriptor>,
-    mut map_events: ResMut<Events<MapEvent>>,
+    mut map_events: EventWriter<MapEvent>,
 ) {
     if let Some((_camera_ctrl, mut camera_transform)) = camera_query.iter_mut().next() {
         for (player, _player_transform, rigid_body_component) in player_info.iter_mut() {
@@ -156,7 +156,7 @@ fn animate_system(
                 || rb.linvel().x < -0.001f32
                 || rb.linvel().y < -0.001f32
             {
-                timer.tick(time.delta_seconds());
+                timer.tick(time.delta());
                 if timer.finished() {
                     if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
                         sprite.index =

@@ -12,14 +12,9 @@ impl Plugin for Clipboard {
     }
 }
 
-#[derive(Default)]
-struct State {
-    event_reader: EventReader<ReceivedCharacter>,
-}
-
-fn clipboard_system(mut state: Local<State>, char_input_events: Res<Events<ReceivedCharacter>>) {
+fn clipboard_system(mut char_input_events: EventReader<ReceivedCharacter>) {
     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    for event in state.event_reader.iter(&char_input_events) {
+    for event in char_input_events.iter() {
         if event.char == "\u{3}".chars().next().unwrap() {
             ctx.set_contents("some string".to_owned()).unwrap();
         }

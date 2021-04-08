@@ -13,10 +13,10 @@ impl Plugin for Fps {
     }
 }
 
-fn add_fps_system(commands: &mut Commands, asset_server: Res<AssetServer>) {
+fn add_fps_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/YouZai.ttf");
     commands
-        .spawn(TextBundle {
+        .spawn_bundle(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
@@ -27,18 +27,18 @@ fn add_fps_system(commands: &mut Commands, asset_server: Res<AssetServer>) {
                 },
                 ..Default::default()
             },
-            text: Text {
-                value: "0 fps".to_string(),
-                font: font.clone(),
-                style: TextStyle {
-                    font_size: 30.0,
+            text: Text::with_section(
+                "0 fps".to_string(),
+                TextStyle {
+                    font: font.clone(),
+                    font_size: 60.0,
                     color: Color::WHITE,
-                    alignment: TextAlignment::default(),
                 },
-            },
+                TextAlignment::default(),
+            ),
             ..Default::default()
         })
-        .with(Fps);
+        .insert(Fps);
 }
 
 fn change_fps_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<Fps>>) {
@@ -50,6 +50,6 @@ fn change_fps_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, 
             }
         }
 
-        text.value = format!("{:.0} fps", fps);
+        text.sections[0].value = format!("{:.0} fps", fps);
     }
 }

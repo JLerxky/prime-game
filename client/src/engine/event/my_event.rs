@@ -14,10 +14,10 @@ pub struct MyEvent {
 }
 
 fn event_listener_system(
-    mut my_event_reader: Local<EventReader<MyEvent>>,
-    my_events: Res<Events<MyEvent>>,
+    mut my_event_reader: EventReader<MyEvent>,
+    _my_events: Res<MyEvent>,
 ) {
-    for my_event in my_event_reader.iter(&my_events) {
+    for my_event in my_event_reader.iter() {
         println!("{}", my_event.message);
     }
 }

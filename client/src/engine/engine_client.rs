@@ -17,13 +17,13 @@ use super::{
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin, UID},
-        tile_map::TileMapPlugin,
+        // tile_map::TileMapPlugin,
     },
 };
 
 pub fn engine_start() {
     App::build()
-        .add_resource(WindowDescriptor {
+        .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
             // 垂直同步
             vsync: true,
@@ -40,7 +40,7 @@ pub fn engine_start() {
             // cursor_visible: false,
             ..Default::default()
         })
-        .add_resource(Msaa { samples: 4 })
+        .insert_resource(Msaa { samples: 8 })
         // 默认插件
         .add_plugins(DefaultPlugins)
         // 窗口插件
@@ -67,7 +67,7 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        .add_plugin(TileMapPlugin)
+        // .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络
@@ -87,19 +87,20 @@ pub fn engine_start() {
         .run();
 }
 
-fn set_camera(commands: &mut Commands) {
+fn set_camera(mut commands: Commands) {
     commands
         // cameras
-        .spawn(Camera2dBundle::default())
-        .with(CameraCtrl)
-        .spawn(CameraUiBundle::default());
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(CameraCtrl);
+    commands.spawn_bundle(UiCameraBundle::default());
+    // .insert(CameraCtrl);
 }
 
-fn setup_graphics(commands: &mut Commands, mut rapier_config: ResMut<RapierConfiguration>) {
+fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfiguration>) {
     // configuration.scale = 40.0;
 
     rapier_config.gravity = Vector2::new(0.0, -512.0);
-    commands.spawn(LightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_translation(Vec3::new(1000.0, 100.0, 2000.0)),
         ..Default::default()
     });
@@ -118,7 +119,7 @@ fn animate_system(
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
     for (mut timer, mut sprite, texture_atlas_handle) in animate_entity_query.iter_mut() {
-        timer.tick(time.delta_seconds());
+        timer.tick(time.delta());
         if timer.finished() {
             if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
                 sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
@@ -128,13 +129,13 @@ fn animate_system(
 }
 
 fn network_synchronization(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     window: Res<WindowDescriptor>,
     net: ResMut<NetWorkState>,
-    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform)>,
-    mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
+    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
+    mut camera_query: Query<(&mut Transform, &CameraCtrl)>,
 ) {
     // println!("1");
     if let Ok(mut update_data_list) = net.update_data_list.lock() {
@@ -160,7 +161,7 @@ fn network_synchronization(
                             if rigid_body_state.entity_type == 1
                                 && UID == rigid_body_state.id as u32
                             {
-                                if let Some((_camera_ctrl, mut camera_transform)) =
+                                if let Some((mut camera_transform, _)) =
                                     camera_query.iter_mut().next()
                                 {
                                     camera_transform.translation = Vec3::new(
@@ -224,7 +225,7 @@ fn network_synchronization(
                 );
                 let texture_atlas_handle = texture_atlases.add(texture_atlas);
                 commands
-                    .spawn(SpriteSheetBundle {
+                    .spawn_bundle(SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle,
                         transform: Transform {
                             translation: Vec3::new(
@@ -237,8 +238,8 @@ fn network_synchronization(
                         },
                         ..Default::default()
                     })
-                    .with(Timer::from_seconds(0.1, true))
-                    .with(SynEntity {
+                    .insert(Timer::from_seconds(0.1, true))
+                    .insert(SynEntity {
                         id: rigid_body_state.id.into(),
                     });
             }

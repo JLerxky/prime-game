@@ -7,7 +7,8 @@ use protocol::{
     route::GameRoute,
 };
 use rapier2d::dynamics::{
-    BodyStatus, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
+    BodyStatus, CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle,
+    RigidBodySet,
 };
 use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, SharedShape};
 use rapier2d::na::Vector2;
@@ -67,7 +68,7 @@ pub async fn engine_main_loop(
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
-    let gravity = Vector2::new(0.0, -100.0);
+    let gravity = Vector2::new(0.0, -9.81 * 5f32);
     //
     let integration_parameters = IntegrationParameters::default();
     //
@@ -77,6 +78,7 @@ pub async fn engine_main_loop(
     // let mut colliders = ColliderSet::new();
     // 连接体集合
     let mut joints = JointSet::new();
+    let mut ccd_solver = CCDSolver::new();
     // 物理钩子
     let physics_hooks = ();
     // 事件处理器
@@ -97,7 +99,6 @@ pub async fn engine_main_loop(
         // println!("main_2");
         let mut bodies = &mut rigid_body_state.lock().await;
         let mut colliders = &mut collider_state.lock().await;
-
         // 运行物理引擎计算世界
         pipeline.step(
             &gravity,
@@ -107,6 +108,7 @@ pub async fn engine_main_loop(
             &mut bodies,
             &mut colliders,
             &mut joints,
+            &mut ccd_solver,
             &physics_hooks,
             &event_handler,
         );
@@ -247,7 +249,7 @@ async fn wait_for_net(
                             .user_data(rb_state.get_data())
                             .build();
                         // 碰撞体类型
-                        let collider = ColliderBuilder::capsule_y(64.0, 0.0)
+                        let collider = ColliderBuilder::capsule_y(64.0, 1.0)
                             // 密度
                             .density(1.0)
                             // 摩擦
@@ -303,7 +305,7 @@ async fn wait_for_net(
                                     ),
                                     true,
                                 );
-                                // println!("控制移动");
+                                println!("控制移动");
                             }
                         }
                     }

@@ -7,7 +7,7 @@ pub struct ControlEventPlugin;
 
 impl Plugin for ControlEventPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(ControlLastOne {
+        app.insert_resource(ControlLastOne {
             control: ControlData {
                 uid: 0,
                 direction: (0., 0.),
@@ -32,13 +32,13 @@ pub struct ControlLastOne {
 }
 
 fn event_listener_system(
-    mut control_event_reader: Local<EventReader<ControlEvent>>,
-    control_events: Res<Events<ControlEvent>>,
+    mut control_event_reader: EventReader<ControlEvent>,
+    // _control_events: EventWriter<ControlEvent>,
     net_state: ResMut<NetWorkState>,
     mut control_last_one: ResMut<ControlLastOne>,
     // player_state: Res<PlayerState>,
 ) {
-    for control_event in control_event_reader.iter(&control_events) {
+    for control_event in control_event_reader.iter() {
         if let Ok(mut control_queue) = net_state.control_queue.lock() {
             if control_last_one.control.direction == control_event.direction
                 && control_last_one.control.action == control_event.action

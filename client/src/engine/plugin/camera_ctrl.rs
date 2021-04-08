@@ -8,13 +8,14 @@ impl Plugin for CameraCtrl {
     }
 }
 
-fn setup(commands: &mut Commands) {
+fn setup(mut commands: Commands) {
     commands
         // cameras
-        .spawn(Camera2dBundle::default())
-        .with(CameraCtrl)
-        .spawn(CameraUiBundle::default())
-        .with(CameraCtrl);
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(CameraCtrl);
+    commands
+        .spawn_bundle(UiCameraBundle::default())
+        .insert(CameraCtrl);
 }
 
 fn camera_ctrl_system(// diagnostics: Res<Diagnostics>,

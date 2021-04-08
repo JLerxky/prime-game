@@ -11,7 +11,7 @@ impl Plugin for KeyboardEventPlugin {
 }
 
 fn keyboard_event_system(
-    mut control_events: ResMut<Events<ControlEvent>>,
+    mut control_events: EventWriter<ControlEvent>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8) as f32
