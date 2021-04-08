@@ -17,7 +17,7 @@ use super::{
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin, UID},
-        // tile_map::TileMapPlugin,
+        tile_map::TileMapPlugin,
     },
 };
 
@@ -41,6 +41,8 @@ pub fn engine_start() {
             ..Default::default()
         })
         .insert_resource(Msaa { samples: 8 })
+        // 窗口背景色
+        .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.9)))
         // 默认插件
         .add_plugins(DefaultPlugins)
         // 窗口插件
@@ -67,7 +69,7 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        // .add_plugin(TileMapPlugin)
+        .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络

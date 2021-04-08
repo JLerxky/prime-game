@@ -208,23 +208,23 @@ impl Plugin for TileMapPlugin {
         app.insert_resource(MapState {
             tile_center: Vec3::new(0f32, 0f32, 0f32),
         })
-        .add_startup_system(setup.system())
+        .add_startup_system(setup.system());
         // .add_system(tile_map_produce_system.system())
         // .add_system(tile_map_clean_system.system())
-        .add_stage_after(
-            CoreStage::Update,
-            BuildMapFixedUpdateStage,
-            SystemStage::parallel()
-                .with_run_criteria(FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"))
-                .with_system(tile_map_produce_system.system()),
-        )
-        .add_stage_after(
-            CoreStage::Update,
-            CleanMapFixedUpdateStage,
-            SystemStage::parallel()
-                .with_run_criteria(FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"))
-                .with_system(tile_map_clean_system.system()),
-        );
+        // .add_stage_after(
+        //     CoreStage::Update,
+        //     BuildMapFixedUpdateStage,
+        //     SystemStage::parallel()
+        //         .with_run_criteria(FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"))
+        //         .with_system(tile_map_produce_system.system()),
+        // )
+        // .add_stage_after(
+        //     CoreStage::Update,
+        //     CleanMapFixedUpdateStage,
+        //     SystemStage::parallel()
+        //         .with_run_criteria(FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"))
+        //         .with_system(tile_map_clean_system.system()),
+        // );
     }
 }
 
@@ -236,8 +236,8 @@ fn test() {
 
 fn setup(
     mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     map_state: ResMut<MapState>,
     window: Res<WindowDescriptor>,
 ) {
