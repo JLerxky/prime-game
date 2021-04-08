@@ -34,12 +34,16 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
     let player_handle_state = Arc::new(Mutex::new(player_handle_map));
 
     // 物理引擎主循环
-    let engine_future =
-        engine_main_loop(engine_tx, rigid_body_state.clone(), collider_state.clone());
+    let engine_future = engine_main_loop(
+        engine_tx.clone(),
+        rigid_body_state.clone(),
+        collider_state.clone(),
+    );
     tokio::spawn(async move { engine_future.await.unwrap() });
 
     // 监听网络模块传过来的消息
     let net_future = wait_for_net(
+        engine_tx,
         net_rx,
         rigid_body_state.clone(),
         collider_state.clone(),
@@ -165,47 +169,10 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     let rb_handle = bodies.insert(rigid_body);
     colliders.insert(collider, rb_handle, bodies);
 
-    // 球
-    // 刚体类型
-    let rb_state = EntityState {
-        id: 0,
-        translation: (0., 0.),
-        rotation: (0., 0.),
-        linvel: (0., 0.),
-        angvel: (0., 0.),
-        texture: (1, 4),
-        entity_type: 2,
-    };
-    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-        .translation(0.0, 50.0)
-        // .rotation(0.0)
-        // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
-        // 线速度
-        .linvel(0.0, 0.0)
-        // 角速度
-        .angvel(0.0)
-        // 重力
-        .gravity_scale(10.0)
-        // .can_sleep(true)
-        .user_data(rb_state.get_data())
-        .build();
-    // 碰撞体类型
-    let collider = ColliderBuilder::new(SharedShape::ball(5.0))
-        // 密度
-        .density(1.0)
-        // 摩擦
-        .friction(10.0)
-        // 是否为传感器
-        // .sensor(true)
-        .build();
-    // let rb_handle = bodies.insert(rigid_body);
-
-    // colliders.insert(collider, rb_handle, bodies);
-
     // 旋转体
     // 刚体类型
     let rb_state = EntityState {
-        id: 1,
+        id: 1000,
         translation: (0., 0.),
         rotation: (0., 0.),
         linvel: (0., 0.),
@@ -241,6 +208,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 }
 
 async fn wait_for_net(
+    engine_tx: Sender<Packet>,
     mut net_rx: Receiver<Packet>,
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
@@ -293,6 +261,37 @@ async fn wait_for_net(
                         player_handle_map.insert(login_data.uid, rb_handle);
                         // println!("{:?}", player_handle_map);
                         // entity_id += 1;
+
+                        // 发送当前所有可移动实体状态给新登录玩家
+                        let mut states = Vec::new();
+                        for (_colloder_handle, collider) in colliders.iter() {
+                            if let Some(body) = bodies.get(collider.parent()) {
+                                // 只更新可运动的物体
+                                if body.is_dynamic() {
+                                    let mut state = EntityState {
+                                        id: body.user_data as u64,
+                                        translation: (
+                                            collider.position().translation.x,
+                                            collider.position().translation.y,
+                                        ),
+                                        rotation: (
+                                            collider.position().rotation.re,
+                                            collider.position().rotation.im,
+                                        ),
+                                        linvel: (body.linvel().x, body.linvel().y),
+                                        angvel: (body.angvel(), body.angvel()),
+                                        texture: (0, 0),
+                                        entity_type: 0,
+                                    };
+                                    state.make_up_data(body.user_data);
+                                    states.push(state);
+                                }
+                            }
+                        }
+                        let packet =
+                            Packet::Game(GameRoute::Update(UpdateData { frame: 0, states }));
+                        let _ = engine_tx.send(packet.clone()).await;
+                        let _ = engine_tx.send(packet.clone()).await;
                     }
                     protocol::route::AccountRoute::Logout(_) => {}
                 },
