@@ -18,6 +18,7 @@ use super::{
         fps::Fps,
         network::{NetworkPlugin, SynEntity},
         ping::Ping,
+        tile_map::TileMapPlugin,
     },
 };
 
@@ -88,7 +89,7 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        // .add_plugin(TileMapPlugin)
+        .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络
