@@ -81,7 +81,12 @@ fn net_handler_system(
                         // println!("ping: {}", time);
                     }
                 },
-                Packet::Account(_) => {}
+                Packet::Account(account_route) => match account_route {
+                    AccountRoute::Login(login_data) => unsafe {
+                        UID = login_data.uid;
+                    },
+                    AccountRoute::Logout(_) => {}
+                },
                 Packet::Game(game_route) => {
                     match game_route {
                         GameRoute::Update(update_data) => {
