@@ -6,57 +6,225 @@ use std::{
 
 use bevy::prelude::*;
 use protocol::{
-    data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData},
+    data::account_data::AccountData,
     packet::Packet,
     route::{AccountRoute, GameRoute, HeartbeatRoute},
 };
-use tokio::{
-    net::UdpSocket,
-    sync::mpsc::{self, Receiver, Sender},
-};
+use tokio::net::UdpSocket;
+
+use crate::engine::engine_client::WindowState;
+
+use super::{camera_ctrl::CameraCtrl, ping::PingState};
 
 // 当前玩家uid
 pub static mut UID: u32 = 0;
+
+pub struct NetWorkState {
+    pub packet_queue: Arc<Mutex<Vec<Packet>>>,
+    pub to_be_sent_queue: Arc<Mutex<Vec<Packet>>>,
+}
+
+pub struct SynEntity {
+    pub id: u128,
+}
 
 pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        let (net_tx, net_rx) = mpsc::channel::<Packet>(1);
-        let (engine_tx, engine_rx) = mpsc::channel::<Packet>(1);
+        let packet_queue: Vec<Packet> = Vec::new();
+        let packet_queue = Arc::new(Mutex::new(packet_queue));
+        let packet_queue_c = packet_queue.clone();
 
-        let update_data_list: Vec<UpdateData> = Vec::new();
-        let update_data_list = Arc::new(Mutex::new(update_data_list));
-        let update_data_list_c = update_data_list.clone();
+        let to_be_sent_queue: Vec<Packet> = Vec::new();
+        let to_be_sent_queue = Arc::new(Mutex::new(to_be_sent_queue));
+        let to_be_sent_queue_c = to_be_sent_queue.clone();
 
-        let control_queue: Vec<ControlData> = Vec::new();
-        let control_queue = Arc::new(Mutex::new(control_queue));
-        let control_queue_c = control_queue.clone();
-
-        tokio::spawn(net_client_start(
-            net_tx,
-            engine_rx,
-            update_data_list_c,
-            control_queue_c,
-        ));
+        tokio::spawn(net_client_start(packet_queue_c, to_be_sent_queue_c));
         app.insert_resource(NetWorkState {
-            engine_tx,
-            net_rx,
-            update_data_list,
-            control_queue,
-        });
+            packet_queue,
+            to_be_sent_queue,
+        })
+        .add_system(net_handler_system.system());
     }
+}
 
-    fn name(&self) -> &str {
-        std::any::type_name::<Self>()
+fn net_handler_system(
+    net_state: ResMut<NetWorkState>,
+    mut commands: Commands,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    window: Res<WindowState>,
+    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
+    mut camera_query: Query<(&mut Transform, &CameraCtrl)>,
+    mut ping_state: ResMut<PingState>,
+) {
+    if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
+        for _ in 0..10 {
+            if packet_queue.is_empty() {
+                return;
+            }
+            let packet = packet_queue[0].clone();
+            packet_queue.remove(0);
+
+            match packet {
+                Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
+                    HeartbeatRoute::In => {}
+                    HeartbeatRoute::Out => {}
+                    protocol::route::HeartbeatRoute::Keep(time) => {
+                        let time = SystemTime::now()
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis()
+                            - time;
+                        ping_state.ping = time as f32;
+                        // println!("ping: {}", time);
+                    }
+                },
+                Packet::Account(_) => {}
+                Packet::Game(game_route) => {
+                    match game_route {
+                        GameRoute::Update(update_data) => {
+                            'update_data: for rigid_body_state in update_data.states {
+                                for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+                                    // println!("3");
+                                    if syn_entity.id == rigid_body_state.id.into() {
+                                        *transform = Transform {
+                                            translation: Vec3::new(
+                                                rigid_body_state.translation.0
+                                                    * window.tile_width_proportion,
+                                                rigid_body_state.translation.1
+                                                    * window.tile_height_proportion,
+                                                99.0,
+                                            ),
+                                            rotation: Quat::from_rotation_z(
+                                                rigid_body_state.rotation,
+                                            ),
+                                            scale: Vec3::new(1., 1., 1.),
+                                        };
+                                        unsafe {
+                                            if rigid_body_state.entity_type == 1
+                                                && UID == rigid_body_state.id as u32
+                                            {
+                                                if let Some((mut camera_transform, _)) =
+                                                    camera_query.iter_mut().next()
+                                                {
+                                                    camera_transform.translation = Vec3::new(
+                                                        rigid_body_state.translation.0
+                                                            * window.tile_width_proportion,
+                                                        rigid_body_state.translation.1
+                                                            * window.tile_height_proportion,
+                                                        99.0,
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        continue 'update_data;
+                                    }
+                                }
+                                // println!("4");
+
+                                // 未生成的实体根据实体类型生成新实体
+                                let mut texture_handle = asset_server.load("textures/chars/0.png");
+                                let mut tile_size =
+                                    Vec2::new(window.tile_width * 1f32, window.tile_height * 1f32);
+
+                                match rigid_body_state.entity_type {
+                                    // tile
+                                    0 => {
+                                        texture_handle = asset_server.load(
+                                            format!(
+                                                "textures/tile/{}.png",
+                                                rigid_body_state.texture.0
+                                            )
+                                            .as_str(),
+                                        );
+                                    }
+                                    // 玩家实体
+                                    1 => {
+                                        texture_handle = asset_server.load(
+                                            format!(
+                                                "textures/chars/{}.png",
+                                                rigid_body_state.texture.0
+                                            )
+                                            .as_str(),
+                                        );
+                                        tile_size *= 2f32;
+                                    }
+                                    // 可动实体
+                                    2 => {
+                                        texture_handle = asset_server.load(
+                                            format!(
+                                                "textures/movable/{}.png",
+                                                rigid_body_state.texture.0
+                                            )
+                                            .as_str(),
+                                        );
+                                        tile_size = Vec2::new(
+                                            window.tile_width * 0.5f32,
+                                            window.tile_width * 1f32,
+                                        );
+                                    }
+                                    // 不可动实体
+                                    3 => {
+                                        texture_handle = asset_server.load(
+                                            format!(
+                                                "textures/unmovable/{}.png",
+                                                rigid_body_state.texture.0
+                                            )
+                                            .as_str(),
+                                        );
+                                    }
+                                    // 其它
+                                    _ => {}
+                                }
+
+                                let scale = Vec3::new(1., 1., 0.);
+
+                                let texture_atlas = TextureAtlas::from_grid(
+                                    texture_handle,
+                                    tile_size,
+                                    rigid_body_state.texture.1.into(),
+                                    1,
+                                );
+                                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+                                commands
+                                    .spawn_bundle(SpriteSheetBundle {
+                                        texture_atlas: texture_atlas_handle,
+                                        transform: Transform {
+                                            translation: Vec3::new(
+                                                rigid_body_state.translation.0
+                                                    * window.tile_width_proportion,
+                                                rigid_body_state.translation.1
+                                                    * window.tile_height_proportion,
+                                                99.0,
+                                            ),
+                                            rotation: Quat::from_rotation_z(
+                                                rigid_body_state.rotation,
+                                            ),
+                                            scale,
+                                        },
+                                        ..Default::default()
+                                    })
+                                    .insert(Timer::from_seconds(0.1, true))
+                                    .insert(SynEntity {
+                                        id: rigid_body_state.id.into(),
+                                    });
+                            }
+                        }
+                        GameRoute::Control(_control_data) => {}
+                    }
+                    // 游戏逻辑数据包每帧执行一次
+                    return;
+                }
+            }
+        }
     }
 }
 
 async fn net_client_start(
-    _net_tx: Sender<Packet>,
-    _engine_rx: Receiver<Packet>,
-    update_data_list: Arc<Mutex<Vec<UpdateData>>>,
-    control_queue: Arc<Mutex<Vec<ControlData>>>,
+    packet_queue: Arc<Mutex<Vec<Packet>>>,
+    to_be_sent_queue: Arc<Mutex<Vec<Packet>>>,
 ) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
@@ -98,89 +266,36 @@ async fn net_client_start(
         }
     });
 
-    // tokio::join!()(async move {
-    //     while let Some(game_event) = engine_rx.recv().await {
-    //         println!("网络模块收到引擎事件: {:?}", game_event);
-    //         let len = s
-    //             .send(&bincode::serialize(&game_event).unwrap()[0..])
-    //             .await
-    //             .unwrap();
-    //         println!("网络客户端发送: {}", len);
-    //     }
-    // });
-
-    // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 5f64));
-    let mut buf = [0; 1024];
+    let mut buf = [0; 2048];
     loop {
-        // interval.tick().await;
         // println!("接收ing");
         if let Ok(len) = r.recv(&mut buf).await {
             // println!("接收来自服务器的 {:?} bytes", len);
-            // let data_str = String::from_utf8_lossy(&buf[..len]);
             let packet = bincode::deserialize(&buf[..len]);
             // 转发事件
             if let Ok(packet) = packet {
-                // let packet_c = packet.clone();
-                match packet {
-                    Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
-                        protocol::route::HeartbeatRoute::In => {}
-                        protocol::route::HeartbeatRoute::Out => {}
-                        protocol::route::HeartbeatRoute::Keep(time) => {
-                            let time = SystemTime::now()
-                                .duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap()
-                                .as_millis()
-                                - time;
-                            println!("ping: {}", time);
-                        }
-                    },
-                    Packet::Account(AccountRoute::Login(login_data)) => unsafe {
-                        UID = login_data.uid;
-                    },
-                    Packet::Game(game_route) => match game_route {
-                        protocol::route::GameRoute::Update(update_data) => {
-                            // let _ = tokio::join!(tx.send(packet_c));
-                            // println!("接收来自服务器的Update事件");
-                            if let Ok(mut update_data_list) = update_data_list.lock() {
-                                if update_data_list.len() >= 10 {
-                                    update_data_list.remove(0);
-                                }
-                                update_data_list.push(update_data);
-                            }
-                        }
-                        _ => {}
-                    },
-                    _ => {}
+                if let Ok(mut packet_queue) = packet_queue.lock() {
+                    packet_queue.push(packet);
                 }
             }
         }
 
-        if let Ok(mut control_queue) = control_queue.lock() {
+        if let Ok(mut to_be_sent_queue) = to_be_sent_queue.lock() {
             // println!("0");
-            let control_queue_c = control_queue.clone();
-            control_queue.clear();
-            for control_data in control_queue_c.iter() {
+            let to_be_sent_queue_c = to_be_sent_queue.clone();
+            to_be_sent_queue.clear();
+            for to_be_sent_packet in to_be_sent_queue_c.iter() {
                 // println!("1");
                 let s = s.clone();
-                let control_data = control_data.clone();
+                let to_be_sent_packet = to_be_sent_packet.clone();
                 tokio::spawn(async move {
                     // println!("2");
-                    s.send(
-                        &bincode::serialize(&Packet::Game(GameRoute::Control(control_data)))
-                            .unwrap()[0..],
-                    )
-                    .await
-                    .unwrap();
+                    s.send(&bincode::serialize(&to_be_sent_packet).unwrap()[0..])
+                        .await
+                        .unwrap();
                     // println!("3");
                 });
             }
         }
     }
-}
-
-pub struct NetWorkState {
-    pub engine_tx: Sender<Packet>,
-    pub net_rx: Receiver<Packet>,
-    pub update_data_list: Arc<Mutex<Vec<UpdateData>>>,
-    pub control_queue: Arc<Mutex<Vec<ControlData>>>,
 }

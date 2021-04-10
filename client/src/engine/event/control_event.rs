@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use protocol::data::control_data::ControlData;
+use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
 
 use crate::engine::plugin::network::NetWorkState;
 
@@ -33,23 +33,21 @@ pub struct ControlLastOne {
 
 fn event_listener_system(
     mut control_event_reader: EventReader<ControlEvent>,
-    // _control_events: EventWriter<ControlEvent>,
     net_state: ResMut<NetWorkState>,
     mut control_last_one: ResMut<ControlLastOne>,
-    // player_state: Res<PlayerState>,
 ) {
     for control_event in control_event_reader.iter() {
-        if let Ok(mut control_queue) = net_state.control_queue.lock() {
+        if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
             if control_last_one.control.direction == control_event.direction
                 && control_last_one.control.action == control_event.action
             {
                 continue;
             }
-            control_queue.push(ControlData {
+            to_be_sent_queue.push(Packet::Game(GameRoute::Control(ControlData {
                 uid: 0,
                 direction: control_event.direction,
                 action: control_event.action,
-            });
+            })));
             control_last_one.control = ControlData {
                 uid: 0,
                 direction: control_event.direction,
