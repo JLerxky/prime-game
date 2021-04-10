@@ -50,7 +50,7 @@ pub async fn clean_offline_user() {
         interval.tick().await;
         match game_db::find(GameData::player_group_addr(0, None)) {
             Ok(data) => {
-                println!("在线玩家列表: [{}]", data);
+                // println!("在线玩家列表: [{}]", data);
                 if data.len() > 0 {
                     for addr_db in data.split(",") {
                         // 检查玩家ip地址健康检查状态
