@@ -20,6 +20,7 @@ use tokio::sync::{
 
 type ColliderSetState = Arc<Mutex<ColliderSet>>;
 type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
+type JointSetState = Arc<Mutex<JointSet>>;
 type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
 pub async fn engine_start() -> Result<(), Box<dyn Error>> {
@@ -30,6 +31,7 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
 
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
+    let joint_state = Arc::new(Mutex::new(JointSet::new()));
 
     let player_handle_map: HashMap<u32, RigidBodyHandle> = HashMap::new();
     let player_handle_state = Arc::new(Mutex::new(player_handle_map));
@@ -39,8 +41,16 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
         engine_tx.clone(),
         rigid_body_state.clone(),
         collider_state.clone(),
+        joint_state.clone(),
     );
     tokio::spawn(async move { engine_future.await.unwrap() });
+
+    let clean_body_future = clean_body(
+        rigid_body_state.clone(),
+        collider_state.clone(),
+        joint_state.clone(),
+    );
+    tokio::spawn(async move { clean_body_future.await });
 
     // 监听网络模块传过来的消息
     let net_future = wait_for_net(
@@ -48,6 +58,7 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
         net_rx,
         rigid_body_state.clone(),
         collider_state.clone(),
+        joint_state.clone(),
         player_handle_state,
     );
     tokio::spawn(async move { net_future.await });
@@ -63,6 +74,7 @@ pub async fn engine_main_loop(
     engine_tx: Sender<Packet>,
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
+    joint_state: JointSetState,
 ) -> Result<(), Box<dyn Error>> {
     println!("物理引擎已启动!");
     // 物理引擎初始化配置
@@ -77,7 +89,7 @@ pub async fn engine_main_loop(
     // 碰撞体集合
     // let mut colliders = ColliderSet::new();
     // 连接体集合
-    let mut joints = JointSet::new();
+    // let mut joints = JointSet::new();
     let mut ccd_solver = CCDSolver::new();
     // 物理钩子
     let physics_hooks = ();
@@ -99,6 +111,7 @@ pub async fn engine_main_loop(
         // println!("main_2");
         let mut bodies = &mut rigid_body_state.lock().await;
         let mut colliders = &mut collider_state.lock().await;
+        let mut joints = &mut joint_state.lock().await;
         // 运行物理引擎计算世界
         pipeline.step(
             &gravity,
@@ -148,6 +161,36 @@ pub async fn engine_main_loop(
     }
     // let time = start_time.elapsed().as_secs_f64();
     // println!("{}", time);
+}
+
+async fn clean_body(
+    rigid_body_state: RigidBodySetState,
+    collider_state: ColliderSetState,
+    joint_state: JointSetState,
+) {
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64));
+    loop {
+        interval.tick().await;
+        let bodies = &mut rigid_body_state.lock().await;
+        let colliders = &mut collider_state.lock().await;
+        let joints = &mut joint_state.lock().await;
+
+        let mut handles_for_remove = Vec::new();
+
+        for (body_handle, body) in bodies.iter_mut() {
+            if body.position().translation.x.abs() > 9999f32
+                || body.position().translation.y.abs() > 9999f32
+            {
+                handles_for_remove.push(body_handle);
+            }
+        }
+
+        for handle in handles_for_remove {
+            println!("清除过界实体: {:?}", &handle);
+            bodies.remove(handle, colliders, joints);
+            println!("剩余实体: {:?}", &bodies.len());
+        }
+    }
 }
 
 async fn create_object(rigid_body_state: RigidBodySetState, collider_state: ColliderSetState) {
@@ -211,6 +254,7 @@ async fn wait_for_net(
     mut net_rx: Receiver<Packet>,
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
+    _joint_state: JointSetState,
     player_handle_state: PlayerHandleMapState,
 ) {
     // let mut entity_id: u64 = 1000;
