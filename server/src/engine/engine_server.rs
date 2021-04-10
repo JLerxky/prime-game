@@ -1,6 +1,9 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
-use crate::net;
+use crate::{
+    data::game_db::{self, GameData},
+    net,
+};
 use protocol::{
     data::update_data::{EntityState, UpdateData},
     packet::Packet,
@@ -130,9 +133,11 @@ pub async fn engine_main_loop(
         let mut states = Vec::new();
         for (_colloder_handle, collider) in colliders.iter() {
             if let Some(body) = bodies.get(collider.parent()) {
+                // 更新所有动态物体
+                if body.is_dynamic()
                 // 只更新在运动的物体
-                if body.is_moving()
-                    && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
+                // if body.is_moving()
+                //     && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
                 {
                     let mut state = EntityState {
                         id: body.user_data as u64,
@@ -177,16 +182,45 @@ async fn clean_body(
 
         let mut handles_for_remove = Vec::new();
 
-        for (body_handle, body) in bodies.iter_mut() {
+        'bodies_iter: for (body_handle, body) in bodies.iter_mut() {
             if body.position().translation.x.abs() > 9999f32
                 || body.position().translation.y.abs() > 9999f32
             {
+                handles_for_remove.push(body_handle);
+                continue;
+            }
+            // TODO 判断玩家实体是否还在线
+            let mut entity_state = EntityState {
+                id: 0,
+                translation: (0., 0.),
+                rotation: 0.,
+                linvel: (0., 0.),
+                angvel: (0., 0.),
+                texture: (0, 0),
+                entity_type: 0,
+            };
+            entity_state.make_up_data(body.user_data);
+
+            if entity_state.entity_type == 1 {
+                match game_db::find(GameData::player_online(None)) {
+                    Ok(data) => {
+                        if data.len() > 0 {
+                            let uid_list: Vec<&str> = data.split(",").collect();
+                            for index in 0..uid_list.len() {
+                                if uid_list[index].eq(&entity_state.id.to_string()) {
+                                    continue 'bodies_iter;
+                                }
+                            }
+                        }
+                    }
+                    Err(_) => {}
+                }
                 handles_for_remove.push(body_handle);
             }
         }
 
         for handle in handles_for_remove {
-            println!("清除过界实体: {:?}", &handle);
+            println!("清除(过界/离线)实体: {:?}", &handle);
             bodies.remove(handle, colliders, joints);
             println!("剩余实体: {:?}", &bodies.len());
         }

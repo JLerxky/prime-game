@@ -4,7 +4,7 @@ use std::{
     time::SystemTime,
 };
 
-use bevy::prelude::*;
+use bevy::{core::FixedTimestep, prelude::*};
 use protocol::{
     data::account_data::AccountData,
     packet::Packet,
@@ -26,7 +26,11 @@ pub struct NetWorkState {
 
 pub struct SynEntity {
     pub id: u128,
+    pub health: u64,
 }
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct CheckEntityHealthFixedUpdateStage;
 
 pub struct NetworkPlugin;
 
@@ -45,7 +49,29 @@ impl Plugin for NetworkPlugin {
             packet_queue,
             to_be_sent_queue,
         })
-        .add_system(net_handler_system.system());
+        .add_system(net_handler_system.system())
+        .add_stage_after(
+            CoreStage::Update,
+            CheckEntityHealthFixedUpdateStage,
+            SystemStage::parallel()
+                .with_run_criteria(FixedTimestep::step(1.).with_label("build_map_fixed_timestep"))
+                .with_system(check_entity_health.system()),
+        );
+    }
+}
+
+fn check_entity_health(
+    mut commands: Commands,
+    syn_entity_query: Query<(&SynEntity, Entity), Without<CameraCtrl>>,
+) {
+    let health_now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    for (syn_entity, entity) in syn_entity_query.iter() {
+        if health_now > (syn_entity.health + 1) {
+            commands.entity(entity).despawn_recursive();
+        }
     }
 }
 
@@ -90,8 +116,12 @@ fn net_handler_system(
                 Packet::Game(game_route) => {
                     match game_route {
                         GameRoute::Update(update_data) => {
+                            let health_now = SystemTime::now()
+                                .duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs();
                             'update_data: for rigid_body_state in update_data.states {
-                                for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
+                                for (mut syn_entity, mut transform) in syn_entity_query.iter_mut() {
                                     // println!("3");
                                     if syn_entity.id == rigid_body_state.id.into() {
                                         *transform = Transform {
@@ -107,6 +137,7 @@ fn net_handler_system(
                                             ),
                                             scale: Vec3::new(1., 1., 1.),
                                         };
+                                        syn_entity.health = health_now;
                                         unsafe {
                                             if rigid_body_state.entity_type == 1
                                                 && UID == rigid_body_state.id as u32
@@ -214,6 +245,10 @@ fn net_handler_system(
                                     .insert(Timer::from_seconds(0.1, true))
                                     .insert(SynEntity {
                                         id: rigid_body_state.id.into(),
+                                        health: SystemTime::now()
+                                            .duration_since(SystemTime::UNIX_EPOCH)
+                                            .unwrap()
+                                            .as_secs(),
                                     });
                             }
                         }

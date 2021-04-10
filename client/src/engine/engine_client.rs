@@ -44,7 +44,7 @@ pub fn engine_start() {
         .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
             // 垂直同步
-            vsync: false,
+            vsync: true,
             // 是否可调整窗口大小
             resizable: false,
             // 是否有窗口外壳
