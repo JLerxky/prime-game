@@ -189,7 +189,7 @@ async fn clean_body(
                 handles_for_remove.push(body_handle);
                 continue;
             }
-            // TODO 判断玩家实体是否还在线
+            // 判断玩家实体是否还在线
             let mut entity_state = EntityState {
                 id: 0,
                 translation: (0., 0.),
@@ -212,10 +212,10 @@ async fn clean_body(
                                 }
                             }
                         }
+                        handles_for_remove.push(body_handle);
                     }
                     Err(_) => {}
                 }
-                handles_for_remove.push(body_handle);
             }
         }
 
