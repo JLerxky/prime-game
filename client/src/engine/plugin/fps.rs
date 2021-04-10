@@ -31,7 +31,7 @@ fn add_fps_system(mut commands: Commands, asset_server: Res<AssetServer>) {
                 "0 fps".to_string(),
                 TextStyle {
                     font: font.clone(),
-                    font_size: 60.0,
+                    font_size: 32.0,
                     color: Color::WHITE,
                 },
                 TextAlignment::default(),

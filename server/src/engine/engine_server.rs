@@ -305,7 +305,7 @@ async fn wait_for_net(
                                     ),
                                     true,
                                 );
-                                println!("控制移动");
+                                // println!("控制移动");
                             }
                         }
                     }

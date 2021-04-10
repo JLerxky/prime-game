@@ -17,11 +17,27 @@ use super::{
         clipboard::Clipboard,
         fps::Fps,
         network::{NetWorkState, NetworkPlugin, UID},
-        tile_map::TileMapPlugin,
     },
 };
 
+pub struct WindowState {
+    tile_width: f32,
+    tile_height: f32,
+    tile_width_proportion: f32,
+    tile_height_proportion: f32,
+}
+
 pub fn engine_start() {
+    let width = 1600f32;
+    let height = 900f32;
+
+    let window_state = WindowState {
+        tile_width: width / 21f32,
+        tile_height: height / 13f32,
+        tile_width_proportion: width / 21f32 / 64f32,
+        tile_height_proportion: height / 13f32 / 64f32,
+    };
+
     App::build()
         .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
@@ -31,8 +47,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 1600f32,
-            height: 900f32,
+            width,
+            height,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -40,6 +56,7 @@ pub fn engine_start() {
             // cursor_visible: false,
             ..Default::default()
         })
+        .insert_resource(window_state)
         .insert_resource(Msaa { samples: 8 })
         // 窗口背景色
         .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.9)))
@@ -69,7 +86,7 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        .add_plugin(TileMapPlugin)
+        // .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络
@@ -134,7 +151,8 @@ fn network_synchronization(
     mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    window: Res<WindowDescriptor>,
+    // window: Res<WindowDescriptor>,
+    window: Res<WindowState>,
     net: ResMut<NetWorkState>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
     mut camera_query: Query<(&mut Transform, &CameraCtrl)>,
@@ -145,6 +163,7 @@ fn network_synchronization(
         if !update_data_list.is_empty() {
             let update_data = update_data_list[0].clone();
             update_data_list.remove(0);
+
             // println!("2");
             'update_data: for rigid_body_state in update_data.states {
                 for (syn_entity, mut transform) in syn_entity_query.iter_mut() {
@@ -152,8 +171,8 @@ fn network_synchronization(
                     if syn_entity.id == rigid_body_state.id.into() {
                         *transform = Transform {
                             translation: Vec3::new(
-                                rigid_body_state.translation.0,
-                                rigid_body_state.translation.1,
+                                rigid_body_state.translation.0 * window.tile_width_proportion,
+                                rigid_body_state.translation.1 * window.tile_height_proportion,
                                 99.0,
                             ),
                             rotation: Quat::from_rotation_z(rigid_body_state.rotation),
@@ -167,8 +186,10 @@ fn network_synchronization(
                                     camera_query.iter_mut().next()
                                 {
                                     camera_transform.translation = Vec3::new(
-                                        rigid_body_state.translation.0,
-                                        rigid_body_state.translation.1,
+                                        rigid_body_state.translation.0
+                                            * window.tile_width_proportion,
+                                        rigid_body_state.translation.1
+                                            * window.tile_height_proportion,
                                         99.0,
                                     );
                                 }
@@ -181,8 +202,7 @@ fn network_synchronization(
 
                 // 未生成的实体根据实体类型生成新实体
                 let mut texture_handle = asset_server.load("textures/chars/0.png");
-                let mut tile_size =
-                    Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
+                let mut tile_size = Vec2::new(window.tile_width * 1f32, window.tile_height * 1f32);
 
                 match rigid_body_state.entity_type {
                     // tile
@@ -203,8 +223,7 @@ fn network_synchronization(
                         texture_handle = asset_server.load(
                             format!("textures/movable/{}.png", rigid_body_state.texture.0).as_str(),
                         );
-                        tile_size =
-                            Vec2::new(window.width / 21f32 * 0.5f32, window.height / 13f32 * 1f32);
+                        tile_size = Vec2::new(window.tile_width * 0.5f32, window.tile_width * 1f32);
                     }
                     // 不可动实体
                     3 => {
@@ -231,8 +250,8 @@ fn network_synchronization(
                         texture_atlas: texture_atlas_handle,
                         transform: Transform {
                             translation: Vec3::new(
-                                rigid_body_state.translation.0,
-                                rigid_body_state.translation.1,
+                                rigid_body_state.translation.0 * window.tile_width_proportion,
+                                rigid_body_state.translation.1 * window.tile_height_proportion,
                                 99.0,
                             ),
                             rotation: Quat::from_rotation_z(rigid_body_state.rotation),
