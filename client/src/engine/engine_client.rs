@@ -1,4 +1,8 @@
-use bevy::{prelude::*, winit::WinitPlugin};
+use bevy::{
+    prelude::*,
+    wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
+    winit::WinitPlugin,
+};
 use bevy_rapier2d::{
     na::Vector2,
     physics::{RapierConfiguration, RapierPhysicsPlugin},
@@ -24,6 +28,11 @@ use super::{
 
 pub fn engine_start() {
     App::build()
+        .insert_resource(WgpuOptions {
+            backend: WgpuBackend::Vulkan,
+            power_pref: WgpuPowerOptions::HighPerformance,
+            ..Default::default()
+        })
         .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
             // 垂直同步
