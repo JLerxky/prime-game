@@ -1,6 +1,5 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet};
 use bevy_tilemap::prelude::*;
-use rand::Rng;
 
 pub struct TileMapPlugin;
 
@@ -27,11 +26,6 @@ struct TileMapState {
     spawned: bool,
     collisions: HashSet<(i32, i32)>,
 }
-
-const CHUNK_WIDTH: u32 = 16;
-const CHUNK_HEIGHT: u32 = 16;
-const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 40;
-const TILEMAP_HEIGHT: i32 = CHUNK_HEIGHT as i32 * 40;
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
     tile_sprite_handles.handles = asset_server.load_folder("textures/tile_map").unwrap();
@@ -61,21 +55,13 @@ fn load(
         let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
         let atlas_handle = texture_atlases.add(texture_atlas);
 
-        // These are fairly advanced configurations just to quickly showcase
-        // them.
         let tilemap = Tilemap::builder()
-            .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
-            .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT, 1)
-            .texture_dimensions(32, 32)
             .auto_chunk()
-            .auto_spawn(2, 2)
-            .add_layer(
-                TilemapLayer {
-                    kind: LayerKind::Dense,
-                    ..Default::default()
-                },
-                0,
-            )
+            .topology(GridTopology::Square)
+            .dimensions(3, 3)
+            .chunk_dimensions(3, 3, 1)
+            .texture_dimensions(32, 32)
+            .z_layers(10)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
@@ -89,6 +75,7 @@ fn load(
             transform: Default::default(),
             global_transform: Default::default(),
         };
+
         commands
             .spawn()
             .insert_bundle(OrthographicCameraBundle::new_2d());
@@ -112,120 +99,41 @@ fn build_world(
     }
 
     for mut map in query.iter_mut() {
-        // Then we need to find out what the handles were to our textures we are going to use.
-        let floor_sprite: Handle<Texture> =
-            asset_server.get_handle("textures/tile_map/square-floor.png");
-        let wall_sprite: Handle<Texture> =
-            asset_server.get_handle("textures/tile_map/square-wall.png");
-        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
-        let floor_idx = texture_atlas.get_texture_index(&floor_sprite).unwrap();
-        let wall_idx = texture_atlas.get_texture_index(&wall_sprite).unwrap();
+        let width = map.width().unwrap() as i32;
+        let height = map.height().unwrap() as i32;
+        let chunk_width = width * map.chunk_width() as i32;
+        let chunk_height = height * map.chunk_height() as i32;
 
-        // Now we fill the entire space with floors.
+        let floor: Handle<Texture> = asset_server.get_handle("textures/tile_map/square-floor.png");
+        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
+        let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
+
         let mut tiles = Vec::new();
-        for y in 0..TILEMAP_HEIGHT {
-            for x in 0..TILEMAP_WIDTH {
-                let y = y - TILEMAP_HEIGHT / 2;
-                let x = x - TILEMAP_WIDTH / 2;
-                // By default tile sets the Z order at 0. Lower means that tile
-                // will render lower than others. 0 is the absolute bottom
-                // level which is perfect for backgrounds.
+        for y in 0..chunk_height {
+            for x in 0..chunk_width {
+                let y = y - chunk_height / 2;
+                let x = x - chunk_width / 2;
                 let tile = Tile {
                     point: (x, y),
-                    sprite_index: floor_idx,
+                    sprite_index: floor_index,
                     ..Default::default()
                 };
                 tiles.push(tile);
             }
         }
+        map.insert_tiles(tiles).unwrap();
 
-        for x in 0..TILEMAP_WIDTH {
-            let x = x - TILEMAP_WIDTH / 2;
-            let tile_a = (x, -TILEMAP_HEIGHT / 2);
-            let tile_b = (x, TILEMAP_HEIGHT / 2 - 1);
-            tiles.push(Tile {
-                point: tile_a,
-                sprite_index: wall_idx,
-                ..Default::default()
-            });
-            tiles.push(Tile {
-                point: tile_b,
-                sprite_index: wall_idx,
-                ..Default::default()
-            });
-            game_state.collisions.insert(tile_a);
-            game_state.collisions.insert(tile_b);
-        }
-
-        // Then the wall tiles on the Y axis.
-        for y in 0..TILEMAP_HEIGHT {
-            let y = y - TILEMAP_HEIGHT / 2;
-            let tile_a = (-TILEMAP_WIDTH / 2, y);
-            let tile_b = (TILEMAP_WIDTH / 2 - 1, y);
-            tiles.push(Tile {
-                point: tile_a,
-                sprite_index: wall_idx,
-                ..Default::default()
-            });
-            tiles.push(Tile {
-                point: tile_b,
-                sprite_index: wall_idx,
-                ..Default::default()
-            });
-            game_state.collisions.insert(tile_a);
-            game_state.collisions.insert(tile_b);
-        }
-
-        // Lets just generate some random walls to sparsely place around the dungeon!
-        let range = (TILEMAP_WIDTH * TILEMAP_HEIGHT) as usize / 5;
-        let mut rng = rand::thread_rng();
-        for _ in 0..range {
-            let x = rng.gen_range((-TILEMAP_WIDTH / 2)..(TILEMAP_WIDTH / 2));
-            let y = rng.gen_range((-TILEMAP_HEIGHT / 2)..(TILEMAP_HEIGHT / 2));
-            let coord = (x, y, 0i32);
-            if coord != (0, 0, 0) {
-                tiles.push(Tile {
-                    point: (x, y),
-                    sprite_index: wall_idx,
-                    ..Default::default()
-                });
-                game_state.collisions.insert((x, y));
+        for x in -width / 2..=width / 2 {
+            if x == 0 {
+                continue;
+            }
+            for y in -height / 2..=height / 2 {
+                if y == 0 {
+                    continue;
+                }
+                map.spawn_chunk((x, y)).unwrap();
             }
         }
-
-        // The above should give us a neat little randomized dungeon! However,
-        // we are missing a hero! First, we need to add a layer. We must make
-        // this layer `Sparse` else we will lose efficiency with our data!
-        //
-        // You might've noticed that we didn't create a layer for z_layer 0 but
-        // yet it still works and exists. By default if a layer doesn't exist
-        // and tiles need to be written there then a Dense layer is created
-        // automatically.
-        map.add_layer(
-            TilemapLayer {
-                kind: LayerKind::Sparse,
-                ..Default::default()
-            },
-            1,
-        )
-        .unwrap();
-
-        // Now lets add in a dwarf friend!
-        let dwarf_sprite: Handle<Texture> =
-            asset_server.get_handle("textures/tile_map/square-dwarf.png");
-        let dwarf_sprite_index = texture_atlas.get_texture_index(&dwarf_sprite).unwrap();
-        // We add in a Z order of 1 to place the tile above the background on Z
-        // order 0.
-        let dwarf_tile = Tile {
-            point: (0, 0),
-            sprite_order: 1,
-            sprite_index: dwarf_sprite_index,
-            ..Default::default()
-        };
-        tiles.push(dwarf_tile);
-
-        // Now we pass all the tiles to our map.
-        map.insert_tiles(tiles).unwrap();
 
         game_state.map_loaded = true;
     }

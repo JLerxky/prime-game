@@ -59,7 +59,7 @@ pub fn engine_start() {
             ..Default::default()
         })
         .insert_resource(window_state)
-        .insert_resource(Msaa { samples: 8 })
+        // .insert_resource(Msaa { samples: 4 })
         // 窗口背景色
         .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.9)))
         // 默认插件
