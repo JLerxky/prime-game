@@ -1,6 +1,8 @@
 use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet};
 use bevy_tilemap::prelude::*;
 
+use super::camera_ctrl::CameraCtrl;
+
 pub struct TileMapPlugin;
 
 impl Plugin for TileMapPlugin {
@@ -10,7 +12,8 @@ impl Plugin for TileMapPlugin {
             .add_plugins(TilemapDefaultPlugins)
             .add_startup_system(setup.system())
             .add_system(load.system())
-            .add_system(build_world.system());
+            .add_system(build_map.system())
+            .add_system(update_map.system());
     }
 }
 
@@ -58,14 +61,12 @@ fn load(
         let tilemap = Tilemap::builder()
             .auto_chunk()
             .topology(GridTopology::Square)
-            .dimensions(3, 3)
-            .chunk_dimensions(3, 3, 1)
+            .chunk_dimensions(2, 2, 1)
             .texture_dimensions(32, 32)
             .z_layers(10)
             .texture_atlas(atlas_handle)
             .finish()
             .unwrap();
-
         let tilemap_components = TilemapBundle {
             tilemap,
             visible: Visible {
@@ -88,21 +89,32 @@ fn load(
     }
 }
 
-fn build_world(
-    mut game_state: ResMut<TileMapState>,
+fn build_map(
+    mut tile_map_state: ResMut<TileMapState>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    mut query: Query<&mut Tilemap>,
+    mut tilemap_query: Query<&mut Tilemap, Without<CameraCtrl>>,
+    // camera_query: Query<&Transform, With<CameraCtrl>>,
+    window: Res<WindowDescriptor>,
 ) {
-    if game_state.map_loaded {
+    if tile_map_state.map_loaded {
         return;
     }
 
-    for mut map in query.iter_mut() {
-        let width = map.width().unwrap() as i32;
-        let height = map.height().unwrap() as i32;
+    if let Ok(mut map) = tilemap_query.single_mut() {
+        let width = window.width as i32 / 64i32 + 5;
+        let height = window.height as i32 / 64i32 + 5;
         let chunk_width = width * map.chunk_width() as i32;
         let chunk_height = height * map.chunk_height() as i32;
+
+        // let center_point = (0, 0);
+
+        // if let Ok(camera_transform) = camera_query.single() {
+        //     center_point = map.point_to_chunk_point((
+        //         camera_transform.translation.x as i32,
+        //         camera_transform.translation.y as i32,
+        //     ));
+        // }
 
         let floor: Handle<Texture> = asset_server.get_handle("textures/tile_map/square-floor.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
@@ -124,17 +136,74 @@ fn build_world(
         map.insert_tiles(tiles).unwrap();
 
         for x in -width / 2..=width / 2 {
-            if x == 0 {
-                continue;
-            }
             for y in -height / 2..=height / 2 {
-                if y == 0 {
-                    continue;
-                }
-                map.spawn_chunk((x, y)).unwrap();
+                // if y == 0 || x == 0 {
+                let _ = map.spawn_chunk((x, y));
+                // }
             }
         }
 
-        game_state.map_loaded = true;
+        tile_map_state.map_loaded = true;
+    }
+}
+
+fn update_map(
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    mut tilemap_query: Query<&mut Tilemap, Without<CameraCtrl>>,
+    camera_query: Query<&Transform, With<CameraCtrl>>,
+    window: Res<WindowDescriptor>,
+) {
+    if let Ok(mut map) = tilemap_query.single_mut() {
+        let width = window.width as i32 / 64i32 + 3;
+        let height = window.height as i32 / 64i32 + 3;
+        let chunk_width = width * map.chunk_width() as i32;
+        let chunk_height = height * map.chunk_height() as i32;
+
+        let mut center_point = (0, 0);
+
+        if let Ok(camera_transform) = camera_query.single() {
+            center_point = map.point_to_chunk_point((
+                camera_transform.translation.x as i32,
+                camera_transform.translation.y as i32,
+            ));
+        }
+
+        let floor: Handle<Texture> = asset_server.get_handle("textures/tile_map/square-floor.png");
+        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
+        let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
+
+        let mut tiles = Vec::new();
+        for y in 0..chunk_height {
+            for x in 0..chunk_width {
+                let y = y - chunk_height / 2 + center_point.0;
+                let x = x - chunk_width / 2 + center_point.1;
+                // if (x - center_point.0).abs() > width || (y - center_point.1).abs() > height {
+                //     if map.contains_chunk((x, y)) {
+                //         let _ = map.remove_chunk((x, y));
+                //         continue;
+                //     }
+                // } else {
+                if map.contains_chunk((x, y)) {
+                    continue;
+                }
+                let tile = Tile {
+                    point: (x, y),
+                    sprite_index: floor_index,
+                    ..Default::default()
+                };
+                tiles.push(tile);
+                // }
+            }
+        }
+        map.insert_tiles(tiles).unwrap();
+
+        for x in -width / 2..=width / 2 {
+            for y in -height / 2..=height / 2 {
+                if y == 0 || x == 0 {
+                    let _ = map.spawn_chunk((x + center_point.0, y + center_point.1));
+                }
+            }
+        }
     }
 }
