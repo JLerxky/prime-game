@@ -5,14 +5,13 @@ use std::{
 };
 
 use bevy::{core::FixedTimestep, prelude::*};
+use bevy_tilemap::Tilemap;
 use protocol::{
     data::account_data::AccountData,
     packet::Packet,
     route::{AccountRoute, GameRoute, HeartbeatRoute},
 };
 use tokio::net::UdpSocket;
-
-use crate::engine::engine_client::WindowState;
 
 use super::{camera_ctrl::CameraCtrl, ping::PingState};
 
@@ -80,9 +79,11 @@ fn net_handler_system(
     mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    window: Res<WindowState>,
-    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
-    mut camera_query: Query<(&mut Transform, &CameraCtrl)>,
+    mut syn_entity_query: Query<
+        (&mut SynEntity, &mut Transform),
+        (Without<CameraCtrl>, Without<Tilemap>),
+    >,
+    mut camera_query: Query<(&mut Transform, &CameraCtrl), (Without<SynEntity>, Without<Tilemap>)>,
     mut ping_state: ResMut<PingState>,
 ) {
     if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
@@ -126,10 +127,8 @@ fn net_handler_system(
                                     if syn_entity.id == rigid_body_state.id.into() {
                                         *transform = Transform {
                                             translation: Vec3::new(
-                                                rigid_body_state.translation.0
-                                                    * window.tile_width_proportion,
-                                                rigid_body_state.translation.1
-                                                    * window.tile_height_proportion,
+                                                rigid_body_state.translation.0,
+                                                rigid_body_state.translation.1,
                                                 99.0,
                                             ),
                                             rotation: Quat::from_rotation_z(
@@ -142,14 +141,12 @@ fn net_handler_system(
                                             if rigid_body_state.entity_type == 1
                                                 && UID == rigid_body_state.id as u32
                                             {
-                                                if let Some((mut camera_transform, _)) =
-                                                    camera_query.iter_mut().next()
+                                                if let Ok((mut camera_transform, _)) =
+                                                    camera_query.single_mut()
                                                 {
                                                     camera_transform.translation = Vec3::new(
-                                                        rigid_body_state.translation.0
-                                                            * window.tile_width_proportion,
-                                                        rigid_body_state.translation.1
-                                                            * window.tile_height_proportion,
+                                                        rigid_body_state.translation.0,
+                                                        rigid_body_state.translation.1,
                                                         99.0,
                                                     );
                                                 }
@@ -162,8 +159,7 @@ fn net_handler_system(
 
                                 // 未生成的实体根据实体类型生成新实体
                                 let mut texture_handle = asset_server.load("textures/chars/0.png");
-                                let mut tile_size =
-                                    Vec2::new(window.tile_width * 1f32, window.tile_height * 1f32);
+                                let mut tile_size = Vec2::new(64f32, 64f32);
 
                                 match rigid_body_state.entity_type {
                                     // tile
@@ -196,10 +192,8 @@ fn net_handler_system(
                                             )
                                             .as_str(),
                                         );
-                                        tile_size = Vec2::new(
-                                            window.tile_width * 0.5f32,
-                                            window.tile_width * 1f32,
-                                        );
+                                        tile_size =
+                                            Vec2::new(tile_size.x * 1f32, tile_size.y * 2f32);
                                     }
                                     // 不可动实体
                                     3 => {
@@ -229,10 +223,8 @@ fn net_handler_system(
                                         texture_atlas: texture_atlas_handle,
                                         transform: Transform {
                                             translation: Vec3::new(
-                                                rigid_body_state.translation.0
-                                                    * window.tile_width_proportion,
-                                                rigid_body_state.translation.1
-                                                    * window.tile_height_proportion,
+                                                rigid_body_state.translation.0,
+                                                rigid_body_state.translation.1,
                                                 99.0,
                                             ),
                                             rotation: Quat::from_rotation_z(

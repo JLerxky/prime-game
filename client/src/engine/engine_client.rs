@@ -22,24 +22,7 @@ use super::{
     },
 };
 
-pub struct WindowState {
-    pub tile_width: f32,
-    pub tile_height: f32,
-    pub tile_width_proportion: f32,
-    pub tile_height_proportion: f32,
-}
-
 pub fn engine_start() {
-    let width = 1600f32;
-    let height = 900f32;
-
-    let window_state = WindowState {
-        tile_width: width / 21f32,
-        tile_height: height / 13f32,
-        tile_width_proportion: width / 21f32 / 64f32,
-        tile_height_proportion: height / 13f32 / 64f32,
-    };
-
     App::build()
         .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
@@ -49,8 +32,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width,
-            height,
+            width: 1600f32,
+            height: 900f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -58,7 +41,6 @@ pub fn engine_start() {
             // cursor_visible: false,
             ..Default::default()
         })
-        .insert_resource(window_state)
         // .insert_resource(Msaa { samples: 4 })
         // 窗口背景色
         .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.9)))
