@@ -13,7 +13,9 @@ use protocol::{
 };
 use tokio::net::UdpSocket;
 
-use super::{camera_ctrl::CameraCtrl, ping::PingState};
+use crate::engine::event::heart_beat_event::HeartBeatEvent;
+
+use super::camera_ctrl::CameraCtrl;
 
 // 当前玩家uid
 pub static mut UID: u32 = 0;
@@ -84,7 +86,7 @@ fn net_handler_system(
         (Without<CameraCtrl>, Without<Tilemap>),
     >,
     mut camera_query: Query<(&mut Transform, &CameraCtrl), (Without<SynEntity>, Without<Tilemap>)>,
-    mut ping_state: ResMut<PingState>,
+    mut hb_event_writer: EventWriter<HeartBeatEvent>,
 ) {
     if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
         for _ in 0..10 {
@@ -99,13 +101,7 @@ fn net_handler_system(
                     HeartbeatRoute::In => {}
                     HeartbeatRoute::Out => {}
                     protocol::route::HeartbeatRoute::Keep(time) => {
-                        let time = SystemTime::now()
-                            .duration_since(SystemTime::UNIX_EPOCH)
-                            .unwrap()
-                            .as_millis()
-                            - time;
-                        ping_state.ping = time as f32;
-                        // println!("ping: {}", time);
+                        hb_event_writer.send(HeartBeatEvent { time });
                     }
                 },
                 Packet::Account(account_route) => match account_route {

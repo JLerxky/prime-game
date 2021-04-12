@@ -13,8 +13,8 @@ use bevy_rapier2d::{
 
 use super::{
     event::{
-        control_event::ControlEventPlugin, keyboard_event::KeyboardEventPlugin,
-        map_event::MapEventPlugin,
+        control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin,
+        keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
     },
     plugin::{
         camera_ctrl::CameraCtrl,
@@ -29,20 +29,20 @@ use super::{
 pub fn engine_start() {
     App::build()
         .insert_resource(WgpuOptions {
-            backend: WgpuBackend::Vulkan,
+            backend: WgpuBackend::Auto,
             power_pref: WgpuPowerOptions::HighPerformance,
             ..Default::default()
         })
         .insert_resource(WindowDescriptor {
             title: String::from("初始游戏"),
             // 垂直同步
-            vsync: false,
+            vsync: true,
             // 是否可调整窗口大小
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 1600f32,
-            height: 900f32,
+            width: 800f32,
+            height: 450f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
@@ -78,6 +78,7 @@ pub fn engine_start() {
         .add_plugin(ControlEventPlugin)
         .add_plugin(KeyboardEventPlugin)
         .add_plugin(MapEventPlugin)
+        .add_plugin(HeartBeatEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)
