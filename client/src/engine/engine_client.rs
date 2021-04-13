@@ -11,20 +11,14 @@ use bevy_rapier2d::{
 };
 // use protocol::Packet;
 
-use super::{
-    event::{
-        control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin,
-        keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
-    },
-    plugin::{
+use super::{event::{control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin, keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin, sync_event::SyncEventPlugin}, plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
         fps::Fps,
         network::{NetworkPlugin, SynEntity},
         ping::Ping,
         tile_map::TileMapPlugin,
-    },
-};
+    }};
 
 pub fn engine_start() {
     App::build()
@@ -79,6 +73,7 @@ pub fn engine_start() {
         .add_plugin(KeyboardEventPlugin)
         .add_plugin(MapEventPlugin)
         .add_plugin(HeartBeatEventPlugin)
+        .add_plugin(SyncEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)

@@ -15,7 +15,7 @@ pub struct MyEvent {
 
 fn event_listener_system(
     mut my_event_reader: EventReader<MyEvent>,
-    _my_events: Res<MyEvent>,
+    //mut my_event_writer: EventWriter<MyEvent>,
 ) {
     for my_event in my_event_reader.iter() {
         println!("{}", my_event.message);
