@@ -31,7 +31,7 @@ struct TileMapState {
 }
 
 fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
-    tile_sprite_handles.handles = asset_server.load_folder("textures/tile_map").unwrap();
+    tile_sprite_handles.handles = asset_server.load_folder("textures/tiles").unwrap();
 }
 
 fn load(
@@ -61,8 +61,8 @@ fn load(
         let tilemap = Tilemap::builder()
             .auto_chunk()
             .topology(GridTopology::Square)
-            .chunk_dimensions(2, 2, 1)
-            .texture_dimensions(32, 32)
+            .chunk_dimensions(1, 1, 1)
+            .texture_dimensions(64, 64)
             .z_layers(10)
             .texture_atlas(atlas_handle)
             .finish()
@@ -107,16 +107,7 @@ fn build_map(
         let chunk_width = width * map.chunk_width() as i32;
         let chunk_height = height * map.chunk_height() as i32;
 
-        // let center_point = (0, 0);
-
-        // if let Ok(camera_transform) = camera_query.single() {
-        //     center_point = map.point_to_chunk_point((
-        //         camera_transform.translation.x as i32,
-        //         camera_transform.translation.y as i32,
-        //     ));
-        // }
-
-        let floor: Handle<Texture> = asset_server.get_handle("textures/tile_map/square-floor.png");
+        let floor: Handle<Texture> = asset_server.get_handle("textures/tiles/0_0_1.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
 
@@ -169,7 +160,7 @@ fn update_map(
             ));
         }
 
-        let floor: Handle<Texture> = asset_server.get_handle("textures/tile_map/square-floor.png");
+        let floor: Handle<Texture> = asset_server.get_handle("textures/tiles/0_0_1.png");
         let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
         let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
 
