@@ -1,200 +1,533 @@
-use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder, utils::HashSet};
-use bevy_tilemap::prelude::*;
+use bevy::prelude::*;
+use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
+
+use crate::engine::event::map_event::MapEvent;
 
 use super::camera_ctrl::CameraCtrl;
 
+// 坐标
+#[derive(Copy, Clone, Debug)]
+pub struct Position {
+    pub x: usize,
+    pub y: usize,
+}
+
+// 瓷砖
+#[derive(Copy, Clone, Debug)]
+pub struct Tile {
+    // 文件名作为name
+    pub id: u32,
+    // 层级
+    pub layer: u8,
+    // 可在哪行生成
+    pub row: i32,
+    // 可连接id
+    pub top: u32,
+    pub down: u32,
+    pub left: u32,
+    pub right: u32,
+}
+
+impl Tile {
+    // fn name(&self) -> String {
+    //     format!("{}_{}_{}", self.layer, self.row, self.row)
+    // }
+    // fn filename(&self) -> String {
+    //     format!(
+    //         "textures/tiles/{}_{}_{}.png",
+    //         self.layer, self.row, self.row
+    //     )
+    // }
+}
+
+// 位置
+#[derive(Copy, Clone, Debug)]
+pub struct Slot {
+    // 位置
+    pub position: Vec3,
+    // 是否坍缩
+    pub is_collapsed: bool,
+    // 叠加态（可选瓷砖集合）
+    pub superposition: [Option<Tile>; 13],
+    // 熵
+    pub entropy: usize,
+    // 确定态（当前瓷砖）
+    pub tile: Option<Tile>,
+}
+
+pub fn get_tiles() -> [Option<Tile>; 13] {
+    // 加载瓷砖素材
+    [
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 6,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 5,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 4,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 3,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 2,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 1,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: 0,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 0,
+            row: -1,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -2,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -3,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -4,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -5,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+        Some(Tile {
+            id: 1,
+            layer: 10,
+            row: -6,
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        }),
+    ]
+}
+
+impl Slot {
+    pub fn new(position: Vec3) -> Slot {
+        let tiles = get_tiles();
+        Slot {
+            position,
+            is_collapsed: false,
+            superposition: tiles,
+            entropy: tiles.len(),
+            tile: None,
+        }
+    }
+}
+
+pub struct MapState {
+    tile_center: Vec3,
+}
+
 pub struct TileMapPlugin;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct BuildMapFixedUpdateStage;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct CleanMapFixedUpdateStage;
 
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.init_resource::<SpriteHandles>()
-            .init_resource::<TileMapState>()
-            .add_plugins(TilemapDefaultPlugins)
-            .add_startup_system(setup.system())
-            .add_system(load.system())
-            .add_system(build_map.system())
-            .add_system(update_map.system());
+        app.insert_resource(MapState {
+            tile_center: Vec3::new(0f32, 0f32, 0f32),
+        })
+        .add_startup_system(setup.system());
+        // .add_system(tile_map_produce_system.system())
+        // .add_system(tile_map_clean_system.system())
+        // .add_stage_after(
+        //     CoreStage::Update,
+        //     BuildMapFixedUpdateStage,
+        //     SystemStage::parallel()
+        //         .with_run_criteria(FixedTimestep::step(0.1).with_label("build_map_fixed_timestep"))
+        //         .with_system(tile_map_produce_system.system()),
+        // )
+        // .add_stage_after(
+        //     CoreStage::Update,
+        //     CleanMapFixedUpdateStage,
+        //     SystemStage::parallel()
+        //         .with_run_criteria(FixedTimestep::step(2.0).with_label("clean_map_fixed_timestep"))
+        //         .with_system(tile_map_clean_system.system()),
+        // );
     }
 }
 
-#[derive(Default, Clone)]
-struct SpriteHandles {
-    handles: Vec<HandleUntyped>,
-    atlas_loaded: bool,
+#[test]
+fn test() {
+    println!("{:?}", 1080 as i32 / 100i32);
+    println!("{:?}", 1920 as i32 / 100i32);
 }
 
-#[derive(Default, Clone)]
-struct TileMapState {
-    map_loaded: bool,
-    spawned: bool,
-    collisions: HashSet<(i32, i32)>,
-}
-
-fn setup(mut tile_sprite_handles: ResMut<SpriteHandles>, asset_server: Res<AssetServer>) {
-    tile_sprite_handles.handles = asset_server.load_folder("textures/tiles").unwrap();
-}
-
-fn load(
+fn setup(
     mut commands: Commands,
-    mut sprite_handles: ResMut<SpriteHandles>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut textures: ResMut<Assets<Texture>>,
     asset_server: Res<AssetServer>,
-) {
-    if sprite_handles.atlas_loaded {
-        return;
-    }
-
-    // Lets load all our textures from our folder!
-    let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    if let LoadState::Loaded =
-        asset_server.get_group_load_state(sprite_handles.handles.iter().map(|handle| handle.id))
-    {
-        for handle in sprite_handles.handles.iter() {
-            let texture = textures.get(handle).unwrap();
-            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), &texture);
-        }
-
-        let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
-        let atlas_handle = texture_atlases.add(texture_atlas);
-
-        let tilemap = Tilemap::builder()
-            .auto_chunk()
-            .topology(GridTopology::Square)
-            .chunk_dimensions(1, 1, 1)
-            .texture_dimensions(64, 64)
-            .z_layers(10)
-            .texture_atlas(atlas_handle)
-            .finish()
-            .unwrap();
-        let tilemap_components = TilemapBundle {
-            tilemap,
-            visible: Visible {
-                is_visible: true,
-                is_transparent: true,
-            },
-            transform: Default::default(),
-            global_transform: Default::default(),
-        };
-
-        commands
-            .spawn()
-            .insert_bundle(OrthographicCameraBundle::new_2d());
-        commands
-            .spawn()
-            .insert_bundle(tilemap_components)
-            .insert(Timer::from_seconds(0.075, true));
-
-        sprite_handles.atlas_loaded = true;
-    }
-}
-
-fn build_map(
-    mut tile_map_state: ResMut<TileMapState>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    asset_server: Res<AssetServer>,
-    mut tilemap_query: Query<&mut Tilemap, Without<CameraCtrl>>,
-    // camera_query: Query<&Transform, With<CameraCtrl>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    map_state: ResMut<MapState>,
     window: Res<WindowDescriptor>,
 ) {
-    if tile_map_state.map_loaded {
-        return;
-    }
+    // 生成地图
+    let tile_center = map_state.tile_center;
+    let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
+    println!(
+        "窗口大小: {},{}; 瓷砖大小: {:?}",
+        window.width, window.height, tile_size
+    );
+    // 长21格，高13格
+    let x_size: i32 = 21i32;
+    let y_size: i32 = 13i32;
 
-    if let Ok(mut map) = tilemap_query.single_mut() {
-        let width = window.width as i32 / 64i32 + 5;
-        let height = window.height as i32 / 64i32 + 5;
-        let chunk_width = width * map.chunk_width() as i32;
-        let chunk_height = height * map.chunk_height() as i32;
+    // 波函数坍缩生成场景
+    // let slots = wave_func_collapse(
+    //     Vec3::new(0.0, 0.0, 0.0),
+    //     Vec3::new(add_x as f32, add_y as f32, 0f32),
+    //     tile_size,
+    // );
 
-        let floor: Handle<Texture> = asset_server.get_handle("textures/tiles/0_0_1.png");
-        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
-        let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
+    /*
+     * The ground
+     */
+    commands
+        .spawn_bundle(SpriteBundle {
+            material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+            sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+            ..Default::default()
+        })
+        .insert(RigidBodyBuilder::new_static().translation(400.0, -tile_size.y / 2f32))
+        .insert(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
 
-        let mut tiles = Vec::new();
-        for y in 0..chunk_height {
-            for x in 0..chunk_width {
-                let y = y - chunk_height / 2;
-                let x = x - chunk_width / 2;
-                let tile = Tile {
-                    point: (x, y),
-                    sprite_index: floor_index,
-                    ..Default::default()
-                };
-                tiles.push(tile);
-            }
-        }
-        map.insert_tiles(tiles).unwrap();
+    commands
+        .spawn_bundle(SpriteBundle {
+            material: materials.add(Color::rgb(0.0, 0.0, 0.8).into()),
+            sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+            ..Default::default()
+        })
+        .insert(RigidBodyBuilder::new_static().translation(0.0, -tile_size.y / 2f32 * 3f32 + 1f32))
+        .insert(ColliderBuilder::cuboid(150.0, 5.0).friction(0.0));
 
-        for x in -width / 2..=width / 2 {
-            for y in -height / 2..=height / 2 {
-                // if y == 0 || x == 0 {
-                let _ = map.spawn_chunk((x, y));
-                // }
-            }
-        }
+    // commands
+    //     .spawn(SpriteBundle {
+    //         material: materials.add(Color::rgb(0.0, 0.0, 0.0).into()),
+    //         sprite: Sprite::new(Vec2::new(300.0, 10.0)),
+    //         transform: Transform::from_translation(Vec3::new(0.0, tile_size.y, 10.0)),
+    //         ..Default::default()
+    //     })
+    //     .with(RigidBodyBuilder::new_static())
+    //     .with(ColliderBuilder::cuboid(150.0, 5.0));
 
-        tile_map_state.map_loaded = true;
-    }
-}
+    // 天空背景
+    let mut texture_handle;
+    for x in -x_size / 2..=x_size / 2 {
+        let x_pos = x as f32 * tile_size.x;
+        for y in -y_size / 2..=y_size / 2 {
+            for z in 0..=1 {
+                let tile_position =
+                    Vec3::new(x_pos, y as f32 * tile_size.y, z as f32 * 10f32) + tile_center;
 
-fn update_map(
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    asset_server: Res<AssetServer>,
-    mut tilemap_query: Query<&mut Tilemap, Without<CameraCtrl>>,
-    camera_query: Query<&Transform, With<CameraCtrl>>,
-    window: Res<WindowDescriptor>,
-) {
-    if let Ok(mut map) = tilemap_query.single_mut() {
-        let width = window.width as i32 / 64i32 + 3;
-        let height = window.height as i32 / 64i32 + 3;
-        let chunk_width = width * map.chunk_width() as i32;
-        let chunk_height = height * map.chunk_height() as i32;
-
-        let mut center_point = (0, 0);
-
-        if let Ok(camera_transform) = camera_query.single() {
-            center_point = map.point_to_chunk_point((
-                camera_transform.translation.x as i32,
-                camera_transform.translation.y as i32,
-            ));
-        }
-
-        let floor: Handle<Texture> = asset_server.get_handle("textures/tiles/0_0_1.png");
-        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
-        let floor_index = texture_atlas.get_texture_index(&floor).unwrap();
-
-        let mut tiles = Vec::new();
-        for y in 0..chunk_height {
-            for x in 0..chunk_width {
-                let y = y - chunk_height / 2 + center_point.0;
-                let x = x - chunk_width / 2 + center_point.1;
-                // if (x - center_point.0).abs() > width || (y - center_point.1).abs() > height {
-                //     if map.contains_chunk((x, y)) {
-                //         let _ = map.remove_chunk((x, y));
-                //         continue;
+                // let slot_option = slots.get(&vec3_to_key(tile_position));
+                // if let Some(slot) = slot_option {
+                //     if let Some(tile) = slot.tile {
+                //         texture_handle = materials.add(
+                //             asset_server
+                //                 .load(format!("textures/tiles/{}.png", tile.id).as_str())
+                //                 .into(),
+                //         );
                 //     }
-                // } else {
-                if map.contains_chunk((x, y)) {
-                    continue;
-                }
-                let tile = Tile {
-                    point: (x, y),
-                    sprite_index: floor_index,
-                    ..Default::default()
-                };
-                tiles.push(tile);
                 // }
-            }
-        }
-        map.insert_tiles(tiles).unwrap();
+                if y <= -2 && y >= -6 && z >= 1 {
+                    texture_handle = materials.add(
+                        asset_server
+                            .load(format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y).as_str())
+                            .into(),
+                    );
 
-        for x in -width / 2..=width / 2 {
-            for y in -height / 2..=height / 2 {
-                if y == 0 || x == 0 {
-                    let _ = map.spawn_chunk((x + center_point.0, y + center_point.1));
+                    let rigid_body = RigidBodyBuilder::new_static()
+                        .translation(tile_position.x, tile_position.y);
+                    let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+
+                    commands
+                        .spawn_bundle(SpriteBundle {
+                            material: texture_handle.clone(),
+                            sprite: Sprite::new(tile_size),
+                            transform: Transform::from_translation(tile_position),
+                            ..Default::default()
+                        })
+                        .insert(rigid_body)
+                        .insert(collider.friction(0.0))
+                        .insert(Slot {
+                            position: tile_position,
+                            is_collapsed: true,
+                            superposition: [None; 13],
+                            entropy: 0,
+                            tile: None,
+                        });
+                }
+                if (y > -2 || y < -6) && z <= 0 {
+                    texture_handle = materials.add(
+                        asset_server
+                            .load(format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y).as_str())
+                            .into(),
+                    );
+                    commands
+                        .spawn_bundle(SpriteBundle {
+                            material: texture_handle.clone(),
+                            sprite: Sprite::new(tile_size),
+                            transform: Transform::from_translation(tile_position),
+                            ..Default::default()
+                        })
+                        .insert(Slot {
+                            position: tile_position,
+                            is_collapsed: true,
+                            superposition: [None; 13],
+                            entropy: 0,
+                            tile: None,
+                        });
                 }
             }
         }
     }
+}
+
+fn _tile_map_produce_system(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut map_state: ResMut<MapState>,
+    slot_exist_query: Query<(Entity, &Transform), With<Slot>>,
+    // player_transform_query: Query<&Transform, With<Player>>,
+    camera_transform_query: Query<&Transform, With<CameraCtrl>>,
+    window: Res<WindowDescriptor>,
+    mut map_event_reader: EventReader<MapEvent>,
+    asset_server: Res<AssetServer>,
+) {
+    let mut has_event = false;
+    for _ in map_event_reader.iter() {
+        has_event = true;
+    }
+    // map_events.clear();
+    if has_event {
+        println!("生成事件！");
+        let camera_transform = camera_transform_query.iter().next().unwrap();
+        map_state.tile_center = camera_transform.translation;
+
+        let tile_size = Vec2::new(window.width / 21f32 * 1f32, window.height / 13f32 * 1f32);
+        let mut count = 0;
+        // 长21格，高13格
+        let x_size: i32 = 21i32;
+        let y_size: i32 = 13i32;
+
+        let tile_center_transform = Vec3::new(
+            (camera_transform.translation.x as i32 / tile_size.x as i32) as f32 * tile_size.x,
+            (camera_transform.translation.y as i32 / tile_size.y as i32) as f32 * tile_size.y,
+            0f32,
+        );
+
+        let mut texture_handle;
+        for x in -x_size / 2 - 2..=x_size / 2 + 2 {
+            let x_pos = x as f32 * tile_size.x;
+            for y in -y_size / 2..=y_size / 2 {
+                for z in 0..=1 {
+                    let tile_position = Vec3::new(x_pos, y as f32 * tile_size.y, z as f32 * 10f32)
+                        + tile_center_transform;
+                    // 存在性检查
+                    let mut exist = false;
+                    for (_exist_entity, exist_transform) in slot_exist_query.iter() {
+                        if exist_transform.translation.distance(tile_position) == 0f32 {
+                            exist = true;
+                            break;
+                        }
+                    }
+                    if exist {
+                        continue;
+                    }
+
+                    if y <= -2 && y >= -6 && z >= 1 {
+                        texture_handle = materials.add(
+                            asset_server
+                                .load(
+                                    format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y)
+                                        .as_str(),
+                                )
+                                .into(),
+                        );
+
+                        let rigid_body = RigidBodyBuilder::new_static()
+                            .translation(tile_position.x, tile_position.y);
+                        let collider =
+                            ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+
+                        commands
+                            .spawn_bundle(SpriteBundle {
+                                material: texture_handle.clone(),
+                                sprite: Sprite::new(tile_size),
+                                transform: Transform::from_translation(tile_position),
+                                ..Default::default()
+                            })
+                            .insert(rigid_body)
+                            .insert(collider.friction(0.0))
+                            .insert(Slot {
+                                position: tile_position,
+                                is_collapsed: true,
+                                superposition: [None; 13],
+                                entropy: 0,
+                                tile: None,
+                            });
+                        // 生成
+                        count += 1;
+                    }
+                    if (y > -2 || y < -6) && z <= 0 {
+                        texture_handle = materials.add(
+                            asset_server
+                                .load(
+                                    format!("textures/tiles/{}_{}_1.png", z as i8 * 10i8, y)
+                                        .as_str(),
+                                )
+                                .into(),
+                        );
+                        commands
+                            .spawn_bundle(SpriteBundle {
+                                material: texture_handle.clone(),
+                                sprite: Sprite::new(tile_size),
+                                transform: Transform::from_translation(tile_position),
+                                ..Default::default()
+                            })
+                            .insert(Slot {
+                                position: tile_position,
+                                is_collapsed: true,
+                                superposition: [None; 13],
+                                entropy: 0,
+                                tile: None,
+                            });
+                        // 生成
+                        count += 1;
+                    }
+                }
+            }
+        }
+
+        if count > 0 {
+            println!(
+                "{:?},{:?}",
+                camera_transform.translation, map_state.tile_center
+            );
+            println!("新生成瓷砖: {}", count);
+        }
+    }
+}
+
+fn _tile_map_clean_system(
+    mut commands: Commands,
+    _entity_query: Query<Entity>,
+    slot_query: Query<(Entity, &Transform), With<Slot>>,
+    camera_transform_query: Query<&Transform, With<CameraCtrl>>,
+    window: Res<WindowDescriptor>,
+    _map_state: Res<MapState>,
+    // mut map_event_reader: Local<EventReader<MapEvent>>,
+    // map_events: Res<Events<MapEvent>>,
+) {
+    if let Some(camera_transform) = camera_transform_query.iter().next() {
+        // for map_event in map_event_reader.iter(&map_events) {
+        // match map_event {
+        //     MapEvent::Clean => {
+
+        // println!(
+        //     "window: {},{}; map_state: {:?}",
+        //     window.width, window.height, map_state.tile_size
+        // );
+        let tile_size = Vec2::new(
+            window.width / 1920f32 * 64f32,
+            window.height / 1080f32 * 64f32,
+        );
+        let w = window.width / 2f32 + (tile_size.x * 2f32);
+        let h = window.height / 2f32 + (tile_size.y * 2f32);
+        for (tile_entity, tile_transform) in slot_query.iter() {
+            if tile_transform.translation.x > camera_transform.translation.x + w
+                || tile_transform.translation.x < camera_transform.translation.x - w
+                || tile_transform.translation.y > camera_transform.translation.y + h
+                || tile_transform.translation.y < camera_transform.translation.y - h
+            {
+                // println!("Clean: {:?}", tile_transform);
+                commands.entity(tile_entity).despawn_recursive();
+            }
+        }
+    }
+    // println!("垃圾回收完成，剩余实体数: {}", entity_query.iter().len());
+    //     }
+    //     _ => {}
+    // }
+    // }
 }

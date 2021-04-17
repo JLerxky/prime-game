@@ -1,7 +1,6 @@
 use std::time::SystemTime;
 
 use bevy::prelude::*;
-use bevy_tilemap::Tilemap;
 use protocol::data::update_data::UpdateData;
 
 use crate::engine::plugin::{
@@ -27,11 +26,8 @@ fn event_listener_system(
     mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    mut syn_entity_query: Query<
-        (&mut SynEntity, &mut Transform),
-        (Without<CameraCtrl>, Without<Tilemap>),
-    >,
-    mut camera_query: Query<(&mut Transform, &CameraCtrl), (Without<SynEntity>, Without<Tilemap>)>,
+    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
+    mut camera_query: Query<(&mut Transform, &CameraCtrl), Without<SynEntity>>,
     // mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     for sync_event in sync_event_reader.iter() {
