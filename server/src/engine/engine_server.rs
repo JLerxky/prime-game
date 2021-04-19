@@ -233,10 +233,10 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 地面
     // 刚体类型
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
-        .translation(0.0, -10.0)
+        .translation(0.0, -96.0)
         .build();
     // 碰撞体类型
-    let collider = ColliderBuilder::new(SharedShape::cuboid(5000.0, 10.0))
+    let collider = ColliderBuilder::new(SharedShape::cuboid(500.0, 32.0))
         // 摩擦
         .friction(0.0)
         // 是否为传感器
@@ -379,7 +379,7 @@ async fn wait_for_net(
                                 body.set_linvel(
                                     Vector2::new(
                                         control_data.direction.0 * 100f32,
-                                        control_data.direction.1 * 0f32,
+                                        body.linvel().y,
                                     ),
                                     true,
                                 );
