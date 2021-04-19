@@ -85,15 +85,15 @@ impl Slot {
 
 pub struct TileMap {
     tile_center: Vec3,
-    texture_size: Vec2,
-    chunk_size: Vec2,
+    texture_size: Vec3,
+    chunk_size: Vec3,
     map_size: Vec3,
     slot_map: HashMap<Vec3, Slot>,
 }
 
 impl TileMap {
-    pub fn position_to_slot(&self, position: Vec2) -> (usize, usize) {
-        (0, 0)
+    pub fn position_to_slot(&self, position: Vec3) -> Vec3 {
+        position
     }
 }
 
@@ -109,8 +109,8 @@ impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(TileMap {
             tile_center: Vec3::new(0f32, 0f32, 0f32),
-            texture_size: Vec2::new(64f32, 64f32),
-            chunk_size: Vec2::new(1f32, 1f32),
+            texture_size: Vec3::new(64f32, 64f32, 0f32),
+            chunk_size: Vec3::new(1f32, 1f32, 0f32),
             map_size: Vec3::new(0f32, 0f32, 0f32),
             slot_map: HashMap::new(),
         })
@@ -173,7 +173,7 @@ fn setup(
             commands
                 .spawn_bundle(SpriteBundle {
                     material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size),
+                    sprite: Sprite::new(tile_size.truncate()),
                     transform: Transform::from_translation(tile_pos),
                     ..Default::default()
                 })
