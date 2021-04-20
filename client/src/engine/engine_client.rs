@@ -1,4 +1,5 @@
 use bevy::{
+    input::system::exit_on_esc_system,
     prelude::*,
     wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
     winit::WinitPlugin,
@@ -11,14 +12,21 @@ use bevy_rapier2d::{
 };
 // use protocol::Packet;
 
-use super::{event::{control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin, keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin, sync_event::SyncEventPlugin}, plugin::{
+use super::{
+    event::{
+        control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin,
+        keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
+        sync_event::SyncEventPlugin,
+    },
+    plugin::{
         camera_ctrl::CameraCtrl,
         clipboard::Clipboard,
         fps::Fps,
         network::{NetworkPlugin, SynEntity},
         ping::Ping,
         tile_map::TileMapPlugin,
-    }};
+    },
+};
 
 pub fn engine_start() {
     App::build()
@@ -49,6 +57,8 @@ pub fn engine_start() {
         .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.9)))
         // 默认插件
         .add_plugins(DefaultPlugins)
+        // esc退出系统
+        .add_system(exit_on_esc_system.system())
         // 窗口插件
         // .add_resource(ClearColor(Color::rgb(
         //     0xF9 as f32 / 255.0,
