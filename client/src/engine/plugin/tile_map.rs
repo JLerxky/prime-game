@@ -1,4 +1,5 @@
 use bevy_rapier2d::rapier::dynamics::RigidBodyBuilder;
+use protocol::data::tile_map_data::TileCollider;
 use std::collections::HashMap;
 
 use bevy::prelude::*;
@@ -35,21 +36,6 @@ pub enum TileJoint {
     Some(String),
     TagOne(TileTag),
     TagSome(Vec<TileTag>),
-}
-
-// 地形碰撞体类型
-#[derive(Clone, Debug)]
-pub enum TileCollider {
-    Full,
-    HalfTop,
-    HalfBottom,
-    HalfLeft,
-    HalfRight,
-    HalfFront,
-    HalfBack,
-    HalfCenter,
-    HalfCenterX,
-    HalfCenterY,
 }
 
 #[derive(Clone, Debug)]

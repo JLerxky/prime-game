@@ -108,6 +108,7 @@ fn net_handler_system(
                             sync_event_writer.send(SyncEvent { update_data });
                         }
                         GameRoute::Control(_control_data) => {}
+                        GameRoute::TileMap(_tile_map_data) => {}
                     }
                     // 游戏逻辑数据包每帧执行一次
                     return;

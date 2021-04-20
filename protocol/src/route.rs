@@ -1,4 +1,7 @@
-use crate::data::{account_data::AccountData, control_data::ControlData, update_data::UpdateData};
+use crate::data::{
+    account_data::AccountData, control_data::ControlData, tile_map_data::TileMapData,
+    update_data::UpdateData,
+};
 use serde::{Deserialize, Serialize};
 // 数据包二级路由[1]
 // 心跳包路由
@@ -19,4 +22,5 @@ pub enum AccountRoute {
 pub enum GameRoute {
     Update(UpdateData),
     Control(ControlData),
+    TileMap(TileMapData),
 }
