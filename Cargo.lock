@@ -3624,7 +3624,6 @@ dependencies = [
  "protocol",
  "rand",
  "rapier2d",
- "rocksdb",
  "rustyline",
  "serde",
  "sha2",

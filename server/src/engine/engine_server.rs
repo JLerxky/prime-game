@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::net;
-use data::game_db::{self, GameData};
+use data::game_server_db::{self, GameData};
 use protocol::{
     data::update_data::{EntityState, UpdateData},
     packet::Packet,
@@ -200,7 +200,7 @@ async fn clean_body(
             entity_state.make_up_data(body.user_data);
 
             if entity_state.entity_type == 1 {
-                match game_db::find(GameData::player_online(None)) {
+                match game_server_db::find(GameData::player_online(None)) {
                     Ok(data) => {
                         if data.len() > 0 {
                             let uid_list: Vec<&str> = data.split(",").collect();

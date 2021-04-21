@@ -9,7 +9,7 @@ pub struct RocksDB {
     path: String,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum ColumnFamily {
     GameServer,
     GameClient,
@@ -24,11 +24,11 @@ impl RocksDB {
             match &db {
                 Some(db) => Ok(db),
                 None => {
-                    let path = "rocks_game_db";
+                    let path = &format!("db_{:?}", column_family);
                     let mut cf_opts = Options::default();
                     cf_opts.set_keep_log_file_num(3);
                     let cf =
-                        ColumnFamilyDescriptor::new((column_family as u8).to_string(), cf_opts);
+                        ColumnFamilyDescriptor::new((column_family as usize).to_string(), cf_opts);
 
                     let mut db_opts = Options::default();
                     db_opts.set_keep_log_file_num(3);

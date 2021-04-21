@@ -1,5 +1,5 @@
 /target
-*_game_db
+db_*
 *.log
 *~
 .DS_Store

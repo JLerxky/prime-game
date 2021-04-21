@@ -7,6 +7,8 @@ pub struct GameData {
     pub data: Option<String>,
 }
 
+static CF: ColumnFamily = ColumnFamily::GameServer;
+
 impl GameData {
     pub fn player_online(data: Option<String>) -> Self {
         GameData {
@@ -46,7 +48,7 @@ impl GameData {
 }
 
 pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
+    let rocks_db = RocksDB::open(CF)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(
@@ -57,7 +59,7 @@ pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
 }
 
 pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
+    let rocks_db = RocksDB::open(CF)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => {
             if let Ok(mut next) = result.parse::<u64>() {
@@ -73,12 +75,12 @@ pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
 }
 
 pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
-    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
+    let rocks_db = RocksDB::open(CF)?;
     rocks_db.put_value(format!("{}-({})", data.table, data.key), data.data.unwrap())
 }
 
 pub fn find_and_lock(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
+    let rocks_db = RocksDB::open(CF)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(
