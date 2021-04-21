@@ -1,9 +1,7 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
-use crate::{
-    data::game_db::{self, GameData},
-    net,
-};
+use crate::net;
+use data::game_db::{self, GameData};
 use protocol::{
     data::update_data::{EntityState, UpdateData},
     packet::Packet,

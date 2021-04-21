@@ -1,0 +1,12 @@
+[package]
+name = "data"
+version = "0.1.0"
+authors = ["JLer <472102489@qq.com>"]
+edition = "2018"
+
+[dependencies]
+util = { path = "../util" }
+common = { path = "../common" }
+protocol = { path = "../protocol" }
+
+rocksdb = "0.16"

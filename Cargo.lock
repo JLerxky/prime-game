@@ -1418,6 +1418,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "data"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "protocol",
+ "rocksdb",
+ "util",
+]
+
+[[package]]
 name = "deflate"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3609,6 +3619,7 @@ dependencies = [
  "bytes",
  "common",
  "crossbeam",
+ "data",
  "futures",
  "protocol",
  "rand",

@@ -1,6 +1,6 @@
 pub const SERVER_PORT: u16 = 2101;
 // 服务器地址
-pub const SERVER_ADDR: &str = "172.20.10.3:2101";
+pub const SERVER_ADDR: &str = "172.20.10.5:2101";
 // 客户端地址
 pub const CLIENT_ADDR: &str = "0.0.0.0:0";
 // 帧间时间

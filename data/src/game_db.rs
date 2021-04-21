@@ -1,6 +1,5 @@
+use crate::rocksdb::{ColumnFamily, RocksDB};
 use std::error::Error;
-
-use crate::data::rocksdb::RocksDB;
 
 pub struct GameData {
     pub table: String,
@@ -47,7 +46,7 @@ impl GameData {
 }
 
 pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(
@@ -58,7 +57,7 @@ pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
 }
 
 pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => {
             if let Ok(mut next) = result.parse::<u64>() {
@@ -74,12 +73,12 @@ pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
 }
 
 pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
     rocks_db.put_value(format!("{}-({})", data.table, data.key), data.data.unwrap())
 }
 
 pub fn find_and_lock(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open()?;
+    let rocks_db = RocksDB::open(ColumnFamily::GameServer)?;
     match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
         Some(result) => Ok(result),
         None => Err(Box::new(std::io::Error::new(

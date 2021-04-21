@@ -8,18 +8,27 @@ pub struct RocksDB {
     opts: Options,
     path: String,
 }
-pub static mut ROCKS_DB: Option<RocksDB> = None;
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub enum ColumnFamily {
+    GameServer,
+    GameClient,
+}
+
+pub static mut ROCKS_DB: [Option<RocksDB>; 2] = [None, None];
 
 impl RocksDB {
-    pub fn open() -> Result<&'static RocksDB, Box<dyn Error>> {
+    pub fn open(column_family: ColumnFamily) -> Result<&'static RocksDB, Box<dyn Error>> {
         unsafe {
-            match &ROCKS_DB {
+            let db = &ROCKS_DB[column_family as usize];
+            match &db {
                 Some(db) => Ok(db),
                 None => {
                     let path = "rocks_game_db";
                     let mut cf_opts = Options::default();
                     cf_opts.set_keep_log_file_num(3);
-                    let cf = ColumnFamilyDescriptor::new("cf1", cf_opts);
+                    let cf =
+                        ColumnFamilyDescriptor::new((column_family as u8).to_string(), cf_opts);
 
                     let mut db_opts = Options::default();
                     db_opts.set_keep_log_file_num(3);
@@ -29,13 +38,13 @@ impl RocksDB {
                     let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
                     let aes =
                         AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
-                    ROCKS_DB = Some(RocksDB {
+                    ROCKS_DB[column_family as usize] = Some(RocksDB {
                         db,
                         aes,
                         opts: db_opts,
                         path: String::from(path),
                     });
-                    if let Some(db) = &ROCKS_DB {
+                    if let Some(db) = &ROCKS_DB[column_family as usize] {
                         Ok(db)
                     } else {
                         Err(Box::new(std::io::Error::new(
