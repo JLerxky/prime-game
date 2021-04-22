@@ -150,8 +150,11 @@ fn setup(
             let tile_pos = Vec3::new(pos_x, pos_y, -5f32);
             println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
-            let texture_handle =
-                materials.add(asset_server.load("textures/tiles/10_-3_1.png").into());
+            let texture_handle = materials.add(
+                asset_server
+                    .load("textures/prime/tiles/0-tileset_04.png")
+                    .into(),
+            );
 
             let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
             // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
@@ -173,4 +176,20 @@ fn setup(
                 });
         }
     }
+}
+
+fn create_map(// tile_map: &TileMap
+) {
+    for z in 0..3 {
+        for x in 0..5 {
+            for y in 0..5 {
+                println!("{},{},{}", x, y, z);
+            }
+        }
+    }
+}
+
+#[test]
+fn test_create_map() {
+    create_map();
 }
