@@ -1,4 +1,4 @@
-use data::game_server_db::{self, GameData};
+use data::server_db::{self, GameData};
 use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -48,14 +48,14 @@ pub async fn clean_offline_user() {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(clean_tick as u64));
     loop {
         interval.tick().await;
-        match game_server_db::find(GameData::player_group_addr(0, None)) {
+        match server_db::find(GameData::player_group_addr(0, None)) {
             Ok(data) => {
                 // println!("在线玩家列表: [{}]", data);
                 if data.len() > 0 {
                     for addr_db in data.split(",") {
                         // 检查玩家ip地址健康检查状态
                         if let Ok(health) =
-                            game_server_db::find(GameData::player_addr_health(addr_db.to_string(), None))
+                            server_db::find(GameData::player_addr_health(addr_db.to_string(), None))
                         {
                             // println!("{}健康值: {}", addr_db, health);
                             if let Ok(h) = health.parse::<u128>() {
@@ -65,7 +65,7 @@ pub async fn clean_offline_user() {
                                     .as_millis();
                                 if now > (h + clean_tick) {
                                     // println!("now: {}", now);
-                                    if let Ok(uid) = game_server_db::find(GameData::player_addr_uid(
+                                    if let Ok(uid) = server_db::find(GameData::player_addr_uid(
                                         addr_db.to_string(),
                                         None,
                                     )) {
@@ -73,7 +73,7 @@ pub async fn clean_offline_user() {
                                         if let Ok(uid_offline) = uid.parse::<u32>() {
                                             // println!("uid_offline: {}", uid_offline);
                                             // 更新在线玩家表
-                                            match game_server_db::find(GameData::player_online(None)) {
+                                            match server_db::find(GameData::player_online(None)) {
                                                 Ok(data) => {
                                                     if data.len() > 0 {
                                                         let mut uid_list: Vec<&str> =
@@ -93,7 +93,7 @@ pub async fn clean_offline_user() {
                                                                 uid_list[index]
                                                             );
                                                             uid_list.remove(index);
-                                                            let _ = game_server_db::save(
+                                                            let _ = server_db::save(
                                                                 GameData::player_online(Some(
                                                                     uid_list.join(","),
                                                                 )),
@@ -104,7 +104,7 @@ pub async fn clean_offline_user() {
                                                 Err(_) => {}
                                             }
                                             // 更新玩家组ip地址
-                                            match game_server_db::find(GameData::player_group_addr(
+                                            match server_db::find(GameData::player_group_addr(
                                                 0, None,
                                             )) {
                                                 Ok(data) => {
@@ -126,7 +126,7 @@ pub async fn clean_offline_user() {
                                                                 addr_list[index]
                                                             );
                                                             addr_list.remove(index);
-                                                            let _ = game_server_db::save(
+                                                            let _ = server_db::save(
                                                                 GameData::player_group_addr(
                                                                     0,
                                                                     Some(addr_list.join(",")),
@@ -152,7 +152,7 @@ pub async fn clean_offline_user() {
 
 pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
     // let mut senders = Vec::new();
-    match game_server_db::find(GameData::player_group_addr(group, None)) {
+    match server_db::find(GameData::player_group_addr(group, None)) {
         Ok(data) => {
             // println!("1");
             if data.len() > 0 {
@@ -216,7 +216,7 @@ async fn start_listening(
                             let _ =
                                 tokio::spawn(send(send_socket.clone(), buf[..len].to_vec(), addr));
                             // 添加玩家ip地址健康检查状态
-                            let _ = game_server_db::save(GameData::player_addr_health(
+                            let _ = server_db::save(GameData::player_addr_health(
                                 addr.to_string(),
                                 Some(format!(
                                     "{}",
@@ -233,16 +233,16 @@ async fn start_listening(
                             println!("{}登录事件: {:?}", &addr, &account_data);
                             // 根据玩家ip注册或获取uid
                             let mut uid = account_data.uid;
-                            match game_server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
                                     } else {
                                         if let Ok(id) =
-                                            game_server_db::next_u64(GameData::player_queue_uid(None))
+                                            server_db::next_u64(GameData::player_queue_uid(None))
                                         {
                                             uid = id as u32;
-                                            let _ = game_server_db::save(GameData::player_addr_uid(
+                                            let _ = server_db::save(GameData::player_addr_uid(
                                                 addr.to_string(),
                                                 Some(uid.to_string()),
                                             ));
@@ -251,10 +251,10 @@ async fn start_listening(
                                 }
                                 Err(_) => {
                                     if let Ok(id) =
-                                        game_server_db::next_u64(GameData::player_queue_uid(None))
+                                        server_db::next_u64(GameData::player_queue_uid(None))
                                     {
                                         uid = id as u32;
-                                        let _ = game_server_db::save(GameData::player_addr_uid(
+                                        let _ = server_db::save(GameData::player_addr_uid(
                                             addr.to_string(),
                                             Some(uid.to_string()),
                                         ));
@@ -262,7 +262,7 @@ async fn start_listening(
                                 }
                             }
                             // 更新在线玩家表
-                            match game_server_db::find(GameData::player_online(None)) {
+                            match server_db::find(GameData::player_online(None)) {
                                 Ok(data) => {
                                     if data.len() > 0 {
                                         let mut exist = false;
@@ -273,25 +273,25 @@ async fn start_listening(
                                             }
                                         }
                                         if !exist {
-                                            let _ = game_server_db::save(GameData::player_online(Some(
+                                            let _ = server_db::save(GameData::player_online(Some(
                                                 format!("{},{}", data, uid),
                                             )));
                                         }
                                     } else {
-                                        let _ = game_server_db::save(GameData::player_online(Some(
+                                        let _ = server_db::save(GameData::player_online(Some(
                                             format!("{}", uid),
                                         )));
                                     }
                                 }
                                 Err(_) => {
-                                    let _ = game_server_db::save(GameData::player_online(Some(format!(
+                                    let _ = server_db::save(GameData::player_online(Some(format!(
                                         "{}",
                                         uid
                                     ))));
                                 }
                             }
                             // 更新玩家组ip地址
-                            match game_server_db::find(GameData::player_group_addr(
+                            match server_db::find(GameData::player_group_addr(
                                 account_data.group,
                                 None,
                             )) {
@@ -305,27 +305,27 @@ async fn start_listening(
                                             }
                                         }
                                         if !exist {
-                                            let _ = game_server_db::save(GameData::player_group_addr(
+                                            let _ = server_db::save(GameData::player_group_addr(
                                                 account_data.group,
                                                 Some(format!("{},{}", data, addr)),
                                             ));
                                         }
                                     } else {
-                                        let _ = game_server_db::save(GameData::player_group_addr(
+                                        let _ = server_db::save(GameData::player_group_addr(
                                             account_data.group,
                                             Some(format!("{}", addr)),
                                         ));
                                     }
                                 }
                                 Err(_) => {
-                                    let _ = game_server_db::save(GameData::player_group_addr(
+                                    let _ = server_db::save(GameData::player_group_addr(
                                         account_data.group,
                                         Some(format!("{}", addr)),
                                     ));
                                 }
                             }
                             // 添加玩家ip地址健康检查状态
-                            let _ = game_server_db::save(GameData::player_addr_health(
+                            let _ = server_db::save(GameData::player_addr_health(
                                 addr.to_string(),
                                 Some(format!(
                                     "{}",
@@ -354,7 +354,7 @@ async fn start_listening(
                             println!("{}登出事件: {:?}", &addr, &account_data);
                             // 根据玩家ip获取uid
                             let uid;
-                            match game_server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
@@ -367,7 +367,7 @@ async fn start_listening(
                                 }
                             }
                             // 更新在线玩家表
-                            match game_server_db::find(GameData::player_online(None)) {
+                            match server_db::find(GameData::player_online(None)) {
                                 Ok(data) => {
                                     if data.len() > 0 {
                                         let mut uid_list: Vec<&str> = data.split(",").collect();
@@ -380,7 +380,7 @@ async fn start_listening(
                                         }
                                         if let Some(index) = rm_index {
                                             uid_list.remove(index);
-                                            let _ = game_server_db::save(GameData::player_online(Some(
+                                            let _ = server_db::save(GameData::player_online(Some(
                                                 uid_list.join(","),
                                             )));
                                         }
@@ -389,7 +389,7 @@ async fn start_listening(
                                 Err(_) => {}
                             }
                             // 更新玩家组ip地址
-                            match game_server_db::find(GameData::player_group_addr(
+                            match server_db::find(GameData::player_group_addr(
                                 account_data.group,
                                 None,
                             )) {
@@ -405,7 +405,7 @@ async fn start_listening(
                                         }
                                         if let Some(index) = rm_index {
                                             addr_list.remove(index);
-                                            let _ = game_server_db::save(GameData::player_group_addr(
+                                            let _ = server_db::save(GameData::player_group_addr(
                                                 account_data.group,
                                                 Some(addr_list.join(",")),
                                             ));
@@ -421,7 +421,7 @@ async fn start_listening(
                             // println!("{}控制: {:?}", &addr, &control_data);
                             // 根据玩家ip注册或获取uid
                             let uid;
-                            match game_server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;

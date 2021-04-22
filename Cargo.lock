@@ -984,6 +984,7 @@ dependencies = [
  "bytes",
  "clipboard",
  "common",
+ "data",
  "protocol",
  "rand",
  "rustyline",

@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 common = { path = "../common" }
+data = { path = "../data" }
 protocol = { path = "../protocol" }
 
 bincode = "1.3"
