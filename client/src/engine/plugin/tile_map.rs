@@ -178,8 +178,13 @@ fn setup(
     }
 }
 
-fn create_map(// tile_map: &TileMap
-) {
+fn create_map(tile_map: &TileMap, player_pos: Vec3) {
+    // 1.按玩家进入点计算初始位置
+    let initial_pos = player_pos;
+    let initial_point = pos_to_global_point(tile_map, initial_pos);
+    // 2.按Z轴从小到大生成图层
+    // 3.按与初始点位的距离，一圈一圈生成
+    // 4.同圈内按照熵值从小到大生成
     for z in 0..3 {
         for x in 0..5 {
             for y in 0..5 {
@@ -189,7 +194,20 @@ fn create_map(// tile_map: &TileMap
     }
 }
 
+fn pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> Vec3 {
+    let point = Vec3::new(0., 0., 0.);
+    point
+}
+
 #[test]
 fn test_create_map() {
-    create_map();
+    let tile_map = TileMap {
+        tile_center: Vec3::new(0., 0., 0.),
+        texture_size: Vec3::new(64., 64., 0.),
+        chunk_size: Vec3::new(1., 1., 0.),
+        map_size: Vec3::new(0., 0., 0.),
+        slot_map: HashMap::new(),
+    };
+    let pos = Vec3::new(0., 0., 0.);
+    create_map(&tile_map, pos);
 }
