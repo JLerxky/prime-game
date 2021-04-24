@@ -48,7 +48,7 @@ pub struct TileTag {
 #[derive(Clone, Debug)]
 pub struct Slot {
     // map坐标
-    pub point: Vec3,
+    pub point: IVec3,
     // 叠加态（可选瓷砖集合）
     pub superposition: Vec<Tile>,
     // 熵 (superposition.len(), 等于0则已坍缩)
@@ -58,7 +58,7 @@ pub struct Slot {
 }
 
 impl Slot {
-    pub fn new(point: Vec3) -> Slot {
+    pub fn new(point: IVec3) -> Slot {
         let tiles = Vec::new();
         Slot {
             point,
@@ -70,11 +70,11 @@ impl Slot {
 }
 
 pub struct TileMap {
-    tile_center: Vec3,
-    texture_size: Vec3,
-    chunk_size: Vec3,
-    map_size: Vec3,
-    slot_map: HashMap<Vec3, Slot>,
+    center_point: IVec3,
+    texture_size: UVec3,
+    chunk_size: UVec3,
+    map_size: UVec3,
+    slot_map: HashMap<IVec3, Slot>,
 }
 
 impl TileMap {
@@ -94,10 +94,10 @@ struct CleanMapFixedUpdateStage;
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(TileMap {
-            tile_center: Vec3::new(0f32, 0f32, 0f32),
-            texture_size: Vec3::new(64f32, 64f32, 0f32),
-            chunk_size: Vec3::new(1f32, 1f32, 0f32),
-            map_size: Vec3::new(0f32, 0f32, 0f32),
+            center_point: IVec3::new(0, 0, 0),
+            texture_size: UVec3::new(64, 64, 0),
+            chunk_size: UVec3::new(1, 1, 0),
+            map_size: UVec3::new(5, 5, 3),
             slot_map: HashMap::new(),
         })
         .add_startup_system(setup.system());
@@ -132,21 +132,25 @@ fn setup(
 
     // 计算tile_map大小
     let tile_size = tile_map.texture_size * tile_map.chunk_size;
-    let mut x = (window.width / tile_size.x) as u32 + 2;
-    let mut y = (window.height / tile_size.y) as u32 + 2;
+    let mut x = (window.width / tile_size.x as f32) as u32 + 2;
+    let mut y = (window.height / tile_size.y as f32) as u32 + 2;
     x += ((x % 2) == 0) as u32;
     y += ((y % 2) == 0) as u32;
-    tile_map.map_size = Vec3::new(x as f32, y as f32, 10f32);
+    tile_map.map_size = UVec3::new(x, y, 10);
+
+    let center_pos = tile_map.center_point.as_f32()
+        * tile_map.texture_size.as_f32()
+        * tile_map.chunk_size.as_f32();
 
     println!(
         "tile_size: {}; map_size: {:?}",
         tile_size, tile_map.map_size
     );
 
-    for x in -tile_map.map_size.x as i32 / 2..=tile_map.map_size.x as i32 / 2 {
-        let pos_x = x as f32 * tile_size.x + tile_map.tile_center.x;
-        for y in -tile_map.map_size.y as i32 / 2..=tile_map.map_size.y as i32 / 2 {
-            let pos_y = y as f32 * tile_size.y + tile_map.tile_center.y;
+    for x in -(tile_map.map_size.x as i32) / 2..=tile_map.map_size.x as i32 / 2 {
+        let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
+        for y in -(tile_map.map_size.y as i32) / 2..=tile_map.map_size.y as i32 / 2 {
+            let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
             let tile_pos = Vec3::new(pos_x, pos_y, -5f32);
             println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
@@ -162,7 +166,7 @@ fn setup(
             commands
                 .spawn_bundle(SpriteBundle {
                     material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size.truncate()),
+                    sprite: Sprite::new(tile_size.truncate().as_f32()),
                     transform: Transform::from_translation(tile_pos),
                     ..Default::default()
                 })
@@ -172,42 +176,66 @@ fn setup(
                     superposition: Vec::new(),
                     entropy: 0,
                     tile: None,
-                    point: Vec3::from(tile_pos),
+                    point: tile_pos.as_i32(),
                 });
         }
     }
 }
 
-fn create_map(tile_map: &TileMap, player_pos: Vec3) {
+fn create_map(tile_map: &mut TileMap, player_pos: Vec3) {
     // 1.按玩家进入点计算初始位置
     let initial_pos = player_pos;
     let initial_point = pos_to_global_point(tile_map, initial_pos);
     // 2.按Z轴从小到大生成图层
     // 3.按与初始点位的距离，一圈一圈生成
     // 4.同圈内按照熵值从小到大生成
-    for z in 0..3 {
-        for x in 0..5 {
-            for y in 0..5 {
-                println!("{},{},{}", x, y, z);
+    let min_x = tile_map.center_point.x - (tile_map.map_size.max_element() as i32 / 2);
+    let max_x = tile_map.center_point.x + (tile_map.map_size.max_element() as i32 / 2);
+    let min_y = tile_map.center_point.y - (tile_map.map_size.max_element() as i32 / 2);
+    let max_y = tile_map.center_point.y + (tile_map.map_size.max_element() as i32 / 2);
+
+    for z in 0..tile_map.map_size.z {
+        for step in 0..tile_map.map_size.max_element() {
+            let point = IVec3::new(
+                initial_point.x + step as i32,
+                initial_point.y + step as i32,
+                z as i32,
+            );
+            // 判断是否超过范围
+            if point.x < min_x || point.x > max_x || point.y < min_y || point.y > max_y {
+                continue;
             }
+            let slot = Slot {
+                point,
+                superposition: Vec::new(),
+                entropy: 0,
+                tile: None,
+            };
+            tile_map.slot_map.insert(point, slot);
         }
     }
 }
 
-fn pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> Vec3 {
-    let point = Vec3::new(0., 0., 0.);
-    point
+// 世界坐标->地图索引
+fn pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> IVec3 {
+    let point =
+        pos / ((tile_map.chunk_size * tile_map.texture_size).as_f32() / Vec3::new(2., 2., 1.));
+    point.as_i32()
 }
 
 #[test]
 fn test_create_map() {
     let tile_map = TileMap {
-        tile_center: Vec3::new(0., 0., 0.),
-        texture_size: Vec3::new(64., 64., 0.),
-        chunk_size: Vec3::new(1., 1., 0.),
-        map_size: Vec3::new(0., 0., 0.),
+        center_point: IVec3::new(0, 0, 0),
+        texture_size: UVec3::new(64, 64, 1),
+        chunk_size: UVec3::new(1, 1, 1),
+        map_size: UVec3::new(5, 5, 3),
         slot_map: HashMap::new(),
     };
-    let pos = Vec3::new(0., 0., 0.);
-    create_map(&tile_map, pos);
+    // let pos = Vec3::new(0., 0., 0.);
+    // create_map(&tile_map, pos);
+    println!(
+        "{}",
+        pos_to_global_point(&tile_map, Vec3::new(-31., 10., 1.))
+    );
 }
