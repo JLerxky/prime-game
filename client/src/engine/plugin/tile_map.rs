@@ -218,14 +218,14 @@ fn create_map(tile_map: &mut TileMap, player_pos: Vec3) {
                     if tile_map.slot_map.contains_key(&point) {
                         continue;
                     }
-                    // TODO 测试输出
-                    // println!("{}", point);
 
                     // 初始化Slot: 填充叠加态, 初始化熵
+                    let superposition = load_default_superposition();
+                    let entropy = superposition.len();
                     let slot = Slot {
                         point,
-                        superposition: load_default_superposition(),
-                        entropy: 999,
+                        superposition,
+                        entropy,
                         tile: None,
                     };
                     tile_map.slot_map.insert(point, slot);
@@ -253,7 +253,7 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
 
     // 取出当前所有未坍缩的slot
     for (_point, slot) in slot_map.iter() {
-        if slot.entropy == 0 {
+        if slot.entropy > 0 {
             slot_list.push(slot.clone());
         }
     }
@@ -388,28 +388,57 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
         slot.tile = Some(slot.superposition[i].clone());
         slot.superposition = Vec::new();
         slot.entropy = 0;
-        tile_map.slot_map.insert(slot.point, slot.clone());
+        if let Some(slot) = tile_map.slot_map.insert(slot.point, slot.clone()) {
+            println!("更新{:?}", slot);
+        }
     }
 
     // 判断是否完成坍缩, 完成则退出递归返回tile_map结果, 否则继续
-    let result = tile_map;
     let mut complete = true;
-    for (_, slot) in result.slot_map.iter() {
+    for (_, slot) in tile_map.slot_map.iter() {
         if slot.entropy > 0 {
             complete = false;
             break;
         }
     }
     if complete {
-        return result;
+        return tile_map;
     } else {
-        return collapse(result);
+        return collapse(tile_map);
     }
 }
 
 // TODO 加载默认可用tile作为叠加态
 fn load_default_superposition() -> Vec<Tile> {
-    let superposition = Vec::new();
+    let mut superposition = Vec::new();
+    superposition.push(Tile {
+        filename: "1".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::All, // 0上
+            TileJoint::All, // 1下
+            TileJoint::All, // 2左
+            TileJoint::All, // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
+    superposition.push(Tile {
+        filename: "2".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::One("1".to_string()), // 0上
+            TileJoint::One("1".to_string()), // 1下
+            TileJoint::One("1".to_string()), // 2左
+            TileJoint::One("1".to_string()), // 3右
+            TileJoint::One("1".to_string()), // 4前
+            TileJoint::One("1".to_string()), // 5后
+        ),
+    });
     superposition
 }
 
@@ -424,8 +453,5 @@ fn test_create_map() {
     };
     let pos = Vec3::new(64., -32., 0.);
     create_map(&mut tile_map, pos);
-    println!(
-        "{:?}",
-        tile_map
-    );
+    println!("{:?}", tile_map);
 }
