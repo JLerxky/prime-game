@@ -221,11 +221,11 @@ fn create_map(tile_map: &mut TileMap, player_pos: Vec3) {
                     // TODO 测试输出
                     // println!("{}", point);
 
-                    // TODO 初始化Slot: 填充叠加态, 初始化熵
+                    // 初始化Slot: 填充叠加态, 初始化熵
                     let slot = Slot {
                         point,
-                        superposition: Vec::new(),
-                        entropy: 0,
+                        superposition: load_default_superposition(),
+                        entropy: 999,
                         tile: None,
                     };
                     tile_map.slot_map.insert(point, slot);
@@ -405,6 +405,12 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
     } else {
         return collapse(result);
     }
+}
+
+// TODO 加载默认可用tile作为叠加态
+fn load_default_superposition() -> Vec<Tile> {
+    let superposition = Vec::new();
+    superposition
 }
 
 #[test]
