@@ -134,11 +134,12 @@ fn setup(
 
     // 计算tile_map大小
     let tile_size = tile_map.texture_size * tile_map.chunk_size;
-    let mut x = (window.width / tile_size.x as f32) as u32 + 2;
-    let mut y = (window.height / tile_size.y as f32) as u32 + 2;
-    x += ((x % 2) == 0) as u32;
-    y += ((y % 2) == 0) as u32;
-    tile_map.map_size = UVec3::new(x, y, tile_map.map_size.z);
+    // TODO 根据窗口大小修改tile_map大小
+    // let mut x = (window.width / tile_size.x as f32) as u32 + 2;
+    // let mut y = (window.height / tile_size.y as f32) as u32 + 2;
+    // x += ((x % 2) == 0) as u32;
+    // y += ((y % 2) == 0) as u32;
+    // tile_map.map_size = UVec3::new(x, y, tile_map.map_size.z);
 
     let center_pos = tile_map.center_point.as_f32()
         * tile_map.texture_size.as_f32()
@@ -151,13 +152,15 @@ fn setup(
 
     create_map(&mut tile_map, Vec3::new(0., 0., 0.));
 
+    println!("{:?}", &tile_map.slot_map);
+
     for (point, slot) in tile_map.slot_map.iter() {
         let x = point.x;
         let y = point.y;
         let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
         let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
         let tile_pos = Vec3::new(pos_x, pos_y, -5f32);
-        println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
+        // println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
         let mut texture_handle = materials.add(
             asset_server
@@ -269,7 +272,7 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
 
     // 重新计算熵
     for slot in &mut slot_list {
-        let mut superposition: Vec<Tile> = slot.superposition.clone();
+        let superposition: Vec<Tile> = slot.superposition.clone();
 
         // 取得紧贴的slot连接限制条件tile_joint
         let mut joint_list = [
@@ -325,12 +328,12 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
 
         // 剔除无效坍缩态
         let mut superposition_new = Vec::new();
-        'tile: for (tile_i, tile) in superposition.iter().enumerate() {
-            println!("len: {}, {}", superposition.len(), tile_i);
+        'tile: for tile in superposition.iter() {
+            // println!("len: {}, {}", superposition.len(), tile_i);
             for i in 0..6 as usize {
                 match joint_list[i] {
                     TileJoint::None => {
-                        superposition = Vec::new();
+                        superposition_new = Vec::new();
                         break 'tile;
                     }
                     TileJoint::One(ref filename) => {
@@ -369,10 +372,8 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
             superposition_new.push(tile.clone());
         }
 
-        superposition = superposition;
-
         // 更新slot
-        slot.superposition = superposition;
+        slot.superposition = superposition_new;
         slot.entropy = slot.superposition.len();
     }
 
@@ -397,8 +398,8 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
         slot.tile = Some(slot.superposition[i].clone());
         slot.superposition = Vec::new();
         slot.entropy = 0;
-        if let Some(slot) = tile_map.slot_map.insert(slot.point, slot.clone()) {
-            println!("更新{:?}", slot);
+        if let Some(_slot) = tile_map.slot_map.insert(slot.point, slot.clone()) {
+            // println!("更新{:?}", slot);
         }
     }
 
@@ -420,6 +421,20 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
 // TODO 加载默认可用tile作为叠加态
 fn load_default_superposition() -> Vec<Tile> {
     let mut superposition = Vec::new();
+    superposition.push(Tile {
+        filename: "0-tileset_07.png".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::All, // 0上
+            TileJoint::All, // 1下
+            TileJoint::All, // 2左
+            TileJoint::All, // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
     superposition.push(Tile {
         filename: "0-tileset_50.png".to_string(),
         layer: 0,
