@@ -1,5 +1,6 @@
 use bevy_rapier2d::rapier::dynamics::RigidBodyBuilder;
 use protocol::data::tile_map_data::TileCollider;
+use rand::Rng;
 use std::collections::HashMap;
 
 use bevy::prelude::*;
@@ -22,7 +23,7 @@ pub struct Tile {
         TileJoint, // 2左
         TileJoint, // 3右
         TileJoint, // 4前
-        TileJoint, // 6后
+        TileJoint, // 5后
     ),
 }
 
@@ -38,7 +39,7 @@ pub enum TileJoint {
     TagSome(Vec<TileTag>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TileTag {
     pub id: u32,
     pub name: String,
@@ -69,6 +70,7 @@ impl Slot {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct TileMap {
     center_point: IVec3,
     texture_size: UVec3,
@@ -183,35 +185,56 @@ fn setup(
 }
 
 fn create_map(tile_map: &mut TileMap, player_pos: Vec3) {
-    // 1.按玩家进入点计算初始位置
+    // 1. 按玩家进入点计算初始位置、地图边界值
     let initial_pos = player_pos;
     let initial_point = pos_to_global_point(tile_map, initial_pos);
-    // 2.按Z轴从小到大生成图层
-    // 3.按与初始点位的距离，一圈一圈生成
-    // 4.同圈内按照熵值从小到大生成
+
     let min_x = tile_map.center_point.x - (tile_map.map_size.max_element() as i32 / 2);
     let max_x = tile_map.center_point.x + (tile_map.map_size.max_element() as i32 / 2);
     let min_y = tile_map.center_point.y - (tile_map.map_size.max_element() as i32 / 2);
     let max_y = tile_map.center_point.y + (tile_map.map_size.max_element() as i32 / 2);
 
+    // 2. 按Z轴从小到大生成图层
     for z in 0..tile_map.map_size.z {
+        // 3. 按与初始点位的距离，一圈一圈生成
         for step in 0..tile_map.map_size.max_element() {
-            let point = IVec3::new(
-                initial_point.x + step as i32,
-                initial_point.y + step as i32,
-                z as i32,
-            );
-            // 判断是否超过范围
-            if point.x < min_x || point.x > max_x || point.y < min_y || point.y > max_y {
-                continue;
+            // 4. 同圈内按照熵值从小到大生成
+            // 4-1. 初始化Slot并计算熵
+            for step_x in -(step as i32)..=(step as i32) {
+                let point_x = initial_point.x + step_x as i32;
+                // 判断x是否超过范围
+                if point_x < min_x || point_x > max_x {
+                    continue;
+                }
+                for step_y in -(step as i32)..=(step as i32) {
+                    let point_y = initial_point.y + step_y as i32;
+                    // 判断x是否超过范围
+                    if point_y < min_y || point_y > max_y {
+                        continue;
+                    }
+                    let point = IVec3::new(point_x, point_y, z as i32);
+
+                    // 判断是否已初始化
+                    if tile_map.slot_map.contains_key(&point) {
+                        continue;
+                    }
+                    // TODO 测试输出
+                    // println!("{}", point);
+
+                    // TODO 初始化Slot: 填充叠加态, 初始化熵
+                    let slot = Slot {
+                        point,
+                        superposition: Vec::new(),
+                        entropy: 0,
+                        tile: None,
+                    };
+                    tile_map.slot_map.insert(point, slot);
+                }
             }
-            let slot = Slot {
-                point,
-                superposition: Vec::new(),
-                entropy: 0,
-                tile: None,
-            };
-            tile_map.slot_map.insert(point, slot);
+            // 4-2. 按照熵值从小到大坍缩
+            // TODO 4-2-1. 填充当前地图块四周已坍缩的tile，以供计算边缘slot的叠加态与熵
+            // 4-2-2. 递归坍缩
+            *tile_map = collapse(tile_map.clone());
         }
     }
 }
@@ -223,19 +246,180 @@ fn pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> IVec3 {
     point.as_i32()
 }
 
+// 递归坍缩
+fn collapse(mut tile_map: TileMap) -> TileMap {
+    let mut slot_list: Vec<Slot> = Vec::new();
+    let slot_map = tile_map.slot_map.clone();
+
+    // 取出当前所有未坍缩的slot
+    for (_point, slot) in slot_map.iter() {
+        if slot.entropy == 0 {
+            slot_list.push(slot.clone());
+        }
+    }
+
+    // 重新计算熵
+    for slot in &mut slot_list {
+        let mut superposition: Vec<Tile> = slot.superposition.clone();
+
+        // 取得紧贴的slot连接限制条件tile_joint
+        let mut joint_list = [
+            TileJoint::All, // 0上
+            TileJoint::All, // 1下
+            TileJoint::All, // 2左
+            TileJoint::All, // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ];
+        // 上
+        let point = IVec3::new(slot.point.x, slot.point.y + 1, slot.point.z);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[0] = tile.joints.1.clone();
+            }
+        }
+        // 下
+        let point = IVec3::new(slot.point.x, slot.point.y - 1, slot.point.z);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[1] = tile.joints.0.clone();
+            }
+        }
+        // 左
+        let point = IVec3::new(slot.point.x - 1, slot.point.y, slot.point.z);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[2] = tile.joints.3.clone();
+            }
+        }
+        // 右
+        let point = IVec3::new(slot.point.x + 1, slot.point.y, slot.point.z);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[3] = tile.joints.2.clone();
+            }
+        }
+        // 前
+        let point = IVec3::new(slot.point.x, slot.point.y, slot.point.z + 1);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[4] = tile.joints.5.clone();
+            }
+        }
+        // 后
+        let point = IVec3::new(slot.point.x, slot.point.y, slot.point.z - 1);
+        if let Some(slot) = slot_map.get(&point) {
+            if let Some(tile) = &slot.tile {
+                joint_list[5] = tile.joints.4.clone();
+            }
+        }
+
+        // 剔除无效坍缩态
+        'tile: for tile_i in 0..superposition.len() {
+            let tile = superposition[tile_i].clone();
+            for i in 0..6 as usize {
+                match joint_list[i] {
+                    TileJoint::None => {
+                        superposition = Vec::new();
+                        break 'tile;
+                    }
+                    TileJoint::One(ref filename) => {
+                        if !filename.eq(&tile.filename) {
+                            &superposition.remove(tile_i);
+                            continue 'tile;
+                        }
+                    }
+                    TileJoint::Some(ref filename_list_str) => {
+                        let filename_list: Vec<&str> = filename_list_str.split(",").collect();
+                        if !filename_list.contains(&tile.filename.as_str()) {
+                            &superposition.remove(tile_i);
+                            continue 'tile;
+                        }
+                    }
+                    TileJoint::TagOne(ref tag) => {
+                        if !tile.tags.contains(&tag) {
+                            &superposition.remove(tile_i);
+                            continue 'tile;
+                        }
+                    }
+                    TileJoint::TagSome(ref tag_list) => {
+                        let mut skip = true;
+                        'tag: for t0 in tag_list {
+                            for t1 in &tile.tags {
+                                if t0.eq(&t1) {
+                                    skip = false;
+                                    break 'tag;
+                                }
+                            }
+                        }
+                        if skip {
+                            &superposition.remove(tile_i);
+                            continue 'tile;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // 更新slot
+        slot.superposition = superposition;
+        slot.entropy = slot.superposition.len();
+    }
+
+    // 获取最小熵slot
+    let mut min_entropy = usize::MAX;
+    let mut min_slot = None;
+    for slot in slot_list {
+        if slot.entropy == 0 {
+            tile_map.slot_map.insert(slot.point, slot.clone());
+            continue;
+        }
+        if slot.entropy < min_entropy && slot.entropy != 0 {
+            min_entropy = slot.entropy;
+            min_slot = Some(slot);
+        }
+    }
+
+    // 执行slot坍缩
+    if let Some(mut slot) = min_slot {
+        let i = rand::thread_rng().gen_range(0..slot.superposition.len());
+
+        slot.tile = Some(slot.superposition[i].clone());
+        slot.superposition = Vec::new();
+        slot.entropy = 0;
+        tile_map.slot_map.insert(slot.point, slot.clone());
+    }
+
+    // 判断是否完成坍缩, 完成则退出递归返回tile_map结果, 否则继续
+    let result = tile_map;
+    let mut complete = true;
+    for (_, slot) in result.slot_map.iter() {
+        if slot.entropy > 0 {
+            complete = false;
+            break;
+        }
+    }
+    if complete {
+        return result;
+    } else {
+        return collapse(result);
+    }
+}
+
 #[test]
 fn test_create_map() {
-    let tile_map = TileMap {
+    let mut tile_map = TileMap {
         center_point: IVec3::new(0, 0, 0),
         texture_size: UVec3::new(64, 64, 1),
         chunk_size: UVec3::new(1, 1, 1),
         map_size: UVec3::new(5, 5, 3),
         slot_map: HashMap::new(),
     };
-    // let pos = Vec3::new(0., 0., 0.);
-    // create_map(&tile_map, pos);
+    let pos = Vec3::new(64., -32., 0.);
+    create_map(&mut tile_map, pos);
     println!(
-        "{}",
-        pos_to_global_point(&tile_map, Vec3::new(-31., 10., 1.))
+        "{:?}",
+        tile_map
     );
 }
