@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 // 瓷砖
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tile {
     // 文件名作为name
     pub filename: String,
@@ -29,7 +29,7 @@ pub struct Tile {
 
 impl Tile {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TileJoint {
     All,
     None,
@@ -39,14 +39,14 @@ pub enum TileJoint {
     TagSome(Vec<TileTag>),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TileTag {
     pub id: u32,
     pub name: String,
 }
 
 // 位置
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Slot {
     // map坐标
     pub point: IVec3,
@@ -138,7 +138,7 @@ fn setup(
     let mut y = (window.height / tile_size.y as f32) as u32 + 2;
     x += ((x % 2) == 0) as u32;
     y += ((y % 2) == 0) as u32;
-    tile_map.map_size = UVec3::new(x, y, 10);
+    tile_map.map_size = UVec3::new(x, y, tile_map.map_size.z);
 
     let center_pos = tile_map.center_point.as_f32()
         * tile_map.texture_size.as_f32()
@@ -151,38 +151,45 @@ fn setup(
 
     create_map(&mut tile_map, Vec3::new(0., 0., 0.));
 
-    for x in -(tile_map.map_size.x as i32) / 2..=tile_map.map_size.x as i32 / 2 {
+    for (point, slot) in tile_map.slot_map.iter() {
+        let x = point.x;
+        let y = point.y;
         let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
-        for y in -(tile_map.map_size.y as i32) / 2..=tile_map.map_size.y as i32 / 2 {
-            let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
-            let tile_pos = Vec3::new(pos_x, pos_y, -5f32);
-            println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
+        let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
+        let tile_pos = Vec3::new(pos_x, pos_y, -5f32);
+        println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
-            let texture_handle = materials.add(
+        let mut texture_handle = materials.add(
+            asset_server
+                .load("textures/prime/tiles/0-tileset_04.png")
+                .into(),
+        );
+        if let Some(tile) = &slot.tile {
+            texture_handle = materials.add(
                 asset_server
-                    .load("textures/prime/tiles/0-tileset_04.png")
+                    .load(format!("textures/prime/tiles/{}", tile.filename).as_str())
                     .into(),
             );
-
-            let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
-            // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
-
-            commands
-                .spawn_bundle(SpriteBundle {
-                    material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size.truncate().as_f32()),
-                    transform: Transform::from_translation(tile_pos),
-                    ..Default::default()
-                })
-                .insert(rigid_body)
-                // .insert(collider.friction(0.0))
-                .insert(Slot {
-                    superposition: Vec::new(),
-                    entropy: 0,
-                    tile: None,
-                    point: tile_pos.as_i32(),
-                });
         }
+
+        let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
+        // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+
+        commands
+            .spawn_bundle(SpriteBundle {
+                material: texture_handle.clone(),
+                sprite: Sprite::new(tile_size.truncate().as_f32()),
+                transform: Transform::from_translation(tile_pos),
+                ..Default::default()
+            })
+            .insert(rigid_body)
+            // .insert(collider.friction(0.0))
+            .insert(Slot {
+                superposition: Vec::new(),
+                entropy: 0,
+                tile: None,
+                point: tile_pos.as_i32(),
+            });
     }
 }
 
@@ -317,8 +324,9 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
         }
 
         // 剔除无效坍缩态
-        'tile: for tile_i in 0..superposition.len() {
-            let tile = superposition[tile_i].clone();
+        let mut superposition_new = Vec::new();
+        'tile: for (tile_i, tile) in superposition.iter().enumerate() {
+            println!("len: {}, {}", superposition.len(), tile_i);
             for i in 0..6 as usize {
                 match joint_list[i] {
                     TileJoint::None => {
@@ -327,20 +335,17 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
                     }
                     TileJoint::One(ref filename) => {
                         if !filename.eq(&tile.filename) {
-                            &superposition.remove(tile_i);
                             continue 'tile;
                         }
                     }
                     TileJoint::Some(ref filename_list_str) => {
                         let filename_list: Vec<&str> = filename_list_str.split(",").collect();
                         if !filename_list.contains(&tile.filename.as_str()) {
-                            &superposition.remove(tile_i);
                             continue 'tile;
                         }
                     }
                     TileJoint::TagOne(ref tag) => {
                         if !tile.tags.contains(&tag) {
-                            &superposition.remove(tile_i);
                             continue 'tile;
                         }
                     }
@@ -355,14 +360,16 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
                             }
                         }
                         if skip {
-                            &superposition.remove(tile_i);
                             continue 'tile;
                         }
                     }
                     _ => {}
                 }
             }
+            superposition_new.push(tile.clone());
         }
+
+        superposition = superposition;
 
         // 更新slot
         slot.superposition = superposition;
