@@ -99,7 +99,7 @@ impl Plugin for TileMapPlugin {
             center_point: IVec3::new(0, 0, 0),
             texture_size: UVec3::new(64, 64, 0),
             chunk_size: UVec3::new(1, 1, 0),
-            map_size: UVec3::new(5, 5, 3),
+            map_size: UVec3::new(5, 5, 1),
             slot_map: HashMap::new(),
         })
         .add_startup_system(setup.system());
@@ -148,6 +148,8 @@ fn setup(
         "tile_size: {}; map_size: {:?}",
         tile_size, tile_map.map_size
     );
+
+    create_map(&mut tile_map, Vec3::new(0., 0., 0.));
 
     for x in -(tile_map.map_size.x as i32) / 2..=tile_map.map_size.x as i32 / 2 {
         let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
@@ -412,31 +414,159 @@ fn collapse(mut tile_map: TileMap) -> TileMap {
 fn load_default_superposition() -> Vec<Tile> {
     let mut superposition = Vec::new();
     superposition.push(Tile {
-        filename: "1".to_string(),
+        filename: "0-tileset_50.png".to_string(),
         layer: 0,
         tags: Vec::new(),
         collider: TileCollider::Full,
         joints: (
-            TileJoint::All, // 0上
-            TileJoint::All, // 1下
-            TileJoint::All, // 2左
-            TileJoint::All, // 3右
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 3右
             TileJoint::All, // 4前
             TileJoint::All, // 5后
         ),
     });
     superposition.push(Tile {
-        filename: "2".to_string(),
+        filename: "0-tileset_65.png".to_string(),
         layer: 0,
         tags: Vec::new(),
         collider: TileCollider::Full,
         joints: (
-            TileJoint::One("1".to_string()), // 0上
-            TileJoint::One("1".to_string()), // 1下
-            TileJoint::One("1".to_string()), // 2左
-            TileJoint::One("1".to_string()), // 3右
-            TileJoint::One("1".to_string()), // 4前
-            TileJoint::One("1".to_string()), // 5后
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
+    superposition.push(Tile {
+        filename: "0-tileset_64.png".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
+    superposition.push(Tile {
+        filename: "0-tileset_63.png".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
+    superposition.push(Tile {
+        filename: "0-tileset_62.png".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
+        ),
+    });
+    superposition.push(Tile {
+        filename: "0-tileset_58.png".to_string(),
+        layer: 0,
+        tags: Vec::new(),
+        collider: TileCollider::Full,
+        joints: (
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 0上
+            TileJoint::TagOne(TileTag {
+                id: 2,
+                name: "墙".to_string(),
+            }), // 1下
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 2左
+            TileJoint::TagOne(TileTag {
+                id: 1,
+                name: "路".to_string(),
+            }), // 3右
+            TileJoint::All, // 4前
+            TileJoint::All, // 5后
         ),
     });
     superposition
@@ -448,7 +578,7 @@ fn test_create_map() {
         center_point: IVec3::new(0, 0, 0),
         texture_size: UVec3::new(64, 64, 1),
         chunk_size: UVec3::new(1, 1, 1),
-        map_size: UVec3::new(5, 5, 3),
+        map_size: UVec3::new(5, 5, 1),
         slot_map: HashMap::new(),
     };
     let pos = Vec3::new(64., -32., 0.);
