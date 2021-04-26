@@ -6,4 +6,5 @@ members = [
     "protocol",
     "util",
     "data",
+    "example",
 ]
