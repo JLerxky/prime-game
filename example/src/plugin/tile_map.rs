@@ -224,13 +224,13 @@ fn create_map(tile_map: &mut TileMap) {
                     tile: None,
                 };
                 tile_map.slot_map.insert(point, slot);
-                // 4-2. 按照熵值从小到大坍缩
-                // TODO 4-2-1. 填充当前地图块四周已坍缩的tile，以供计算边缘slot的叠加态与熵
-                // 4-2-2. 递归坍缩
-                tile_map.slot_map = collapse(tile_map.slot_map.clone());
             }
         }
     }
+    // 4-2. 按照熵值从小到大坍缩
+    // TODO 4-2-1. 填充当前地图块四周已坍缩的tile，以供计算边缘slot的叠加态与熵
+    // 4-2-2. 递归坍缩
+    tile_map.slot_map = collapse(tile_map.slot_map.clone());
 }
 
 // 世界坐标->地图索引
@@ -396,7 +396,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
             break;
         }
     }
-    if !complete {
+    if complete {
         return slot_map;
     } else {
         return collapse(slot_map);
