@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 
+use crate::data::load_default_superposition;
+
 // 瓷砖
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tile {
@@ -151,7 +153,7 @@ fn setup(
 
         let mut texture_handle = materials.add(
             asset_server
-                .load("textures/prime/tiles/0-tileset_04.png")
+                .load("textures/prime/tiles/0-tileset_50.png")
                 .into(),
         );
         if let Some(tile) = &slot.tile {
@@ -364,110 +366,6 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
     } else {
         return slot_map;
     }
-
-}
-
-// TODO 加载默认胶水tile初始化叠加态
-fn load_glue_superposition() -> Vec<Tile> {
-    let mut superposition = Vec::new();
-    superposition.push(Tile {
-        filename: "0-tileset_07.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::All, // 0上
-            TileJoint::All, // 1下
-            TileJoint::All, // 2左
-            TileJoint::All, // 3右
-            TileJoint::All, // 4前
-            TileJoint::All, // 5后
-        ],
-    });
-    superposition
-}
-
-// TODO 加载默认可用tile作为叠加态
-fn load_default_superposition() -> Vec<Tile> {
-    let mut superposition = Vec::new();
-    superposition.push(Tile {
-        filename: "0-tileset_50.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("墙".to_string()), // 0上
-            TileJoint::TagOne("墙".to_string()), // 1下
-            TileJoint::TagOne("墙".to_string()), // 2左
-            TileJoint::TagOne("墙".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition.push(Tile {
-        filename: "0-tileset_65.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("路".to_string()), // 0上
-            TileJoint::TagOne("路".to_string()), // 1下
-            TileJoint::TagOne("路".to_string()), // 2左
-            TileJoint::TagOne("路".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition.push(Tile {
-        filename: "0-tileset_64.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("路".to_string()), // 0上
-            TileJoint::TagOne("路".to_string()), // 1下
-            TileJoint::TagOne("墙".to_string()), // 2左
-            TileJoint::TagOne("路".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition.push(Tile {
-        filename: "0-tileset_63.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("路".to_string()), // 0上
-            TileJoint::TagOne("墙".to_string()), // 1下
-            TileJoint::TagOne("路".to_string()), // 2左
-            TileJoint::TagOne("墙".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition.push(Tile {
-        filename: "0-tileset_62.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("路".to_string()), // 0上
-            TileJoint::TagOne("路".to_string()), // 1下
-            TileJoint::TagOne("墙".to_string()), // 2左
-            TileJoint::TagOne("墙".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition.push(Tile {
-        filename: "0-tileset_58.png".to_string(),
-        layer: 0,
-        collider: TileCollider::Full,
-        joints: [
-            TileJoint::TagOne("墙".to_string()), // 0上
-            TileJoint::TagOne("墙".to_string()), // 1下
-            TileJoint::TagOne("路".to_string()), // 2左
-            TileJoint::TagOne("路".to_string()), // 3右
-            TileJoint::All,                       // 4前
-            TileJoint::All,                       // 5后
-        ],
-    });
-    superposition
 }
 
 #[test]
