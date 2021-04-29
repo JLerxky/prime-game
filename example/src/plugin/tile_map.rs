@@ -156,36 +156,29 @@ fn setup(
         // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
         // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
 
-        // 地形背景（泥地）
-        let mut texture_handle = materials.add(
-            asset_server
-                .load("textures/prime/tiles/0-tileset_30.png")
-                .into(),
-        );
-
         if let Some(tile) = &slot.tile {
-            texture_handle = materials.add(
+            let texture_handle = materials.add(
                 asset_server
                     .load(format!("textures/prime/tiles/{}", tile.filename).as_str())
                     .into(),
             );
-        }
 
-        commands
-            .spawn_bundle(SpriteBundle {
-                material: texture_handle.clone(),
-                sprite: Sprite::new(tile_size.truncate().as_f32()),
-                transform: Transform::from_translation(tile_pos),
-                ..Default::default()
-            })
-            // .insert(rigid_body)
-            // .insert(collider.friction(0.0))
-            .insert(Slot {
-                superposition: Vec::new(),
-                entropy: 0,
-                tile: None,
-                point: tile_pos.as_i32(),
-            });
+            commands
+                .spawn_bundle(SpriteBundle {
+                    material: texture_handle.clone(),
+                    sprite: Sprite::new(tile_size.truncate().as_f32()),
+                    transform: Transform::from_translation(tile_pos),
+                    ..Default::default()
+                })
+                // .insert(rigid_body)
+                // .insert(collider.friction(0.0))
+                .insert(Slot {
+                    superposition: Vec::new(),
+                    entropy: 0,
+                    tile: None,
+                    point: tile_pos.as_i32(),
+                });
+        }
     }
 }
 
@@ -318,10 +311,20 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
                             TileJoint::None => {
                                 continue 'tile;
                             }
-                            TileJoint::TagOne(t_tage) => {
-                                println!("{}:{:?}---{:?}:{}", i, tag, t_tage, i);
-                                if !t_tage.eq(tag) {
-                                    continue 'tile;
+                            TileJoint::TagOne(t_tag) => {
+                                println!("{}:{:?}---{:?}:{}", i, tag, t_tag, i);
+                                if tag.contains("空") && !tag.eq("空") {
+                                    if !t_tag.eq("空") {
+                                        continue 'tile;
+                                    }
+                                } else if tag.eq("空") {
+                                    if !t_tag.contains("空") {
+                                        continue 'tile;
+                                    }
+                                } else {
+                                    if !t_tag.eq(tag) {
+                                        continue 'tile;
+                                    }
                                 }
                             }
                         }
