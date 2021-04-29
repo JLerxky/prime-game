@@ -110,8 +110,6 @@ fn net_handler_system(
                         GameRoute::Control(_control_data) => {}
                         GameRoute::TileMap(_tile_map_data) => {}
                     }
-                    // 游戏逻辑数据包每帧执行一次
-                    return;
                 }
             }
         }
@@ -144,7 +142,7 @@ async fn net_client_start(
     .unwrap();
 
     tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64));
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(2f64));
         loop {
             interval.tick().await;
             s1.send(
@@ -171,6 +169,9 @@ async fn net_client_start(
             // 转发事件
             if let Ok(packet) = packet {
                 if let Ok(mut packet_queue) = packet_queue.lock() {
+                    if packet_queue.len() > 10 {
+                        packet_queue.remove(0);
+                    }
                     packet_queue.push(packet);
                 }
             }
