@@ -17,11 +17,11 @@ fn main() {
             // 垂直同步
             vsync: true,
             // 是否可调整窗口大小
-            resizable: false,
+            resizable: true,
             // 是否有窗口外壳
             decorations: true,
-            width: 800f32,
-            height: 450f32,
+            width: 1600f32,
+            height: 900f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定

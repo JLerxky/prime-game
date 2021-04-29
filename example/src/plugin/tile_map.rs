@@ -13,6 +13,8 @@ pub struct Tile {
     pub filename: String,
     // 层级
     pub layer: usize,
+    // 随机权重
+    pub rng_seed: u8,
     // 碰撞体类型
     pub collider: TileCollider,
     // 可连接点类型
@@ -88,7 +90,7 @@ impl Plugin for TileMapPlugin {
             center_point: IVec3::new(0, 0, 0),
             texture_size: UVec3::new(64, 64, 1),
             chunk_size: UVec3::new(1, 1, 1),
-            map_size: UVec3::new(5, 5, 1),
+            map_size: UVec3::new(5, 5, 2),
             slot_map: HashMap::new(),
         })
         .add_startup_system(setup.system());
@@ -151,11 +153,16 @@ fn setup(
         let tile_pos = Vec3::new(pos_x, pos_y, point.z as f32);
         // println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
+        // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
+        // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+
+        // 地形背景（泥地）
         let mut texture_handle = materials.add(
             asset_server
-                .load("textures/prime/tiles/0-tileset_50.png")
+                .load("textures/prime/tiles/0-tileset_30.png")
                 .into(),
         );
+
         if let Some(tile) = &slot.tile {
             texture_handle = materials.add(
                 asset_server
@@ -163,9 +170,6 @@ fn setup(
                     .into(),
             );
         }
-
-        // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
-        // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
 
         commands
             .spawn_bundle(SpriteBundle {
@@ -205,7 +209,7 @@ fn create_map(tile_map: &mut TileMap) {
                 }
 
                 // 初始化Slot: 填充叠加态, 初始化熵
-                let superposition = load_default_superposition();
+                let superposition = load_default_superposition(z);
                 let entropy = superposition.len();
                 let slot = Slot {
                     point,
@@ -353,9 +357,15 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
 
     // 执行slot坍缩
     if let Some(mut slot) = min_slot {
-        let i = rand::thread_rng().gen_range(0..slot.superposition.len());
+        let mut superposition_for_rng = Vec::new();
+        for tile in &slot.superposition {
+            for _ in 0..tile.rng_seed {
+                superposition_for_rng.push(tile.clone());
+            }
+        }
+        let i = rand::thread_rng().gen_range(0..superposition_for_rng.len());
 
-        slot.tile = Some(slot.superposition[i].clone());
+        slot.tile = Some(superposition_for_rng[i].clone());
         slot.superposition = Vec::new();
         slot.entropy = 0;
         if let Some(_slot) = slot_map.insert(slot.point, slot.clone()) {
