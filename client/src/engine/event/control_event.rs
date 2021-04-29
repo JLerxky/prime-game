@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
 
-use crate::engine::plugin::network::NetWorkState;
+use crate::engine::plugin::network_plugin::NetWorkState;
 
 pub struct ControlEventPlugin;
 

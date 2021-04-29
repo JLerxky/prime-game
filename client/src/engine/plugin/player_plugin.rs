@@ -10,7 +10,7 @@ use bevy_rapier2d::{
 
 use crate::engine::event::map_event::MapEvent;
 
-use super::camera_ctrl::CameraCtrl;
+use super::camera_ctrl_plugin::CameraCtrl;
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {

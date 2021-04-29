@@ -1,7 +1,7 @@
-pub mod camera_ctrl;
-pub mod clipboard;
-pub mod fps;
-pub mod ping;
-pub mod tile_map;
-pub mod player;
-pub mod network;
+pub mod camera_ctrl_plugin;
+pub mod clipboard_plugin;
+pub mod fps_plugin;
+pub mod ping_plugin;
+pub mod tile_map_plugin;
+pub mod player_plugin;
+pub mod network_plugin;

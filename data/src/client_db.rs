@@ -1,5 +1,6 @@
-use crate::db::rocksdb::RocksDB;
 use std::error::Error;
+
+use crate::rocksdb::RocksDB;
 
 use super::rocksdb::ColumnFamily;
 
@@ -9,7 +10,7 @@ pub struct GameData {
     pub data: Option<String>,
 }
 
-static CF: ColumnFamily = ColumnFamily::GameServer;
+static CF: ColumnFamily = ColumnFamily::GameClient;
 
 impl GameData {
     pub fn player_online(data: Option<String>) -> Self {

@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use bevy::prelude::*;
 
-use crate::engine::plugin::ping::PingState;
+use crate::engine::plugin::ping_plugin::PingState;
 
 pub struct HeartBeatEventPlugin;
 

@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
 };
-use client::engine::plugin::tile_map::TileMapPlugin;
+use client::engine::plugin::tile_map_plugin::TileMapPlugin;
 
 fn main() {
     App::build()

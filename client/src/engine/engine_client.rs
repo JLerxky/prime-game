@@ -19,12 +19,12 @@ use super::{
         sync_event::SyncEventPlugin,
     },
     plugin::{
-        camera_ctrl::CameraCtrl,
-        clipboard::Clipboard,
-        fps::Fps,
-        network::{NetworkPlugin, SynEntity},
-        ping::Ping,
-        tile_map::TileMapPlugin,
+        camera_ctrl_plugin::CameraCtrl,
+        clipboard_plugin::Clipboard,
+        fps_plugin::Fps,
+        network_plugin::{NetworkPlugin, SynEntity},
+        ping_plugin::Ping,
+        tile_map_plugin::TileMapPlugin,
     },
 };
 

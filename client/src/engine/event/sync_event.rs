@@ -4,8 +4,8 @@ use bevy::prelude::*;
 use protocol::data::update_data::UpdateData;
 
 use crate::engine::plugin::{
-    camera_ctrl::CameraCtrl,
-    network::{SynEntity, UID},
+    camera_ctrl_plugin::CameraCtrl,
+    network_plugin::{SynEntity, UID},
 };
 
 pub struct SyncEventPlugin;

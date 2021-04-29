@@ -507,7 +507,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb36a879cdc96f554b62dd7c7c02392a9a10e94082e4bc686a8242e1d674e7cc"
 dependencies = [
  "bevy_reflect",
- "glam 0.13.1",
+ "glam",
 ]
 
 [[package]]
@@ -550,7 +550,7 @@ dependencies = [
  "bevy_utils",
  "downcast-rs",
  "erased-serde",
- "glam 0.13.1",
+ "glam",
  "parking_lot",
  "serde",
  "smallvec",
@@ -986,7 +986,6 @@ dependencies = [
  "common",
  "data",
  "protocol",
- "rand",
  "rustyline",
  "serde",
  "serde_json",
@@ -1087,6 +1086,11 @@ dependencies = [
 [[package]]
 name = "common"
 version = "0.1.0"
+dependencies = [
+ "glam",
+ "protocol",
+ "rand",
+]
 
 [[package]]
 name = "concurrent-queue"
@@ -1423,7 +1427,6 @@ name = "data"
 version = "0.1.0"
 dependencies = [
  "common",
- "glam 0.13.1",
  "protocol",
  "rocksdb",
  "util",
@@ -2030,12 +2033,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glam"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "333928d5eb103c5d4050533cec0384302db6be8ef7d3cebd30ec6a35350353da"
-
-[[package]]
 name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2180,7 +2177,7 @@ version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c592a42961cf144138e04a4bddbe3ef5c6f9fe6ef5eff6fd3bb767b254194171"
 dependencies = [
- "glam 0.13.1",
+ "glam",
  "lazy_static",
 ]
 
@@ -3223,7 +3220,7 @@ name = "protocol"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "glam 0.14.0",
+ "glam",
  "serde",
 ]
 

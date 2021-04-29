@@ -14,7 +14,7 @@ use tokio::net::UdpSocket;
 
 use crate::engine::event::{heart_beat_event::HeartBeatEvent, sync_event::SyncEvent};
 
-use super::camera_ctrl::CameraCtrl;
+use super::camera_ctrl_plugin::CameraCtrl;
 
 // 当前玩家uid
 pub static mut UID: u32 = 0;
