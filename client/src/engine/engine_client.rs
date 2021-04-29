@@ -91,6 +91,7 @@ pub fn engine_start() {
         // .add_plugin(PlayerPlugin)
         // 网络
         .add_plugin(NetworkPlugin)
+        // 动画
         .add_system(animate_system.system())
         .run();
 }
@@ -100,8 +101,8 @@ fn set_camera(mut commands: Commands) {
         // cameras
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(CameraCtrl);
-    commands.spawn_bundle(UiCameraBundle::default());
-    // .insert(CameraCtrl);
+    commands
+        .spawn_bundle(UiCameraBundle::default());
 }
 
 fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfiguration>) {

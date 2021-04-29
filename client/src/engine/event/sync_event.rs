@@ -47,12 +47,14 @@ fn event_listener_system(
                             99.0,
                         ),
                         rotation: Quat::from_rotation_z(rigid_body_state.rotation),
-                        scale: Vec3::new(1., 1., 1.),
+                        scale: transform.scale,
                     };
                     syn_entity.health = health_now;
                     unsafe {
                         if rigid_body_state.entity_type == 1 && UID == rigid_body_state.id as u32 {
-                            if let Ok((mut camera_transform, _)) = camera_query.single_mut() {
+                            println!("1");
+                            if let Some((mut camera_transform, _)) = camera_query.iter_mut().next() {
+                                println!("2");
                                 camera_transform.translation = Vec3::new(
                                     rigid_body_state.translation.0,
                                     rigid_body_state.translation.1,
@@ -79,14 +81,14 @@ fn event_listener_system(
                 // 玩家实体
                 1 => {
                     texture_handle = asset_server.load(
-                        format!("textures/chars/{}.png", rigid_body_state.texture.0).as_str(),
+                        format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str(),
                     );
-                    tile_size *= 2f32;
+                    tile_size = Vec2::new(16f32, 17f32);
                 }
                 // 可动实体
                 2 => {
                     texture_handle = asset_server.load(
-                        format!("textures/movable/{}.png", rigid_body_state.texture.0).as_str(),
+                        format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str(),
                     );
                     tile_size = Vec2::new(tile_size.x * 1f32, tile_size.y * 2f32);
                 }
@@ -100,13 +102,13 @@ fn event_listener_system(
                 _ => {}
             }
 
-            let scale = Vec3::new(1., 1., 0.);
+            let scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);
 
             let texture_atlas = TextureAtlas::from_grid(
                 texture_handle,
                 tile_size,
                 rigid_body_state.texture.1.into(),
-                1,
+                rigid_body_state.texture.2.into(),
             );
             let texture_atlas_handle = texture_atlases.add(texture_atlas);
             commands

@@ -146,7 +146,7 @@ pub async fn engine_main_loop(
                         rotation: collider.position().rotation.angle(),
                         linvel: (body.linvel().x, body.linvel().y),
                         angvel: (body.angvel(), body.angvel()),
-                        texture: (0, 0),
+                        texture: (0, 0, 0),
                         entity_type: 0,
                     };
                     state.make_up_data(body.user_data);
@@ -194,7 +194,7 @@ async fn clean_body(
                 rotation: 0.,
                 linvel: (0., 0.),
                 angvel: (0., 0.),
-                texture: (0, 0),
+                texture: (0, 0, 0),
                 entity_type: 0,
             };
             entity_state.make_up_data(body.user_data);
@@ -251,7 +251,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         rotation: 0.,
         linvel: (0., 0.),
         angvel: (0., 0.),
-        texture: (0, 4),
+        texture: (0, 5, 1),
         entity_type: 2,
     };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -310,7 +310,7 @@ async fn wait_for_net(
                             rotation: 0.,
                             linvel: (0., 0.),
                             angvel: (0., 0.),
-                            texture: (1, 8),
+                            texture: (1, 4, 3),
                             entity_type: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -352,7 +352,7 @@ async fn wait_for_net(
                                         rotation: collider.position().rotation.angle(),
                                         linvel: (body.linvel().x, body.linvel().y),
                                         angvel: (body.angvel(), body.angvel()),
-                                        texture: (0, 0),
+                                        texture: (0, 0, 0),
                                         entity_type: 0,
                                     };
                                     state.make_up_data(body.user_data);
