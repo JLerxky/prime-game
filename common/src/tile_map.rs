@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use glam::{IVec3, UVec3, Vec3};
+use glam::{IVec3, Vec3};
 use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap};
 use rand::Rng;
 pub fn create_map(tile_map: &mut TileMap) {
@@ -204,6 +204,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
 
 #[test]
 fn test_create_map() {
+    use glam::UVec3;
     let mut tile_map = TileMap {
         center_point: IVec3::new(0, 0, 0),
         texture_size: UVec3::new(64, 64, 1),
