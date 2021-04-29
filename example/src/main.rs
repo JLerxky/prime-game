@@ -20,8 +20,8 @@ fn main() {
             resizable: true,
             // 是否有窗口外壳
             decorations: true,
-            width: 1600f32,
-            height: 900f32,
+            width: 400f32,
+            height: 400f32,
             // 窗口模式
             // mode: WindowMode::BorderlessFullscreen,
             // 鼠标隐藏并锁定
