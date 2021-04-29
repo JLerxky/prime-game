@@ -1,4 +1,4 @@
-use data::server_db::{self, GameData};
+use data::db::server_db::{self, GameData};
 use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -233,7 +233,8 @@ async fn start_listening(
                             println!("{}登录事件: {:?}", &addr, &account_data);
                             // 根据玩家ip注册或获取uid
                             let mut uid = account_data.uid;
-                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None))
+                            {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
@@ -284,10 +285,9 @@ async fn start_listening(
                                     }
                                 }
                                 Err(_) => {
-                                    let _ = server_db::save(GameData::player_online(Some(format!(
-                                        "{}",
-                                        uid
-                                    ))));
+                                    let _ = server_db::save(GameData::player_online(Some(
+                                        format!("{}", uid),
+                                    )));
                                 }
                             }
                             // 更新玩家组ip地址
@@ -354,7 +354,8 @@ async fn start_listening(
                             println!("{}登出事件: {:?}", &addr, &account_data);
                             // 根据玩家ip获取uid
                             let uid;
-                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None))
+                            {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
@@ -421,7 +422,8 @@ async fn start_listening(
                             // println!("{}控制: {:?}", &addr, &control_data);
                             // 根据玩家ip注册或获取uid
                             let uid;
-                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None)) {
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None))
+                            {
                                 Ok(data) => {
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;

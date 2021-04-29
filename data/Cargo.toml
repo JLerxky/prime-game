@@ -10,3 +10,4 @@ common = { path = "../common" }
 protocol = { path = "../protocol" }
 
 rocksdb = "0.16"
+glam = "0.13.1"

@@ -1,5 +1,8 @@
-use crate::rocksdb::{ColumnFamily, RocksDB};
 use std::error::Error;
+
+use crate::db::rocksdb::RocksDB;
+
+use super::rocksdb::ColumnFamily;
 
 pub struct GameData {
     pub table: String,

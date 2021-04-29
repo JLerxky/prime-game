@@ -1423,6 +1423,7 @@ name = "data"
 version = "0.1.0"
 dependencies = [
  "common",
+ "glam 0.13.1",
  "protocol",
  "rocksdb",
  "util",
@@ -1558,7 +1559,7 @@ name = "example"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "common",
+ "client",
  "protocol",
  "rand",
  "util",

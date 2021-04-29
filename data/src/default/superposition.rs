@@ -1,6 +1,77 @@
+use std::collections::HashMap;
+
+use glam::{IVec3, UVec3, Vec3};
 use protocol::data::tile_map_data::TileCollider;
 
-use crate::plugin::tile_map::{Tile, TileJoint};
+// 瓷砖
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Tile {
+    // 文件名作为name
+    pub filename: String,
+    // 层级
+    pub layer: usize,
+    // 随机权重
+    pub rng_seed: u8,
+    // 碰撞体类型
+    pub collider: TileCollider,
+    // 可连接点类型
+    pub joints: [TileJoint; 6],
+}
+
+impl Tile {}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TileJoint {
+    All,
+    None,
+    TagOne(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TileTag {
+    pub id: u32,
+    pub name: String,
+}
+
+// 位置
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Slot {
+    // map坐标
+    pub point: IVec3,
+    // 叠加态（可选瓷砖集合）
+    pub superposition: Vec<Tile>,
+    // 熵 (superposition.len(), 等于0则已坍缩)
+    pub entropy: usize,
+    // 确定态（当前瓷砖）
+    pub tile: Option<Tile>,
+}
+
+impl Slot {
+    pub fn new(point: IVec3) -> Slot {
+        let tiles = Vec::new();
+        Slot {
+            point,
+            superposition: tiles.clone(),
+            entropy: tiles.len(),
+            tile: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TileMap {
+    pub center_point: IVec3,
+    pub texture_size: UVec3,
+    pub chunk_size: UVec3,
+    pub map_size: UVec3,
+    pub slot_map: HashMap<IVec3, Slot>,
+}
+
+impl TileMap {
+    pub fn position_to_slot(&self, position: Vec3) -> Vec3 {
+        position
+    }
+}
 
 // 加载默认胶水tile初始化叠加态
 pub fn load_glue_superposition() -> Vec<Tile> {
@@ -80,9 +151,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 2,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("草空".to_string()),       // 0上
+                TileJoint::TagOne("草空".to_string()),    // 0上
                 TileJoint::TagOne("x|边|草".to_string()), // 1下
-                TileJoint::TagOne("草空".to_string()),       // 2左
+                TileJoint::TagOne("草空".to_string()),    // 2左
                 TileJoint::TagOne("y|边|草".to_string()), // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
@@ -94,7 +165,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 2,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("草空".to_string()),       // 0上
+                TileJoint::TagOne("草空".to_string()),    // 0上
                 TileJoint::TagOne("草".to_string()),       // 1下
                 TileJoint::TagOne("y|边|草".to_string()), // 2左
                 TileJoint::TagOne("y|边|草".to_string()), // 3右
@@ -108,10 +179,10 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 2,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("草空".to_string()),       // 0上
+                TileJoint::TagOne("草空".to_string()),    // 0上
                 TileJoint::TagOne("x|草|边".to_string()), // 1下
                 TileJoint::TagOne("y|边|草".to_string()), // 2左
-                TileJoint::TagOne("草空".to_string()),       // 3右
+                TileJoint::TagOne("草空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
             ],
@@ -138,7 +209,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             joints: [
                 TileJoint::TagOne("x|边|草".to_string()), // 0上
                 TileJoint::TagOne("x|边|草".to_string()), // 1下
-                TileJoint::TagOne("草空".to_string()),       // 2左
+                TileJoint::TagOne("草空".to_string()),    // 2左
                 TileJoint::TagOne("草".to_string()),       // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
@@ -153,7 +224,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
                 TileJoint::TagOne("x|草|边".to_string()), // 0上
                 TileJoint::TagOne("x|草|边".to_string()), // 1下
                 TileJoint::TagOne("草".to_string()),       // 2左
-                TileJoint::TagOne("草空".to_string()),       // 3右
+                TileJoint::TagOne("草空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
             ],
@@ -165,8 +236,8 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|边|草".to_string()), // 0上
-                TileJoint::TagOne("草空".to_string()),       // 1下
-                TileJoint::TagOne("草空".to_string()),       // 2左
+                TileJoint::TagOne("草空".to_string()),    // 1下
+                TileJoint::TagOne("草空".to_string()),    // 2左
                 TileJoint::TagOne("y|草|边".to_string()), // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
@@ -179,7 +250,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("草".to_string()),       // 0上
-                TileJoint::TagOne("草空".to_string()),       // 1下
+                TileJoint::TagOne("草空".to_string()),    // 1下
                 TileJoint::TagOne("y|草|边".to_string()), // 2左
                 TileJoint::TagOne("y|草|边".to_string()), // 3右
                 TileJoint::All,                             // 4前
@@ -193,9 +264,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|草|边".to_string()), // 0上
-                TileJoint::TagOne("草空".to_string()),       // 1下
+                TileJoint::TagOne("草空".to_string()),    // 1下
                 TileJoint::TagOne("y|草|边".to_string()), // 2左
-                TileJoint::TagOne("草空".to_string()),       // 3右
+                TileJoint::TagOne("草空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::All,                             // 5后
             ],
@@ -210,9 +281,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("池空".to_string()),       // 0上
+                TileJoint::TagOne("池空".to_string()),    // 0上
                 TileJoint::TagOne("x|边|水".to_string()), // 1下
-                TileJoint::TagOne("池空".to_string()),       // 2左
+                TileJoint::TagOne("池空".to_string()),    // 2左
                 TileJoint::TagOne("y|边|水".to_string()), // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
@@ -224,7 +295,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("池空".to_string()),       // 0上
+                TileJoint::TagOne("池空".to_string()),    // 0上
                 TileJoint::TagOne("水".to_string()),       // 1下
                 TileJoint::TagOne("y|边|水".to_string()), // 2左
                 TileJoint::TagOne("y|边|水".to_string()), // 3右
@@ -238,10 +309,10 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("池空".to_string()),       // 0上
+                TileJoint::TagOne("池空".to_string()),    // 0上
                 TileJoint::TagOne("x|水|边".to_string()), // 1下
                 TileJoint::TagOne("y|边|水".to_string()), // 2左
-                TileJoint::TagOne("池空".to_string()),       // 3右
+                TileJoint::TagOne("池空".to_string()),    // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
             ],
@@ -254,7 +325,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             joints: [
                 TileJoint::TagOne("x|边|水".to_string()), // 0上
                 TileJoint::TagOne("x|边|水".to_string()), // 1下
-                TileJoint::TagOne("池空".to_string()),       // 2左
+                TileJoint::TagOne("池空".to_string()),    // 2左
                 TileJoint::TagOne("水".to_string()),       // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
@@ -283,7 +354,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
                 TileJoint::TagOne("x|水|边".to_string()), // 0上
                 TileJoint::TagOne("x|水|边".to_string()), // 1下
                 TileJoint::TagOne("水".to_string()),       // 2左
-                TileJoint::TagOne("池空".to_string()),       // 3右
+                TileJoint::TagOne("池空".to_string()),    // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
             ],
@@ -295,8 +366,8 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|边|水".to_string()), // 0上
-                TileJoint::TagOne("池空".to_string()),       // 1下
-                TileJoint::TagOne("池空".to_string()),       // 2左
+                TileJoint::TagOne("池空".to_string()),    // 1下
+                TileJoint::TagOne("池空".to_string()),    // 2左
                 TileJoint::TagOne("y|水|边".to_string()), // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
@@ -309,7 +380,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("水".to_string()),       // 0上
-                TileJoint::TagOne("池空".to_string()),       // 1下
+                TileJoint::TagOne("池空".to_string()),    // 1下
                 TileJoint::TagOne("y|水|边".to_string()), // 2左
                 TileJoint::TagOne("y|水|边".to_string()), // 3右
                 TileJoint::None,                            // 4前
@@ -323,9 +394,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|水|边".to_string()), // 0上
-                TileJoint::TagOne("池空".to_string()),       // 1下
+                TileJoint::TagOne("池空".to_string()),    // 1下
                 TileJoint::TagOne("y|水|边".to_string()), // 2左
-                TileJoint::TagOne("池空".to_string()),       // 3右
+                TileJoint::TagOne("池空".to_string()),    // 3右
                 TileJoint::None,                            // 4前
                 TileJoint::None,                            // 5后
             ],
@@ -461,9 +532,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("砖空".to_string()),       // 0上
+                TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("x|边|砖".to_string()), // 1下
-                TileJoint::TagOne("砖空".to_string()),       // 2左
+                TileJoint::TagOne("砖空".to_string()),    // 2左
                 TileJoint::TagOne("y|边|砖".to_string()), // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
@@ -475,7 +546,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("砖空".to_string()),       // 0上
+                TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("砖".to_string()),       // 1下
                 TileJoint::TagOne("y|边|砖".to_string()), // 2左
                 TileJoint::TagOne("y|边|砖".to_string()), // 3右
@@ -489,10 +560,10 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             rng_seed: 1,
             collider: TileCollider::Full,
             joints: [
-                TileJoint::TagOne("砖空".to_string()),       // 0上
+                TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("x|砖|边".to_string()), // 1下
                 TileJoint::TagOne("y|边|砖".to_string()), // 2左
-                TileJoint::TagOne("砖空".to_string()),       // 3右
+                TileJoint::TagOne("砖空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
             ],
@@ -505,7 +576,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             joints: [
                 TileJoint::TagOne("x|边|砖".to_string()), // 0上
                 TileJoint::TagOne("x|边|砖".to_string()), // 1下
-                TileJoint::TagOne("砖空".to_string()),       // 2左
+                TileJoint::TagOne("砖空".to_string()),    // 2左
                 TileJoint::TagOne("砖".to_string()),       // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
@@ -534,7 +605,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
                 TileJoint::TagOne("x|砖|边".to_string()), // 0上
                 TileJoint::TagOne("x|砖|边".to_string()), // 1下
                 TileJoint::TagOne("砖".to_string()),       // 2左
-                TileJoint::TagOne("砖空".to_string()),       // 3右
+                TileJoint::TagOne("砖空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
             ],
@@ -546,8 +617,8 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|边|砖".to_string()), // 0上
-                TileJoint::TagOne("砖空".to_string()),       // 1下
-                TileJoint::TagOne("砖空".to_string()),       // 2左
+                TileJoint::TagOne("砖空".to_string()),    // 1下
+                TileJoint::TagOne("砖空".to_string()),    // 2左
                 TileJoint::TagOne("y|砖|边".to_string()), // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
@@ -560,7 +631,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("砖".to_string()),       // 0上
-                TileJoint::TagOne("砖空".to_string()),       // 1下
+                TileJoint::TagOne("砖空".to_string()),    // 1下
                 TileJoint::TagOne("y|砖|边".to_string()), // 2左
                 TileJoint::TagOne("y|砖|边".to_string()), // 3右
                 TileJoint::All,                             // 4前
@@ -574,9 +645,9 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             collider: TileCollider::Full,
             joints: [
                 TileJoint::TagOne("x|砖|边".to_string()), // 0上
-                TileJoint::TagOne("砖空".to_string()),       // 1下
+                TileJoint::TagOne("砖空".to_string()),    // 1下
                 TileJoint::TagOne("y|砖|边".to_string()), // 2左
-                TileJoint::TagOne("砖空".to_string()),       // 3右
+                TileJoint::TagOne("砖空".to_string()),    // 3右
                 TileJoint::All,                             // 4前
                 TileJoint::None,                            // 5后
             ],

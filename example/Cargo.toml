@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 util = { path = "../util" }
-common = { path = "../common" }
+client = { path = "../client" }
 protocol = { path = "../protocol" }
 
 bevy = "0.5"
