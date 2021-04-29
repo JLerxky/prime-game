@@ -16,11 +16,12 @@ fn keyboard_event_system(
 ) {
     let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8) as f32
         + (keyboard_input.pressed(KeyCode::D) as i8) as f32;
-    let y_axis = keyboard_input.pressed(KeyCode::Space) as i8 as f32;
-    let mut action = 1u8;
-    if y_axis != 0f32 {
-        action = 2u8;
-    }
+    let y_axis = -(keyboard_input.pressed(KeyCode::S) as i8) as f32
+        + (keyboard_input.pressed(KeyCode::W) as i8) as f32;
+    let action = 1u8;
+    // if y_axis != 0f32 {
+    //     action = 2u8;
+    // }
     if x_axis != 0f32 || y_axis != 0f32 {
         control_events.send(ControlEvent {
             direction: (x_axis, y_axis),

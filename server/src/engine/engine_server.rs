@@ -81,7 +81,7 @@ pub async fn engine_main_loop(
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
-    let gravity = Vector2::new(0.0, -9.81 * 5f32);
+    let gravity = Vector2::new(0.0, 0.0);
     //
     let integration_parameters = IntegrationParameters::default();
     //
@@ -377,7 +377,7 @@ async fn wait_for_net(
                                 body.set_linvel(
                                     Vector2::new(
                                         control_data.direction.0 * 100f32,
-                                        body.linvel().y,
+                                        control_data.direction.1 * 100f32,
                                     ),
                                     true,
                                 );

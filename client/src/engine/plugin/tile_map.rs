@@ -27,8 +27,8 @@ impl Plugin for TileMapPlugin {
 
 #[test]
 fn test() {
-    println!("{:?}", 1080 as i32 / 100i32);
-    println!("{:?}", 1920 as i32 / 100i32);
+    debug!("{:?}", 1080 as i32 / 100i32);
+    debug!("{:?}", 1920 as i32 / 100i32);
 }
 
 // 1. 获取tile素材资源, 生成tile可用集合
@@ -44,7 +44,7 @@ fn setup(
     mut tile_map: ResMut<TileMap>,
     window: Res<WindowDescriptor>,
 ) {
-    println!(
+    debug!(
         "窗口大小: {},{}; 瓷砖大小: {:?}",
         window.width,
         window.height,
@@ -64,14 +64,14 @@ fn setup(
         * tile_map.texture_size.as_f32()
         * tile_map.chunk_size.as_f32();
 
-    println!(
+    debug!(
         "tile_size: {}; map_size: {:?}",
         tile_size, tile_map.map_size
     );
 
     create_map(&mut tile_map);
 
-    // println!("{:?}", &tile_map.slot_map);
+    // debug!("{:?}", &tile_map.slot_map);
 
     for (point, slot) in tile_map.slot_map.iter() {
         let x = point.x;
@@ -79,7 +79,7 @@ fn setup(
         let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
         let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
         let tile_pos = Vec3::new(pos_x, pos_y, point.z as f32);
-        // println!("slot: ({},{}) pos: ({})", x, y, tile_pos);
+        // debug!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
         // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
         // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
@@ -167,7 +167,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
     }
 
     // 重新计算熵
-    println!("{:?}", &slot_list.len());
+    debug!("{:?}", &slot_list.len());
     for slot in &mut slot_list {
         let superposition: Vec<Tile> = slot.superposition.clone();
 
@@ -226,7 +226,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         // 剔除无效坍缩态
         let mut superposition_new = Vec::new();
         'tile: for tile in superposition.iter() {
-            println!("-------------------{:?}", &tile.filename);
+            debug!("-------------------{:?}", &tile.filename);
             for i in 0..6 as usize {
                 match joint_list[i] {
                     TileJoint::None => {
@@ -240,7 +240,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
                                 continue 'tile;
                             }
                             TileJoint::TagOne(t_tag) => {
-                                println!("{}:{:?}---{:?}:{}", i, tag, t_tag, i);
+                                debug!("{}:{:?}---{:?}:{}", i, tag, t_tag, i);
                                 if tag.contains("空") && !tag.eq("空") {
                                     if !t_tag.eq("空") {
                                         continue 'tile;
@@ -268,8 +268,8 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         slot.superposition = superposition_new;
         slot.entropy = slot.superposition.len();
 
-        println!("{:?}", joint_list);
-        println! {"{:?}-{:?}", &slot.point, &slot.entropy};
+        debug!("{:?}", joint_list);
+        debug! {"{:?}-{:?}", &slot.point, &slot.entropy};
     }
 
     // 获取最小熵slot
@@ -300,7 +300,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         slot.superposition = Vec::new();
         slot.entropy = 0;
         if let Some(_slot) = slot_map.insert(slot.point, slot.clone()) {
-            println!("更新{:?}", slot);
+            debug!("更新{:?}", slot);
         }
         // 判断是否完成坍缩, 完成则退出递归返回tile_map结果, 否则继续
         return collapse(slot_map);
@@ -319,5 +319,5 @@ fn test_create_map() {
         slot_map: HashMap::new(),
     };
     create_map(&mut tile_map);
-    println!("{:?}", tile_map);
+    debug!("{:?}", tile_map);
 }
