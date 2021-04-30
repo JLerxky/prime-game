@@ -8,5 +8,4 @@ edition = "2018"
 common = { path = "../common" }
 protocol = { path = "../protocol" }
 
-rocksdb = "0.16"
 sled = "0.34.6"

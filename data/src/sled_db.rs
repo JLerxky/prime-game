@@ -63,3 +63,22 @@ fn test_sled() {
         )
         .unwrap();
 }
+
+#[test]
+fn test_iter() {
+    let db: sled::Db = sled::open("../db_sled_server").unwrap();
+    for iter in db.iter() {
+        match iter {
+            Ok((k, v)) => {
+                println!(
+                    "{:?}==={:?}",
+                    String::from_utf8(k.to_vec()).unwrap(),
+                    String::from_utf8(v.to_vec()).unwrap()
+                );
+            }
+            Err(e) => {
+                println!("{}", e);
+            }
+        }
+    }
+}

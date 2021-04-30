@@ -86,7 +86,7 @@ pub fn engine_start() {
         .add_plugin(SyncEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        // .add_plugin(TileMapPlugin)
+        .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络
@@ -101,8 +101,7 @@ fn set_camera(mut commands: Commands) {
         // cameras
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(CameraCtrl);
-    commands
-        .spawn_bundle(UiCameraBundle::default());
+    commands.spawn_bundle(UiCameraBundle::default());
 }
 
 fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfiguration>) {

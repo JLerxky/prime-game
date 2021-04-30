@@ -72,14 +72,9 @@ pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
             save(GameData::player_queue_uid(Some(format!("{}", next))))?;
             return Ok(next);
         }
-        save(GameData::player_queue_uid(Some(format!("{}", 0))))?;
-        Ok(0)
-    } else {
-        Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "无数据!",
-        )))
     }
+    save(GameData::player_queue_uid(Some(format!("{}", 0))))?;
+    Ok(0)
 }
 
 pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
