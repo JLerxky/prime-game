@@ -52,9 +52,8 @@ fn event_listener_system(
                     syn_entity.health = health_now;
                     unsafe {
                         if rigid_body_state.entity_type == 1 && UID == rigid_body_state.id as u32 {
-                            println!("1");
-                            if let Some((mut camera_transform, _)) = camera_query.iter_mut().next() {
-                                println!("2");
+                            if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
+                            {
                                 camera_transform.translation = Vec3::new(
                                     rigid_body_state.translation.0,
                                     rigid_body_state.translation.1,
@@ -66,7 +65,6 @@ fn event_listener_system(
                     continue 'update_data;
                 }
             }
-            // println!("4");
 
             // 未生成的实体根据实体类型生成新实体
             let mut texture_handle = asset_server.load("textures/chars/0.png");

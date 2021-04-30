@@ -352,6 +352,7 @@ async fn wait_for_net(
                         let _ = engine_tx.send(packet.clone()).await;
                     }
                     protocol::route::AccountRoute::Logout(_) => {}
+                    protocol::route::AccountRoute::GetInfo(_) => {}
                 },
                 // 玩家控制
                 Packet::Game(game_route) => match game_route {

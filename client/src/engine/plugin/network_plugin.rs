@@ -101,16 +101,17 @@ fn net_handler_system(
                         UID = login_data.uid;
                     },
                     AccountRoute::Logout(_) => {}
+                    AccountRoute::GetInfo(account_data) => unsafe {
+                        UID = account_data.uid;
+                    },
                 },
-                Packet::Game(game_route) => {
-                    match game_route {
-                        GameRoute::Update(update_data) => {
-                            sync_event_writer.send(SyncEvent { update_data });
-                        }
-                        GameRoute::Control(_control_data) => {}
-                        GameRoute::TileMap(_tile_map_data) => {}
+                Packet::Game(game_route) => match game_route {
+                    GameRoute::Update(update_data) => {
+                        sync_event_writer.send(SyncEvent { update_data });
                     }
-                }
+                    GameRoute::Control(_control_data) => {}
+                    GameRoute::TileMap(_tile_map_data) => {}
+                },
             }
         }
     }
@@ -128,7 +129,6 @@ async fn net_client_start(
     println!("客户端网络连接成功: {:?}", sock.local_addr());
     let r = Arc::new(sock);
     let s = r.clone();
-    let s1 = r.clone();
 
     // 登录服务器
     s.send(
@@ -145,7 +145,7 @@ async fn net_client_start(
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(2f64));
         loop {
             interval.tick().await;
-            s1.send(
+            s.send(
                 &bincode::serialize(&Packet::Heartbeat(HeartbeatRoute::Keep(
                     SystemTime::now()
                         .duration_since(SystemTime::UNIX_EPOCH)
@@ -156,6 +156,20 @@ async fn net_client_start(
             )
             .await
             .unwrap();
+
+            unsafe {
+                if UID == 0 {
+                    s.send(
+                        &bincode::serialize(&Packet::Account(AccountRoute::GetInfo(AccountData {
+                            uid: 0,
+                            group: 0,
+                        })))
+                        .unwrap()[0..],
+                    )
+                    .await
+                    .unwrap();
+                }
+            }
             // println!("发送Heartbeat");
         }
     });
@@ -183,7 +197,7 @@ async fn net_client_start(
             to_be_sent_queue.clear();
             for to_be_sent_packet in to_be_sent_queue_c.iter() {
                 // println!("1");
-                let s = s.clone();
+                let s = r.clone();
                 let to_be_sent_packet = to_be_sent_packet.clone();
                 tokio::spawn(async move {
                     // println!("2");

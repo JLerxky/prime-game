@@ -16,6 +16,7 @@ pub enum HeartbeatRoute {
 pub enum AccountRoute {
     Login(AccountData),
     Logout(AccountData),
+    GetInfo(AccountData),
 }
 // 游戏路由
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -416,6 +416,32 @@ async fn start_listening(
                                 Err(_) => {}
                             }
                         }
+                        protocol::route::AccountRoute::GetInfo(account_data) => {
+                            // 根据玩家ip获取uid
+                            let mut uid = account_data.uid;
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None))
+                            {
+                                Ok(data) => {
+                                    if let Ok(id) = data.parse::<u32>() {
+                                        uid = id;
+                                    }
+                                }
+                                Err(_) => {}
+                            }
+                            // 发送生成玩家实体事件到引擎
+                            let packet_login =
+                                Packet::Account(protocol::route::AccountRoute::Login(
+                                    protocol::data::account_data::AccountData {
+                                        uid,
+                                        group: account_data.group,
+                                    },
+                                ));
+                            let _ = tokio::spawn(send(
+                                send_socket.clone(),
+                                bincode::serialize(&packet_login).unwrap(),
+                                addr,
+                            ));
+                        }
                     },
                     Packet::Game(game_route) => match game_route {
                         protocol::route::GameRoute::Control(control_data) => {

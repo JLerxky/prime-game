@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use rocksdb::{ColumnFamilyDescriptor, Error as RocksdbError, IteratorMode, Options, DB};
+use rocksdb::{ColumnFamilyDescriptor, IteratorMode, Options, DB};
 pub struct RocksDB {
     db: DB,
     opts: Options,
