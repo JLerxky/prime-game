@@ -5,7 +5,6 @@ authors = ["JLer <472102489@qq.com>"]
 edition = "2018"
 
 [dependencies]
-util = { path = "../util" }
 client = { path = "../client" }
 protocol = { path = "../protocol" }
 

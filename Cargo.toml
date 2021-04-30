@@ -4,7 +4,6 @@ members = [
     "client",
     "common",
     "protocol",
-    "util",
     "data",
     "example",
 ]

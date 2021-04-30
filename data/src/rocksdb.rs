@@ -1,10 +1,8 @@
 use std::error::Error;
 
 use rocksdb::{ColumnFamilyDescriptor, Error as RocksdbError, IteratorMode, Options, DB};
-use util::aes::AESUtil;
 pub struct RocksDB {
     db: DB,
-    aes: AESUtil,
     opts: Options,
     path: String,
 }
@@ -36,11 +34,8 @@ impl RocksDB {
                     db_opts.create_if_missing(true);
                     // let db = DB::open_for_read_only(&db_opts, path, false)?;
                     let db = DB::open_cf_descriptors(&db_opts, path, vec![cf])?;
-                    let aes =
-                        AESUtil::config(b"09bn39189y30v47620c334yct285hbp2", b"7v3g41itb236gt9c");
                     ROCKS_DB[column_family as usize] = Some(RocksDB {
                         db,
-                        aes,
                         opts: db_opts,
                         path: String::from(path),
                     });
@@ -57,16 +52,6 @@ impl RocksDB {
         }
     }
 
-    // 加密存储
-    pub fn put<K, V>(&self, key: K, value: V) -> Result<(), RocksdbError>
-    where
-        K: AsRef<[u8]>,
-        V: AsRef<[u8]>,
-    {
-        self.db
-            .put(key, self.aes.encrypt(value.as_ref()).as_bytes())
-    }
-
     // 无加密存储
     pub fn put_value<K, V>(&self, key: K, value: V) -> Result<(), Box<dyn std::error::Error>>
     where
@@ -76,18 +61,6 @@ impl RocksDB {
         match self.db.put(key, value) {
             Ok(_) => Ok(()),
             Err(e) => Err(Box::new(e)),
-        }
-    }
-
-    // 读取加密值
-    pub fn get<K: AsRef<[u8]>>(&self, key: K) -> Option<String> {
-        match self.db.get(key) {
-            Ok(Some(ciphertext)) => self.aes.decrypt(ciphertext.as_slice()),
-            Ok(None) => None,
-            Err(e) => {
-                println!("RocksDB: 读取数据失败 -> {}", e);
-                None
-            }
         }
     }
 
