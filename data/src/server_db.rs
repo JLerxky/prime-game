@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use protocol::data::tile_map_data::Tile;
+
 use crate::sled_db::SledDB;
 
 #[derive(Debug)]
@@ -44,6 +46,13 @@ impl GameData {
         GameData {
             table: "player".to_string(),
             key: "queue_uid".to_string(),
+            data,
+        }
+    }
+    pub fn tile_map(point: glam::IVec3, data: Option<String>) -> Self {
+        GameData {
+            table: "tile_map".to_string(),
+            key: format!("{},{},{}", point.x, point.y, point.z),
             data,
         }
     }
@@ -92,6 +101,24 @@ pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+pub fn find_tile_map(point: glam::IVec3) -> Option<Tile> {
+    if let Ok(data) = find(GameData::tile_map(point, None)) {
+        if let Ok(tile) = bincode::deserialize(data.as_bytes()) {
+            return Some(tile);
+        }
+    }
+    None
+}
+
+pub fn save_tile_map(point: glam::IVec3, tile: Tile) -> Result<(), Box<dyn Error>> {
+    let data = GameData {
+        table: "tile_map".to_string(),
+        key: format!("{},{},{}", point.x, point.y, point.z),
+        data: Some(String::from_utf8(bincode::serialize(&tile).unwrap()).unwrap()),
+    };
+    save(data)
 }
 
 #[test]

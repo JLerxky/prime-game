@@ -1062,6 +1062,7 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "data",
  "glam",
  "protocol",
  "rand",
@@ -1401,7 +1402,8 @@ dependencies = [
 name = "data"
 version = "0.1.0"
 dependencies = [
- "common",
+ "bincode",
+ "glam",
  "protocol",
  "sled",
 ]

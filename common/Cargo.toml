@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 protocol = { path = "../protocol" }
+data = { path = "../data" }
 
 glam = "0.13.1"
 rand = "0.8"

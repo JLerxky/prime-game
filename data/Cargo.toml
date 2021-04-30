@@ -5,7 +5,8 @@ authors = ["JLer <472102489@qq.com>"]
 edition = "2018"
 
 [dependencies]
-common = { path = "../common" }
 protocol = { path = "../protocol" }
 
 sled = "0.34.6"
+glam = "0.13.1"
+bincode = "1.3"

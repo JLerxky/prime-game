@@ -1,10 +1,30 @@
 use std::collections::HashMap;
 
-use glam::{IVec3, Vec3};
+use data::server_db::find_tile_map;
+use glam::{IVec3, UVec3, Vec3};
 use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap};
 use rand::Rng;
 
 /// 创建地图
+pub fn create_init_map() {
+    let mut tile_map = TileMap {
+        center_point: IVec3::new(0, 0, 0),
+        texture_size: UVec3::new(64, 64, 1),
+        chunk_size: UVec3::new(1, 1, 1),
+        map_size: UVec3::new(5, 5, 2),
+        slot_map: HashMap::new(),
+    };
+    create_map(&mut tile_map);
+    for (point, slot) in tile_map.slot_map {
+        if let Ok(_result) = data::server_db::save_tile_map(point, slot.tile.clone().unwrap()) {
+            println!("save: {}==={:?}", point, &slot.tile.unwrap());
+        }
+        if let Some(data) = find_tile_map(point) {
+            println!("saved: {:?}", data);
+        }
+    }
+}
+
 pub fn create_map(tile_map: &mut TileMap) {
     // 1. 计算地图边界值
 

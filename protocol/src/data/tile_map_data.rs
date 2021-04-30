@@ -33,7 +33,7 @@ pub enum TileCollider {
 }
 
 // 瓷砖
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Tile {
     // 文件名作为name
     pub filename: String,
@@ -47,7 +47,7 @@ pub struct Tile {
     pub joints: [TileJoint; 6],
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum TileJoint {
     All,
     None,
