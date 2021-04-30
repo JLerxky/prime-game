@@ -243,6 +243,7 @@ async fn start_listening(
                                             server_db::next_u64(GameData::player_queue_uid(None))
                                         {
                                             uid = id as u32;
+                                            println!("新玩家注册: {}", uid);
                                             let _ = server_db::save(GameData::player_addr_uid(
                                                 addr.to_string(),
                                                 Some(uid.to_string()),
@@ -255,6 +256,7 @@ async fn start_listening(
                                         server_db::next_u64(GameData::player_queue_uid(None))
                                     {
                                         uid = id as u32;
+                                        println!("新玩家注册: {}", uid);
                                         let _ = server_db::save(GameData::player_addr_uid(
                                             addr.to_string(),
                                             Some(uid.to_string()),
@@ -360,11 +362,12 @@ async fn start_listening(
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
                                     } else {
-                                        return;
+                                        continue;
                                     }
                                 }
-                                Err(_) => {
-                                    return;
+                                Err(e) => {
+                                    println!("报错: {}", e);
+                                    continue;
                                 }
                             }
                             // 更新在线玩家表
@@ -454,11 +457,12 @@ async fn start_listening(
                                     if let Ok(id) = data.parse::<u32>() {
                                         uid = id;
                                     } else {
-                                        return;
+                                        continue;
                                     }
                                 }
-                                Err(_) => {
-                                    return;
+                                Err(e) => {
+                                    println!("{}报错: {}", &addr, e);
+                                    continue;
                                 }
                             }
                             let packet_control = Packet::Game(GameRoute::Control(ControlData {

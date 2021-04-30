@@ -86,7 +86,7 @@ pub fn engine_start() {
         .add_plugin(SyncEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
-        .add_plugin(TileMapPlugin)
+        // .add_plugin(TileMapPlugin)
         // 玩家
         // .add_plugin(PlayerPlugin)
         // 网络

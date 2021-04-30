@@ -10,7 +10,7 @@ impl SledDB {
             match &SLED_DB {
                 Some(sled_db) => Ok(sled_db),
                 None => {
-                    let db: sled::Db = sled::open(path).unwrap();
+                    let db: sled::Db = sled::open(path)?;
                     SLED_DB = Some(SledDB {
                         db,
                         path: path.to_string(),

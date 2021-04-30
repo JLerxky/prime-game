@@ -1,16 +1,15 @@
 use std::error::Error;
 
-use crate::rocksdb::RocksDB;
+use crate::sled_db::SledDB;
 
-use super::rocksdb::ColumnFamily;
-
+#[derive(Debug)]
 pub struct GameData {
     pub table: String,
     pub key: String,
     pub data: Option<String>,
 }
 
-static CF: ColumnFamily = ColumnFamily::GameServer;
+static DB_PATH: &str = "db_sled_server";
 
 impl GameData {
     pub fn player_online(data: Option<String>) -> Self {
@@ -51,44 +50,65 @@ impl GameData {
 }
 
 pub fn find(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(CF)?;
-    match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
-        Some(result) => Ok(result),
-        None => Err(Box::new(std::io::Error::new(
+    let db = &SledDB::open(DB_PATH)?.db;
+    let data = &db.get(format!("{}-({})", key.table, key.key).as_bytes())?;
+    if let Some(data) = data {
+        Ok(String::from_utf8(data.to_vec())?)
+    } else {
+        Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
             "无数据!",
-        ))),
+        )))
     }
 }
 
 pub fn next_u64(key: GameData) -> Result<u64, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(CF)?;
-    match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
-        Some(result) => {
-            if let Ok(mut next) = result.parse::<u64>() {
-                next += 1;
-                save(GameData::player_queue_uid(Some(format!("{}", next))))?;
-                return Ok(next);
-            }
+    let db = &SledDB::open(DB_PATH)?.db;
+    let data_bt = &db.get(format!("{}-({})", key.table, key.key).as_bytes())?;
+    if let Some(data) = data_bt {
+        let data_str = String::from_utf8(data.to_vec())?;
+        if let Ok(mut next) = data_str.parse::<u64>() {
+            next += 1;
+            save(GameData::player_queue_uid(Some(format!("{}", next))))?;
+            return Ok(next);
         }
-        None => {}
+        save(GameData::player_queue_uid(Some(format!("{}", 0))))?;
+        Ok(0)
+    } else {
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "无数据!",
+        )))
     }
-    save(GameData::player_queue_uid(Some(format!("{}", 0))))?;
-    Ok(0)
 }
 
 pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
-    let rocks_db = RocksDB::open(CF)?;
-    rocks_db.put_value(format!("{}-({})", data.table, data.key), data.data.unwrap())
+    let db = &SledDB::open(DB_PATH)?.db;
+    let result = db.insert(
+        format!("{}-({})", data.table, data.key).as_bytes(),
+        data.data.unwrap().as_bytes(),
+    );
+    match result {
+        std::result::Result::Ok(_old) => {
+            // println!("old: {:?}", old);
+        }
+        std::result::Result::Err(e) => {
+            println!("error: {}", e);
+        }
+    }
+    Ok(())
 }
 
-pub fn find_and_lock(key: GameData) -> Result<String, Box<dyn Error>> {
-    let rocks_db = RocksDB::open(CF)?;
-    match rocks_db.get_value(format!("{}-({})", key.table, key.key)) {
-        Some(result) => Ok(result),
-        None => Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "oh no!",
-        ))),
+#[test]
+fn test_server_db() {
+    let _ = save(GameData::player_addr_uid(
+        "0:0:0:0".to_string(),
+        Some("999".to_string()),
+    ));
+    match find(GameData::player_addr_uid("0:0:0:0".to_string(), None)) {
+        Ok(data) => {
+            println!("{}", data);
+        }
+        Err(_) => {}
     }
 }
