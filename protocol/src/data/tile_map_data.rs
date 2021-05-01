@@ -10,6 +10,13 @@ pub struct TileMapData {
     pub tiles: Vec<TileState>,
 }
 
+// Tile数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TileData {
+    pub point: (i32, i32, i32),
+    pub tile: Option<Tile>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TileState {
     pub point: (i32, i32, i32),

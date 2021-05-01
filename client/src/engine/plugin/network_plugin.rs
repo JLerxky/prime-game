@@ -111,6 +111,17 @@ fn net_handler_system(
                     }
                     GameRoute::Control(_control_data) => {}
                     GameRoute::TileMap(_tile_map_data) => {}
+                    GameRoute::Tile(tile_data) => {
+                        let point = glam::IVec3::new(
+                            tile_data.point.0,
+                            tile_data.point.1,
+                            tile_data.point.2,
+                        );
+                        let _ = data::client_db::save_tile_map(
+                            point,
+                            tile_data.tile.unwrap(),
+                        );
+                    }
                 },
             }
         }

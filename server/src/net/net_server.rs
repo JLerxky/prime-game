@@ -1,5 +1,9 @@
 use data::server_db::{self, GameData};
-use protocol::{data::control_data::ControlData, packet::Packet, route::GameRoute};
+use protocol::{
+    data::{control_data::ControlData, tile_map_data::TileData},
+    packet::Packet,
+    route::GameRoute,
+};
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
 
@@ -472,6 +476,26 @@ async fn start_listening(
                             }));
                             if let Ok(_) = net_tx.try_send(packet_control) {
                                 // println!("{}转递控制: {:?}", &addr, &control_data);
+                            }
+                        }
+                        protocol::route::GameRoute::Tile(tile_data) => {
+                            let point = glam::IVec3::new(
+                                tile_data.point.0,
+                                tile_data.point.1,
+                                tile_data.point.2,
+                            );
+                            if let Ok(tile) = server_db::find_tile_map(point) {
+                                let packet_tile =
+                                    Packet::Game(protocol::route::GameRoute::Tile(TileData {
+                                        point: tile_data.point,
+                                        tile: Some(tile),
+                                    }));
+                                println!("send: {:?}", &packet_tile);
+                                let _ = tokio::spawn(send(
+                                    send_socket.clone(),
+                                    bincode::serialize(&packet_tile).unwrap(),
+                                    addr,
+                                ));
                             }
                         }
                         _ => {}

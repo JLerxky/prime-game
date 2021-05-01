@@ -19,3 +19,4 @@ tokio = {version = "1.2", features = ["full"]}
 serde_json = "1.0"
 serde = {version = "1", features = ["derive"]}
 bytes = "1"
+glam = "0.13.1"

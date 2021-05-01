@@ -24,3 +24,4 @@ tokio-util = { version = "0.6", features = ["full"] }
 tokio-stream = { version = "0.1" }
 bytes = "1.0"
 futures = { version = "0.3", features = ["thread-pool"]}
+glam = "0.13.1"

@@ -1,8 +1,13 @@
-use common::tile_map::create_map;
-use protocol::data::tile_map_data::{Slot, TileMap};
+use protocol::{
+    data::tile_map_data::{Slot, Tile, TileData, TileMap},
+    packet::Packet,
+    route::GameRoute,
+};
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+
+use super::network_plugin::NetWorkState;
 
 pub struct TileMapPlugin;
 
@@ -31,6 +36,20 @@ fn test() {
     debug!("{:?}", 1920 as i32 / 100i32);
 }
 
+fn get_tile(point: IVec3, net_state: &ResMut<NetWorkState>) -> Option<Tile> {
+    if let Ok(tile) = data::client_db::find_tile_map(point) {
+        return Some(tile);
+    } else {
+        if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
+            to_be_sent_queue.push(Packet::Game(GameRoute::Tile(TileData {
+                point: (point.x, point.y, point.z),
+                tile: None,
+            })));
+        }
+    }
+    None
+}
+
 // 1. 获取tile素材资源, 生成tile可用集合
 // 2. 按所需创建地图大小生成tilemap, 创建slot_map
 // 3. slot坍缩, 生成新地图
@@ -43,6 +62,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut tile_map: ResMut<TileMap>,
     window: Res<WindowDescriptor>,
+    net_state: ResMut<NetWorkState>,
 ) {
     debug!(
         "窗口大小: {},{}; 瓷砖大小: {:?}",
@@ -69,43 +89,51 @@ fn setup(
         tile_size, tile_map.map_size
     );
 
-    create_map(&mut tile_map);
-
     // debug!("{:?}", &tile_map.slot_map);
 
-    for (point, slot) in tile_map.slot_map.iter() {
-        let x = point.x;
-        let y = point.y;
-        let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
-        let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
-        let tile_pos = Vec3::new(pos_x, pos_y, point.z as f32);
-        // debug!("slot: ({},{}) pos: ({})", x, y, tile_pos);
+    let min_x = tile_map.center_point.x - (tile_map.map_size.x as i32 / 2);
+    let max_x = tile_map.center_point.x + (tile_map.map_size.x as i32 / 2);
+    let min_y = tile_map.center_point.y - (tile_map.map_size.y as i32 / 2);
+    let max_y = tile_map.center_point.y + (tile_map.map_size.y as i32 / 2);
 
-        // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
-        // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+    // 2. 按Z轴从小到大生成图层
+    for z in 0..tile_map.map_size.z {
+        for x in min_x..=max_x {
+            for y in min_y..=max_y {
+                let point = IVec3::new(x as i32, y as i32, z as i32);
+                let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
+                let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
+                let tile_pos = Vec3::new(pos_x, pos_y, z as f32);
+                // debug!("slot: ({},{}) pos: ({})", x, y, tile_pos);
 
-        if let Some(tile) = &slot.tile {
-            let texture_handle = materials.add(
-                asset_server
-                    .load(format!("textures/prime/tiles/{}", tile.filename).as_str())
-                    .into(),
-            );
+                // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
+                // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
+                println!("point: {}", point);
+                if let Some(tile) = get_tile(point, &net_state) {
+                    println!("tile: {:?}", tile);
+                    let texture_handle = materials.add(
+                        asset_server
+                            .load(format!("textures/prime/tiles/{}", tile.filename).as_str())
+                            .into(),
+                    );
 
-            commands
-                .spawn_bundle(SpriteBundle {
-                    material: texture_handle.clone(),
-                    sprite: Sprite::new(tile_size.truncate().as_f32()),
-                    transform: Transform::from_translation(tile_pos),
-                    ..Default::default()
-                })
-                // .insert(rigid_body)
-                // .insert(collider.friction(0.0))
-                .insert(Slot {
-                    superposition: Vec::new(),
-                    entropy: 0,
-                    tile: None,
-                    point: tile_pos.as_i32(),
-                });
+                    commands
+                        .spawn_bundle(SpriteBundle {
+                            material: texture_handle.clone(),
+                            sprite: Sprite::new(tile_size.truncate().as_f32()),
+                            transform: Transform::from_translation(tile_pos),
+                            ..Default::default()
+                        })
+                        // .insert(rigid_body)
+                        // .insert(collider.friction(0.0))
+                        .insert(Slot {
+                            superposition: Vec::new(),
+                            entropy: 0,
+                            tile: None,
+                            point: tile_pos.as_i32(),
+                        });
+                }
+            }
         }
     }
 }

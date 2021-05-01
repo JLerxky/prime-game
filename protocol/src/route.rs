@@ -1,5 +1,7 @@
 use crate::data::{
-    account_data::AccountData, control_data::ControlData, tile_map_data::TileMapData,
+    account_data::AccountData,
+    control_data::ControlData,
+    tile_map_data::{TileData, TileMapData},
     update_data::UpdateData,
 };
 use serde::{Deserialize, Serialize};
@@ -24,4 +26,5 @@ pub enum GameRoute {
     Update(UpdateData),
     Control(ControlData),
     TileMap(TileMapData),
+    Tile(TileData),
 }
