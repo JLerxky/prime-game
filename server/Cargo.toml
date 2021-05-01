@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 data = { path = "../data" }
+config = { path = "../config" }
 common = { path = "../common" }
 protocol = { path = "../protocol" }
 

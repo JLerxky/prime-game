@@ -10,7 +10,7 @@ pub async fn start_server(
     net_tx: Sender<Packet>,
     engine_rx: Receiver<Packet>,
 ) -> Result<(), Box<dyn Error>> {
-    let game_server_socket = UdpSocket::bind(common::config::SERVER_ADDR).await?;
+    let game_server_socket = UdpSocket::bind(config::SERVER_ADDR).await?;
     let game_server_addr = &game_server_socket.local_addr()?;
 
     println!("网络服务器已启动: {:?}", game_server_addr);

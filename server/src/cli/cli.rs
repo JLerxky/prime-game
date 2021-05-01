@@ -28,6 +28,10 @@ impl Cli {
                         }
                         None => match params[0] {
                             "new" => println!("new"),
+                            "init_tile_map" => common::tile_map::create_init_map(),
+                            "db_show_all" => {
+                                data::sled_db::SledDB::show_all(config::DB_PATH_SERVER)
+                            }
                             "quit" | "q!" => break,
                             "help" | "h" => println!("Print help command"),
                             "" => continue,

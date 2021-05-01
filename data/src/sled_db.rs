@@ -27,6 +27,24 @@ impl SledDB {
             }
         }
     }
+
+    pub fn show_all(path: &str) {
+        let db = &SledDB::open(path).unwrap().db;
+        for iter in db.iter() {
+            match iter {
+                Ok((k, v)) => {
+                    println!(
+                        "{:?}==={:?}",
+                        String::from_utf8(k.to_vec()).unwrap(),
+                        String::from_utf8(v.to_vec()).unwrap()
+                    );
+                }
+                Err(e) => {
+                    println!("{}", e);
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -66,19 +84,5 @@ fn test_sled() {
 
 #[test]
 fn test_iter() {
-    let db: sled::Db = sled::open("../db_sled_server").unwrap();
-    for iter in db.iter() {
-        match iter {
-            Ok((k, v)) => {
-                println!(
-                    "{:?}==={:?}",
-                    String::from_utf8(k.to_vec()).unwrap(),
-                    String::from_utf8(v.to_vec()).unwrap()
-                );
-            }
-            Err(e) => {
-                println!("{}", e);
-            }
-        }
-    }
+    SledDB::show_all(&format!("../{}", config::DB_PATH_SERVER));
 }

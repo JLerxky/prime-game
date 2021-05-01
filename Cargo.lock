@@ -959,6 +959,7 @@ dependencies = [
  "bytes",
  "clipboard",
  "common",
+ "config",
  "data",
  "protocol",
  "rustyline",
@@ -1076,6 +1077,10 @@ checksum = "30ed07550be01594c6026cff2a1d7fe9c8f683caa798e12b68694ac9e88286a3"
 dependencies = [
  "cache-padded",
 ]
+
+[[package]]
+name = "config"
+version = "0.1.0"
 
 [[package]]
 name = "console_error_panic_hook"
@@ -1403,6 +1408,7 @@ name = "data"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "config",
  "glam",
  "protocol",
  "sled",
@@ -3512,6 +3518,7 @@ dependencies = [
  "bincode",
  "bytes",
  "common",
+ "config",
  "crossbeam",
  "data",
  "futures",

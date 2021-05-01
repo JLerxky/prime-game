@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 protocol = { path = "../protocol" }
+config = { path = "../config" }
 
 sled = "0.34.6"
 glam = "0.13.1"

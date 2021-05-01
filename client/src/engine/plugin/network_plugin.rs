@@ -123,8 +123,8 @@ async fn net_client_start(
 ) -> io::Result<()> {
     // 连接服务器
     println!("客户端网络连接ing...");
-    let sock = UdpSocket::bind(common::config::CLIENT_ADDR).await?;
-    let remote_addr = common::config::SERVER_ADDR;
+    let sock = UdpSocket::bind(config::CLIENT_ADDR).await?;
+    let remote_addr = config::SERVER_ADDR;
     sock.connect(remote_addr).await?;
     println!("客户端网络连接成功: {:?}", sock.local_addr());
     let r = Arc::new(sock);

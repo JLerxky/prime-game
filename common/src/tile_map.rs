@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use data::server_db::find_tile_map;
 use glam::{IVec3, UVec3, Vec3};
 use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap};
 use rand::Rng;
@@ -19,7 +18,7 @@ pub fn create_init_map() {
         if let Ok(_result) = data::server_db::save_tile_map(point, slot.tile.clone().unwrap()) {
             println!("save: {}==={:?}", point, &slot.tile.unwrap());
         }
-        if let Some(data) = find_tile_map(point) {
+        if let Ok(data) = data::server_db::find_tile_map(point) {
             println!("saved: {:?}", data);
         }
     }
