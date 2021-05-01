@@ -108,9 +108,9 @@ fn setup(
 
                 // let rigid_body = RigidBodyBuilder::new_static().translation(tile_pos.x, tile_pos.y);
                 // let collider = ColliderBuilder::cuboid(tile_size.x / 2f32, tile_size.y / 2f32);
-                println!("point: {}", point);
+                // println!("point: {}", point);
                 if let Some(tile) = get_tile(point, &net_state) {
-                    println!("tile: {:?}", tile);
+                    // println!("tile: {:?}", tile);
                     let texture_handle = materials.add(
                         asset_server
                             .load(format!("textures/prime/tiles/{}", tile.filename).as_str())

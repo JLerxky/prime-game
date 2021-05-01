@@ -26,6 +26,7 @@ pub struct EntityState {
     pub texture: (u32, u8, u8),
     // 1b[45]
     pub entity_type: u8,
+    pub animate: u8,
 }
 
 impl EntityState {
@@ -45,10 +46,12 @@ impl EntityState {
         let texture2 = data[13];
 
         let entity_type = data[14];
+        let animate = data[15];
 
         self.id = id;
         self.texture = (texture0, texture1, texture2);
         self.entity_type = entity_type;
+        self.animate = animate;
     }
     pub fn get_data(&self) -> u128 {
         let mut data = self.id.to_le_bytes().to_vec();
@@ -56,6 +59,7 @@ impl EntityState {
         data.append(&mut self.texture.1.to_le_bytes().to_vec());
         data.append(&mut self.texture.2.to_le_bytes().to_vec());
         data.append(&mut self.entity_type.to_le_bytes().to_vec());
+        data.append(&mut self.animate.to_le_bytes().to_vec());
         data.append(&mut [0u8; 2].to_vec());
 
         let ptr: *const u8 = data[0..15].as_ptr();

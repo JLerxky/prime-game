@@ -148,8 +148,28 @@ pub async fn engine_main_loop(
                         angvel: (body.angvel(), body.angvel()),
                         texture: (0, 0, 0),
                         entity_type: 0,
+                        animate: 0,
                     };
                     state.make_up_data(body.user_data);
+                    if state.entity_type == 1 {
+                        if body.linvel().amax().abs() > 0.0001f32 {
+                            if body.linvel().x.abs() >= body.linvel().y.abs() {
+                                if body.linvel().x > 0.0 {
+                                    state.animate = 3;
+                                } else {
+                                    state.animate = 4;
+                                }
+                            } else {
+                                if body.linvel().y > 0.0 {
+                                    state.animate = 2;
+                                } else {
+                                    state.animate = 1;
+                                }
+                            }
+                        } else {
+                            state.animate = 0;
+                        }
+                    }
                     states.push(state);
                 }
             }
@@ -196,6 +216,7 @@ async fn clean_body(
                 angvel: (0., 0.),
                 texture: (0, 0, 0),
                 entity_type: 0,
+                animate: 0,
             };
             entity_state.make_up_data(body.user_data);
 
@@ -239,6 +260,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         angvel: (0., 0.),
         texture: (0, 5, 1),
         entity_type: 2,
+        animate: 1,
     };
     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
         .translation(0.0, 200.0)
@@ -288,8 +310,7 @@ async fn wait_for_net(
                 Packet::Account(account_route) => match account_route {
                     protocol::route::AccountRoute::Login(login_data) => {
                         println!("玩家加入: {}", &login_data.uid);
-                        // 球
-                        // 刚体类型
+                        // 玩家
                         let rb_state = EntityState {
                             id: login_data.uid as u64,
                             translation: (0., 0.),
@@ -298,6 +319,7 @@ async fn wait_for_net(
                             angvel: (0., 0.),
                             texture: (1, 4, 3),
                             entity_type: 1,
+                            animate: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
                             .translation(0.0, 100.0)
@@ -340,6 +362,7 @@ async fn wait_for_net(
                                         angvel: (body.angvel(), body.angvel()),
                                         texture: (0, 0, 0),
                                         entity_type: 0,
+                                        animate: 0,
                                     };
                                     state.make_up_data(body.user_data);
                                     states.push(state);

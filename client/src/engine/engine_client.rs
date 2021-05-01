@@ -19,11 +19,8 @@ use super::{
         sync_event::SyncEventPlugin,
     },
     plugin::{
-        camera_ctrl_plugin::CameraCtrl,
-        clipboard_plugin::Clipboard,
-        fps_plugin::Fps,
-        network_plugin::{NetworkPlugin, SynEntity},
-        ping_plugin::Ping,
+        animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl, clipboard_plugin::Clipboard,
+        fps_plugin::Fps, network_plugin::NetworkPlugin, ping_plugin::Ping,
         tile_map_plugin::TileMapPlugin,
     },
 };
@@ -92,7 +89,7 @@ pub fn engine_start() {
         // 网络
         .add_plugin(NetworkPlugin)
         // 动画
-        .add_system(animate_system.system())
+        .add_plugin(AnimatePlugin)
         .run();
 }
 
@@ -116,22 +113,4 @@ fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfig
 
 fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
-}
-
-fn animate_system(
-    time: Res<Time>,
-    mut animate_entity_query: Query<
-        (&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>),
-        With<SynEntity>,
-    >,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) {
-    for (mut timer, mut sprite, texture_atlas_handle) in animate_entity_query.iter_mut() {
-        timer.tick(time.delta());
-        if timer.finished() {
-            if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
-                sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
-            }
-        }
-    }
 }
