@@ -44,7 +44,7 @@ fn event_listener_system(
                         translation: Vec3::new(
                             rigid_body_state.translation.0,
                             rigid_body_state.translation.1,
-                            99.0,
+                            50.0,
                         ),
                         rotation: Quat::from_rotation_z(rigid_body_state.rotation),
                         scale: transform.scale,
