@@ -1,25 +1,32 @@
 use std::collections::HashMap;
 
+use data::server_db::find_tile_map;
 use glam::{IVec3, UVec3, Vec3};
 use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap};
 use rand::Rng;
 
 /// 创建地图
 pub fn create_init_map() {
-    let mut tile_map = TileMap {
-        center_point: IVec3::new(0, 0, 0),
-        texture_size: UVec3::new(64, 64, 1),
-        chunk_size: UVec3::new(1, 1, 1),
-        map_size: UVec3::new(20, 20, 2),
-        slot_map: HashMap::new(),
-    };
-    create_map(&mut tile_map);
-    for (point, slot) in tile_map.slot_map {
-        if let Ok(_result) = data::server_db::save_tile_map(point, slot.tile.clone().unwrap()) {
-            // println!("save: {}==={:?}", point, &slot.tile.unwrap());
-        }
-        if let Ok(data) = data::server_db::find_tile_map(point) {
-            println!("saved: {}==={:?}", point, data);
+    for x in -10..=10 {
+        for y in -10..=10 {
+            let mut tile_map = TileMap {
+                center_point: IVec3::new(x * 10, y * 10, 0),
+                texture_size: UVec3::new(64, 64, 1),
+                chunk_size: UVec3::new(1, 1, 1),
+                map_size: UVec3::new(20, 20, 2),
+                slot_map: HashMap::new(),
+            };
+            create_map(&mut tile_map);
+            for (point, slot) in tile_map.slot_map {
+                if let Some(tile) = slot.tile.clone() {
+                    if let Ok(_result) = data::server_db::save_tile_map(point, tile) {
+                        // println!("save: {}==={:?}", point, &slot.tile.unwrap());
+                    }
+                    if let Ok(data) = data::server_db::find_tile_map(point) {
+                        println!("saved: {}==={:?}", point, data);
+                    }
+                }
+            }
         }
     }
 }
@@ -46,12 +53,22 @@ pub fn create_map(tile_map: &mut TileMap) {
                 // 初始化Slot: 填充叠加态, 初始化熵
                 let superposition = load_default_superposition(z);
                 let entropy = superposition.len();
-                let slot = Slot {
+                let mut slot = Slot {
                     point,
                     superposition,
                     entropy,
                     tile: None,
                 };
+                // 获取数据库数据, 存在则载入, 不存在则保持初始化
+                if let Ok(tile) = find_tile_map(point) {
+                    slot = Slot {
+                        point,
+                        superposition: Vec::new(),
+                        entropy: 0,
+                        tile: Some(tile),
+                    };
+                }
+
                 tile_map.slot_map.insert(point, slot);
             }
         }
@@ -63,7 +80,7 @@ pub fn create_map(tile_map: &mut TileMap) {
 }
 
 /// 世界坐标->地图索引
-fn _pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> IVec3 {
+pub fn pos_to_global_point(tile_map: &TileMap, pos: Vec3) -> IVec3 {
     let point =
         pos / ((tile_map.chunk_size * tile_map.texture_size).as_f32() / Vec3::new(2., 2., 1.));
     point.as_i32()

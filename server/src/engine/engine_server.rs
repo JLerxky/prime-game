@@ -322,7 +322,7 @@ async fn wait_for_net(
                             animate: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                            .translation(0.0, 100.0)
+                            .translation(0.0, 0.0)
                             // 线速度
                             .linvel(0.0, 0.0)
                             // 角速度
