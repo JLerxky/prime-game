@@ -83,7 +83,7 @@ fn net_handler_system(
     mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
-        for _ in 0..10 {
+        for _ in 0..512 {
             if packet_queue.is_empty() {
                 return;
             }
@@ -119,10 +119,8 @@ fn net_handler_system(
                             tile_data.point.1,
                             tile_data.point.2,
                         );
-                        let _ = data::client_db::save_tile_map(
-                            point,
-                            tile_data.tile.unwrap(),
-                        );
+                        // println!("rev: {}", point);
+                        let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
                     }
                 },
             }
@@ -196,7 +194,7 @@ async fn net_client_start(
             // 转发事件
             if let Ok(packet) = packet {
                 if let Ok(mut packet_queue) = packet_queue.lock() {
-                    if packet_queue.len() > 10 {
+                    if packet_queue.len() > 512 {
                         packet_queue.remove(0);
                     }
                     packet_queue.push(packet);

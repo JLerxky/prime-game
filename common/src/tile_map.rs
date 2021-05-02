@@ -10,16 +10,16 @@ pub fn create_init_map() {
         center_point: IVec3::new(0, 0, 0),
         texture_size: UVec3::new(64, 64, 1),
         chunk_size: UVec3::new(1, 1, 1),
-        map_size: UVec3::new(5, 5, 2),
+        map_size: UVec3::new(20, 20, 2),
         slot_map: HashMap::new(),
     };
     create_map(&mut tile_map);
     for (point, slot) in tile_map.slot_map {
         if let Ok(_result) = data::server_db::save_tile_map(point, slot.tile.clone().unwrap()) {
-            println!("save: {}==={:?}", point, &slot.tile.unwrap());
+            // println!("save: {}==={:?}", point, &slot.tile.unwrap());
         }
         if let Ok(data) = data::server_db::find_tile_map(point) {
-            println!("saved: {:?}", data);
+            println!("saved: {}==={:?}", point, data);
         }
     }
 }
@@ -81,7 +81,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
     }
 
     // 重新计算熵
-    println!("{:?}", &slot_list.len());
+    // println!("{:?}", &slot_list.len());
     for slot in &mut slot_list {
         let superposition: Vec<Tile> = slot.superposition.clone();
 
@@ -140,7 +140,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         // 剔除无效坍缩态
         let mut superposition_new = Vec::new();
         'tile: for tile in superposition.iter() {
-            println!("-------------------{:?}", &tile.filename);
+            // println!("-------------------{:?}", &tile.filename);
             for i in 0..6 as usize {
                 match joint_list[i] {
                     TileJoint::None => {
@@ -154,7 +154,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
                                 continue 'tile;
                             }
                             TileJoint::TagOne(t_tag) => {
-                                println!("{}:{:?}---{:?}:{}", i, tag, t_tag, i);
+                                // println!("{}:{:?}---{:?}:{}", i, tag, t_tag, i);
                                 if tag.contains("空") && !tag.eq("空") {
                                     if !t_tag.eq("空") {
                                         continue 'tile;
@@ -182,8 +182,8 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         slot.superposition = superposition_new;
         slot.entropy = slot.superposition.len();
 
-        println!("{:?}", joint_list);
-        println! {"{:?}-{:?}", &slot.point, &slot.entropy};
+        // println!("{:?}", joint_list);
+        // println! {"{:?}-{:?}", &slot.point, &slot.entropy};
     }
 
     // 获取最小熵slot
@@ -214,7 +214,7 @@ fn collapse(mut slot_map: HashMap<IVec3, Slot>) -> HashMap<IVec3, Slot> {
         slot.superposition = Vec::new();
         slot.entropy = 0;
         if let Some(_slot) = slot_map.insert(slot.point, slot.clone()) {
-            println!("更新{:?}", slot);
+            // println!("更新{:?}", slot);
         }
         // 判断是否完成坍缩, 完成则退出递归返回tile_map结果, 否则继续
         return collapse(slot_map);
@@ -234,7 +234,7 @@ fn test_create_map() {
         slot_map: HashMap::new(),
     };
     create_map(&mut tile_map);
-    println!("{:?}", tile_map);
+    // println!("{:?}", tile_map);
 }
 
 /// 加载默认胶水tile初始化叠加态

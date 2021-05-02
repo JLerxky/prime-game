@@ -134,7 +134,7 @@ pub fn save_tile_map(point: glam::IVec3, tile: Tile) -> Result<(), Box<dyn Error
     );
     match result {
         std::result::Result::Ok(_old) => {
-            // println!("old: {:?}", old);
+            println!("save: {}==={:?}", point, tile);
         }
         std::result::Result::Err(e) => {
             println!("error: {}", e);
@@ -150,3 +150,9 @@ fn test_server_db() {
         println!("{:?}", tile);
     }
 }
+
+#[test]
+fn test_iter() {
+    SledDB::show_all(&format!("../{}", config::DB_PATH_CLIENT));
+}
+
