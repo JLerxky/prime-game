@@ -143,6 +143,24 @@ pub fn save_tile_map(point: glam::IVec3, tile: Tile) -> Result<(), Box<dyn Error
     Ok(())
 }
 
+pub fn all_tile(path: &str) {
+    let db = &SledDB::open(path).unwrap().db;
+    for iter in db.scan_prefix("tile_map-(") {
+        match iter {
+            Ok((k, v)) => {
+                println!(
+                    "{:?}==={:?}",
+                    String::from_utf8(k.to_vec()).unwrap(),
+                    String::from_utf8(v.to_vec()).unwrap()
+                );
+            }
+            Err(e) => {
+                println!("{}", e);
+            }
+        }
+    }
+}
+
 #[test]
 fn test_server_db() {
     let point = glam::IVec3::new(0, 0, 0);

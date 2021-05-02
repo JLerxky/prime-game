@@ -27,6 +27,7 @@ pub struct TileState {
 // 地形碰撞体类型
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TileCollider {
+    None,
     Full,
     HalfTop,
     HalfBottom,

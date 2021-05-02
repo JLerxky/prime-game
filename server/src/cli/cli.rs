@@ -32,6 +32,9 @@ impl Cli {
                             "db_show_all" => {
                                 data::sled_db::SledDB::show_all(config::DB_PATH_SERVER)
                             }
+                            "db_all_tile" => {
+                                data::server_db::all_tile(config::DB_PATH_SERVER)
+                            }
                             "quit" | "q!" => break,
                             "help" | "h" => println!("Print help command"),
                             "" => continue,

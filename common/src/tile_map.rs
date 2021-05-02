@@ -7,8 +7,8 @@ use rand::Rng;
 
 /// 创建地图
 pub fn create_init_map() {
-    for x in -10..=10 {
-        for y in -10..=10 {
+    for x in -3..=3 {
+        for y in -3..=3 {
             let mut tile_map = TileMap {
                 center_point: IVec3::new(x * 10, y * 10, 0),
                 texture_size: UVec3::new(64, 64, 1),
@@ -294,7 +294,7 @@ pub fn load_background_superposition(layer: usize) -> Vec<Tile> {
         filename: "0-tileset_30.png".to_string(),
         layer,
         rng_seed: 1,
-        collider: TileCollider::Full,
+        collider: TileCollider::None,
         joints: [
             TileJoint::All, // 0上
             TileJoint::All, // 1下
@@ -315,7 +315,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
         filename: "0-tileset_30.png".to_string(),
         layer,
         rng_seed: 40,
-        collider: TileCollider::Full,
+        collider: TileCollider::None,
         joints: [
             TileJoint::TagOne("空".to_string()), // 0上
             TileJoint::TagOne("空".to_string()), // 1下
@@ -713,7 +713,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_13.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("x|边|砖".to_string()), // 1下
@@ -727,7 +727,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_14.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("砖".to_string()),       // 1下
@@ -741,7 +741,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_15.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("砖空".to_string()),    // 0上
                 TileJoint::TagOne("x|砖|边".to_string()), // 1下
@@ -755,7 +755,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_33.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("x|边|砖".to_string()), // 0上
                 TileJoint::TagOne("x|边|砖".to_string()), // 1下
@@ -769,7 +769,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_34.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("砖".to_string()), // 0上
                 TileJoint::TagOne("砖".to_string()), // 1下
@@ -783,7 +783,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_35.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("x|砖|边".to_string()), // 0上
                 TileJoint::TagOne("x|砖|边".to_string()), // 1下
@@ -797,7 +797,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_51.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("x|边|砖".to_string()), // 0上
                 TileJoint::TagOne("砖空".to_string()),    // 1下
@@ -811,7 +811,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_52.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("砖".to_string()),       // 0上
                 TileJoint::TagOne("砖空".to_string()),    // 1下
@@ -825,7 +825,7 @@ pub fn load_terrain_superposition(layer: usize) -> Vec<Tile> {
             filename: "0-tileset_53.png".to_string(),
             layer,
             rng_seed: 1,
-            collider: TileCollider::Full,
+            collider: TileCollider::None,
             joints: [
                 TileJoint::TagOne("x|砖|边".to_string()), // 0上
                 TileJoint::TagOne("砖空".to_string()),    // 1下
@@ -847,7 +847,7 @@ pub fn load_item_superposition(layer: usize) -> Vec<Tile> {
         filename: "0-tileset_50.png".to_string(),
         layer,
         rng_seed: 1,
-        collider: TileCollider::Full,
+        collider: TileCollider::None,
         joints: [
             TileJoint::TagOne("边".to_string()), // 0上
             TileJoint::TagOne("边".to_string()), // 1下

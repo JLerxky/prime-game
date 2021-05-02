@@ -2,8 +2,12 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::net;
 use data::server_db::{self, GameData};
+use glam::IVec3;
 use protocol::{
-    data::update_data::{EntityState, UpdateData},
+    data::{
+        tile_map_data::Tile,
+        update_data::{EntityState, UpdateData},
+    },
     packet::Packet,
     route::GameRoute,
 };
@@ -285,8 +289,94 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         // .sensor(true)
         .build();
     let rb_handle = bodies.insert(rigid_body);
-
     colliders.insert(collider, rb_handle, bodies);
+
+    // 加载地形
+    let db = &data::sled_db::SledDB::open(config::DB_PATH_SERVER)
+        .unwrap()
+        .db;
+    for iter in db.scan_prefix("tile_map-(") {
+        match iter {
+            Ok((k, v)) => {
+                if let Ok(tile) = bincode::deserialize::<Tile>(&v) {
+                    match tile.collider {
+                        protocol::data::tile_map_data::TileCollider::Full => {
+                            println!("4");
+                            let mut k_str = String::from_utf8(k.to_vec()).unwrap();
+                            k_str = k_str.replace("tile_map-(", "").replace(")", "");
+                            let mut point_str = k_str.split(",").take(3);
+                            let point = IVec3::new(
+                                point_str.next().unwrap().parse().unwrap(),
+                                point_str.next().unwrap().parse().unwrap(),
+                                0,
+                            );
+                            println!("生成碰撞体: {}", point);
+                            let point = point.as_f32() * 64.0;
+                            let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
+                                .translation(point.x, point.y)
+                                // .rotation(0.0)
+                                // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
+                                // 线速度
+                                .linvel(0.0, 0.0)
+                                // 角速度
+                                .angvel(0.0)
+                                // 重力
+                                .gravity_scale(0.0)
+                                // .can_sleep(true)
+                                .build();
+                            // 碰撞体类型
+                            let collider = ColliderBuilder::new(SharedShape::cuboid(32.0, 32.0))
+                                // 密度
+                                .density(1.0)
+                                // 摩擦
+                                .friction(1.0)
+                                // 是否为传感器
+                                // .sensor(true)
+                                .build();
+                            let rb_handle = bodies.insert(rigid_body);
+                            colliders.insert(collider, rb_handle, bodies);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Err(_e) => {}
+        }
+    }
+
+    // 加载边界碰撞体
+    for side_x in -16..=16 {
+        for side_y in -16..=16 {
+            if side_y == -16 || side_y == 16 || side_x == -16 || side_x == 16 {
+                let point = IVec3::new(side_x, side_y, 0);
+                println!("生成边界: {}", point);
+                let point = point.as_f32() * 64.0;
+                let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
+                    .translation(point.x, point.y)
+                    // .rotation(0.0)
+                    // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
+                    // 线速度
+                    .linvel(0.0, 0.0)
+                    // 角速度
+                    .angvel(0.0)
+                    // 重力
+                    .gravity_scale(0.0)
+                    // .can_sleep(true)
+                    .build();
+                // 碰撞体类型
+                let collider = ColliderBuilder::new(SharedShape::cuboid(32.0, 32.0))
+                    // 密度
+                    .density(1.0)
+                    // 摩擦
+                    .friction(1.0)
+                    // 是否为传感器
+                    // .sensor(true)
+                    .build();
+                let rb_handle = bodies.insert(rigid_body);
+                colliders.insert(collider, rb_handle, bodies);
+            }
+        }
+    }
 }
 
 async fn wait_for_net(
