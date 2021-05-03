@@ -256,40 +256,42 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 旋转体
     // 刚体类型
-    let rb_state = EntityState {
-        id: 1000,
-        translation: (0., 0.),
-        rotation: 0.,
-        linvel: (0., 0.),
-        angvel: (0., 0.),
-        texture: (0, 5, 1),
-        entity_type: 2,
-        animate: 1,
-    };
-    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-        .translation(0.0, 200.0)
-        // .rotation(0.0)
-        // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
-        // 线速度
-        .linvel(0.0, 0.0)
-        // 角速度
-        .angvel(1.0)
-        // 重力
-        .gravity_scale(0.0)
-        // .can_sleep(true)
-        .user_data(rb_state.get_data())
-        .build();
-    // 碰撞体类型
-    let collider = ColliderBuilder::new(SharedShape::ball(5.0))
-        // 密度
-        .density(1.0)
-        // 摩擦
-        .friction(1.0)
-        // 是否为传感器
-        // .sensor(true)
-        .build();
-    let rb_handle = bodies.insert(rigid_body);
-    colliders.insert(collider, rb_handle, bodies);
+    for i in 0..10 {
+        let rb_state = EntityState {
+            id: 1000 + i,
+            translation: (0., 0.),
+            rotation: 0.,
+            linvel: (0., 0.),
+            angvel: (0., 0.),
+            texture: (0, 5, 1),
+            entity_type: 2,
+            animate: 1,
+        };
+        let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
+            .translation(0.0, i as f32 * 20.0)
+            // .rotation(0.0)
+            // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
+            // 线速度
+            .linvel(0.0, 0.0)
+            // 角速度
+            .angvel(1.0)
+            // 重力
+            .gravity_scale(0.0)
+            // .can_sleep(true)
+            .user_data(rb_state.get_data())
+            .build();
+        // 碰撞体类型
+        let collider = ColliderBuilder::new(SharedShape::ball(5.0))
+            // 密度
+            .density(0.1)
+            // 摩擦
+            .friction(1.0)
+            // 是否为传感器
+            // .sensor(true)
+            .build();
+        let rb_handle = bodies.insert(rigid_body);
+        colliders.insert(collider, rb_handle, bodies);
+    }
 
     // 加载地形
     let db = &data::sled_db::SledDB::open(config::DB_PATH_SERVER)
@@ -327,7 +329,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                             // 碰撞体类型
                             let collider = ColliderBuilder::new(SharedShape::cuboid(32.0, 32.0))
                                 // 密度
-                                .density(1.0)
+                                .density(0.1)
                                 // 摩擦
                                 .friction(0.0)
                                 // 是否为传感器
@@ -366,7 +368,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                 // 碰撞体类型
                 let collider = ColliderBuilder::new(SharedShape::cuboid(32.0, 32.0))
                     // 密度
-                    .density(1.0)
+                    .density(0.1)
                     // 摩擦
                     .friction(0.0)
                     // 是否为传感器
@@ -425,7 +427,7 @@ async fn wait_for_net(
                         // 碰撞体类型
                         let collider = ColliderBuilder::capsule_y(8.0, 20.0)
                             // 密度
-                            .density(1.0)
+                            .density(0.1)
                             // 摩擦
                             .friction(0.0)
                             .build();
