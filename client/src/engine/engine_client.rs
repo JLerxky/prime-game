@@ -21,7 +21,7 @@ use super::{
     plugin::{
         animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl, clipboard_plugin::Clipboard,
         fps_plugin::Fps, network_plugin::NetworkPlugin, ping_plugin::Ping,
-        tile_map_plugin::TileMapPlugin,
+        tile_map_plugin::TileMapPlugin, ui_plugin::UIPlugin,
     },
 };
 
@@ -49,9 +49,9 @@ pub fn engine_start() {
             // cursor_visible: false,
             ..Default::default()
         })
-        // .insert_resource(Msaa { samples: 4 })
+        .insert_resource(Msaa { samples: 4 })
         // 窗口背景色
-        .insert_resource(ClearColor(Color::rgb(0., 0., 0.)))
+        .insert_resource(ClearColor(Color::rgb(255., 255., 255.)))
         // 默认插件
         .add_plugins(DefaultPlugins)
         // esc退出系统
@@ -90,6 +90,8 @@ pub fn engine_start() {
         .add_plugin(NetworkPlugin)
         // 动画
         .add_plugin(AnimatePlugin)
+        // egui
+        .add_plugin(UIPlugin)
         .run();
 }
 
