@@ -156,7 +156,7 @@ fn setup(
     }
 }
 
-fn update_tile(
+fn _update_tile(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,

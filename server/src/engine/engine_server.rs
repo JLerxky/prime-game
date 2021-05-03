@@ -329,7 +329,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                                 // 密度
                                 .density(1.0)
                                 // 摩擦
-                                .friction(1.0)
+                                .friction(0.0)
                                 // 是否为传感器
                                 // .sensor(true)
                                 .build();
@@ -368,7 +368,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                     // 密度
                     .density(1.0)
                     // 摩擦
-                    .friction(1.0)
+                    .friction(0.0)
                     // 是否为传感器
                     // .sensor(true)
                     .build();
@@ -423,7 +423,7 @@ async fn wait_for_net(
                             .user_data(rb_state.get_data())
                             .build();
                         // 碰撞体类型
-                        let collider = ColliderBuilder::cuboid(20.0, 20.0)
+                        let collider = ColliderBuilder::capsule_y(8.0, 20.0)
                             // 密度
                             .density(1.0)
                             // 摩擦
