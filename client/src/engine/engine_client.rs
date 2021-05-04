@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
     wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
+    window::WindowMode,
     winit::WinitPlugin,
 };
 use bevy_rapier2d::{
@@ -38,10 +39,10 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 800f32,
-            height: 450f32,
+            width: 1280f32,
+            height: 720f32,
             // 窗口模式
-            // mode: WindowMode::BorderlessFullscreen,
+            mode: WindowMode::Windowed,
             // 鼠标隐藏并锁定
             // cursor_locked: true,
             // cursor_visible: false,

@@ -69,14 +69,15 @@ fn ui_system(
     diagnostics: Res<bevy::diagnostic::Diagnostics>,
     mut app_exit_events: EventWriter<bevy::app::AppExit>,
 ) {
-    let mut fps = 0.0;
-    if let Some(fps_diagnostic) = diagnostics.get(bevy::diagnostic::FrameTimeDiagnosticsPlugin::FPS)
-    {
-        if let Some(fps_avg) = fps_diagnostic.average() {
-            fps = fps_avg;
-        }
-    }
     if ui_state.windows_enabled[0] {
+        let mut fps = 0.0;
+        if let Some(fps_diagnostic) =
+            diagnostics.get(bevy::diagnostic::FrameTimeDiagnosticsPlugin::FPS)
+        {
+            if let Some(fps_avg) = fps_diagnostic.average() {
+                fps = fps_avg;
+            }
+        }
         bevy_egui::egui::Window::new("性能监控")
             .title_bar(false)
             .id(Id::new(1))

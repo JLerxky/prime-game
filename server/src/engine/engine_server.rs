@@ -256,7 +256,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 旋转体
     // 刚体类型
-    for i in 0..10 {
+    for i in 0..40 {
         let rb_state = EntityState {
             id: 1000 + i,
             translation: (0., 0.),
@@ -268,7 +268,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             animate: 1,
         };
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-            .translation(0.0, i as f32 * 20.0)
+            .translation(0.0, i as f32 * 10.0)
             // .rotation(0.0)
             // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
             // 线速度
