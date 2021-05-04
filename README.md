@@ -8,4 +8,4 @@
   - AI --- big_brain
   - UI --- bevy_egui
   - 异步运行时 --- tokio
-  - 数据存储引擎 --- rocksdb
+  - 数据存储引擎 --- sled
