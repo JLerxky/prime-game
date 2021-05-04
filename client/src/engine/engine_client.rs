@@ -19,9 +19,8 @@ use super::{
         sync_event::SyncEventPlugin,
     },
     plugin::{
-        animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl, clipboard_plugin::Clipboard,
-        fps_plugin::Fps, network_plugin::NetworkPlugin, ping_plugin::Ping,
-        tile_map_plugin::TileMapPlugin, ui_plugin::UIPlugin,
+        animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl,
+        network_plugin::NetworkPlugin, tile_map_plugin::TileMapPlugin, ui_plugin::UIPlugin,
     },
 };
 
@@ -72,9 +71,9 @@ pub fn engine_start() {
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
-        .add_plugin(Fps)
-        .add_plugin(Ping)
-        .add_plugin(Clipboard)
+        // .add_plugin(Fps)
+        // .add_plugin(Ping)
+        // .add_plugin(Clipboard)
         // 事件
         .add_plugin(ControlEventPlugin)
         .add_plugin(KeyboardEventPlugin)

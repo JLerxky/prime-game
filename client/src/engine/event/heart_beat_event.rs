@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use bevy::prelude::*;
 
-use crate::engine::plugin::ping_plugin::PingState;
+use crate::engine::plugin::ui_plugin::UIState;
 
 pub struct HeartBeatEventPlugin;
 
@@ -20,7 +20,7 @@ pub struct HeartBeatEvent {
 fn event_listener_system(
     mut hb_event_reader: EventReader<HeartBeatEvent>,
     // _hb_event_writer: EventWriter<HeartBeatEvent>,
-    mut ping_state: ResMut<PingState>,
+    mut ui_state: ResMut<UIState>,
 ) {
     for heart_beat_event in hb_event_reader.iter() {
         let time = SystemTime::now()
@@ -28,6 +28,6 @@ fn event_listener_system(
             .unwrap()
             .as_millis()
             - heart_beat_event.time;
-        ping_state.ping = time as f32;
+        ui_state.ping = time as f32;
     }
 }
