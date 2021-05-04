@@ -1,5 +1,4 @@
 use bevy::{
-    input::system::exit_on_esc_system,
     prelude::*,
     wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
     winit::WinitPlugin,
@@ -54,7 +53,7 @@ pub fn engine_start() {
         // 默认插件
         .add_plugins(DefaultPlugins)
         // esc退出系统
-        .add_system(exit_on_esc_system.system())
+        // .add_system(bevy::input::system::exit_on_esc_system.system())
         // 窗口插件
         // .add_resource(ClearColor(Color::rgb(
         //     0xF9 as f32 / 255.0,
@@ -71,7 +70,7 @@ pub fn engine_start() {
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // 辅助功能插件
-        // .add_plugin(Fps)
+        // .add_plugin(super::plugin::fps_plugin::Fps)
         // .add_plugin(Ping)
         // .add_plugin(Clipboard)
         // 事件
