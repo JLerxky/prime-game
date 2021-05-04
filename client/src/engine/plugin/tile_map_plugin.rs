@@ -83,11 +83,11 @@ fn setup(
     // 计算tile_size大小
     let tile_size = tile_map.texture_size * tile_map.chunk_size;
     // 根据窗口大小修改tile_map大小
-    let mut x = (window.width / tile_size.x as f32) as u32 + 2;
-    let mut y = (window.height / tile_size.y as f32) as u32 + 2;
-    x += ((x % 2) == 0) as u32;
-    y += ((y % 2) == 0) as u32;
-    tile_map.map_size = UVec3::new(x, y, tile_map.map_size.z);
+    // let mut x = (window.width / tile_size.x as f32) as u32 + 2;
+    // let mut y = (window.height / tile_size.y as f32) as u32 + 2;
+    // x += ((x % 2) == 0) as u32;
+    // y += ((y % 2) == 0) as u32;
+    // tile_map.map_size = UVec3::new(x, y, tile_map.map_size.z);
 
     let center_pos = tile_map.center_point.as_f32()
         * tile_map.texture_size.as_f32()
