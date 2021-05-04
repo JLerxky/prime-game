@@ -68,6 +68,7 @@ fn ui_system(
     mut ui_state: ResMut<UIState>,
     diagnostics: Res<bevy::diagnostic::Diagnostics>,
     mut app_exit_events: EventWriter<bevy::app::AppExit>,
+    window: Res<WindowDescriptor>,
 ) {
     if ui_state.windows_enabled[0] {
         let mut fps = 0.0;
@@ -117,7 +118,11 @@ fn ui_system(
             .resizable(false)
             // .default_pos((250., 75.))
             .enabled(ui_state.windows_enabled[1])
-            .fixed_pos((250., 75.))
+            .fixed_rect(bevy_egui::egui::Rect::from_center_size(
+                bevy_egui::egui::Pos2::new(window.width / 2., window.height / 2.),
+                bevy_egui::egui::Vec2::new(300., 300.),
+            ))
+            // .fixed_pos((250., 75.))
             .frame(Frame {
                 margin: bevy_egui::egui::Vec2::new(0., 0.),
                 corner_radius: 50.,
