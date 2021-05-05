@@ -50,7 +50,7 @@ fn event_listener_system(
                         scale: transform.scale,
                     };
                     syn_entity.health = health_now;
-                    syn_entity.animate = rigid_body_state.animate;
+                    syn_entity.animate_type = rigid_body_state.animate;
                     unsafe {
                         if rigid_body_state.entity_type == 1 && UID == rigid_body_state.id as u32 {
                             if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
@@ -132,7 +132,8 @@ fn event_listener_system(
                         .duration_since(SystemTime::UNIX_EPOCH)
                         .unwrap()
                         .as_secs(),
-                    animate: rigid_body_state.animate,
+                    animate_type: rigid_body_state.animate,
+                    animate_index: 0,
                 });
         }
     }

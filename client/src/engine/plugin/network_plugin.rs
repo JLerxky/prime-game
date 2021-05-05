@@ -28,7 +28,8 @@ pub struct SynEntity {
     pub id: u128,
     pub entity_type: u8,
     pub health: u64,
-    pub animate: u8,
+    pub animate_type: u8,
+    pub animate_index: usize,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
