@@ -294,5 +294,4 @@ fn ui_system(
                     .bg_fill(Color32::TRANSPARENT),
             );
         });
-    // 角色抬头栏
 }

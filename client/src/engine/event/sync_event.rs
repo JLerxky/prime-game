@@ -25,6 +25,7 @@ fn event_listener_system(
     mut sync_event_reader: EventReader<SyncEvent>,
     mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
     mut camera_query: Query<(&mut Transform, &CameraCtrl), Without<SynEntity>>,
@@ -110,6 +111,18 @@ fn event_listener_system(
                 rigid_body_state.texture.2.into(),
             );
             let texture_atlas_handle = texture_atlases.add(texture_atlas);
+            let blood_handle = materials.add(
+                asset_server
+                    .load("textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-top-1.png")
+                    .into(),
+            );
+            let blood_backgound_handle = materials.add(
+                asset_server
+                    .load(
+                        "textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-backgound.png",
+                    )
+                    .into(),
+            );
             commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handle,
@@ -123,6 +136,36 @@ fn event_listener_system(
                         scale,
                     },
                     ..Default::default()
+                })
+                .with_children(|parent| {
+                    if rigid_body_state.entity_type == 1 {
+                        parent.spawn_bundle(SpriteBundle {
+                            material: blood_handle,
+                            transform: Transform {
+                                translation: Vec3::new(
+                                    rigid_body_state.translation.0,
+                                    rigid_body_state.translation.1 + 12.,
+                                    99.0,
+                                ),
+                                scale: Vec3::new(0.11, 0.1, 0.),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        });
+                        parent.spawn_bundle(SpriteBundle {
+                            material: blood_backgound_handle,
+                            transform: Transform {
+                                translation: Vec3::new(
+                                    rigid_body_state.translation.0,
+                                    rigid_body_state.translation.1 + 12.,
+                                    99.0,
+                                ),
+                                scale: Vec3::new(0.11, 0.1, 0.),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        });
+                    }
                 })
                 .insert(Timer::from_seconds(0.1, true))
                 .insert(SynEntity {
