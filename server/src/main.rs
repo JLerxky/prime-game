@@ -4,7 +4,8 @@ use server::engine::engine_server::engine_start;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    tokio::spawn(async move { server::cli::cli::Cli::start() });
-    let _ = engine_start().await;
+    let cli = async move { server::cli::cli::Cli::start() };
+    let engine = engine_start();
+    let _ = tokio::join!(cli, engine);
     Ok(())
 }
