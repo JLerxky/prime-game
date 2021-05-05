@@ -2,8 +2,8 @@ pub const SERVER_PORT: u16 = 2101;
 /// 服务器地址
 // pub const SERVER_ADDR: &str = "192.168.101.198:2101";
 // pub const SERVER_ADDR: &str = "192.168.101.17:2101";
-// pub const SERVER_ADDR: &str = "192.168.101.220:2101";
-pub const SERVER_ADDR: &str = "0.0.0.0:2101";
+pub const SERVER_ADDR: &str = "192.168.101.220:2101";
+// pub const SERVER_ADDR: &str = "0.0.0.0:2101";
 // pub const SERVER_ADDR: &str = "115.197.164.108:2101";
 // pub const SERVER_ADDR: &str = "jler.vip:2101";
 /// 客户端地址
