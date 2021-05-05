@@ -303,7 +303,6 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                 if let Ok(tile) = bincode::deserialize::<Tile>(&v) {
                     match tile.collider {
                         protocol::data::tile_map_data::TileCollider::Full => {
-                            println!("4");
                             let mut k_str = String::from_utf8(k.to_vec()).unwrap();
                             k_str = k_str.replace("tile_map-(", "").replace(")", "");
                             let mut point_str = k_str.split(",").take(3);
@@ -312,7 +311,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                                 point_str.next().unwrap().parse().unwrap(),
                                 0,
                             );
-                            println!("生成碰撞体: {}", point);
+                            // println!("生成碰撞体: {}", point);
                             let point = point.as_f32() * 64.0;
                             let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
                                 .translation(point.x, point.y)
@@ -345,13 +344,14 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             Err(_e) => {}
         }
     }
+    println!("加载地形碰撞体: 完成");
 
     // 加载边界碰撞体
     for side_x in -16..=16 {
         for side_y in -16..=16 {
             if side_y == -16 || side_y == 16 || side_x == -16 || side_x == 16 {
                 let point = IVec3::new(side_x, side_y, 0);
-                println!("生成边界: {}", point);
+                // println!("生成边界: {}", point);
                 let point = point.as_f32() * 64.0;
                 let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
                     .translation(point.x, point.y)
@@ -379,6 +379,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             }
         }
     }
+    println!("生成边界: 完成");
 }
 
 async fn wait_for_net(
