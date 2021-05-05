@@ -11,6 +11,7 @@ use protocol::{
     packet::Packet,
     route::GameRoute,
 };
+use rand::Rng;
 use rapier2d::dynamics::{
     BodyStatus, CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle,
     RigidBodySet,
@@ -404,13 +405,14 @@ async fn wait_for_net(
                     protocol::route::AccountRoute::Login(login_data) => {
                         println!("玩家加入: {}", &login_data.uid);
                         // 玩家
+                        let player_texture_index: u32 = rand::thread_rng().gen_range(1..24);
                         let rb_state = EntityState {
                             id: login_data.uid as u64,
                             translation: (0., 0.),
                             rotation: 0.,
                             linvel: (0., 0.),
                             angvel: (0., 0.),
-                            texture: (1, 4, 3),
+                            texture: (player_texture_index, 4, 3),
                             entity_type: 1,
                             animate: 1,
                         };
