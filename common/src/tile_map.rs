@@ -7,8 +7,8 @@ use rand::Rng;
 
 /// 创建地图
 pub fn create_init_map() {
-    for x in -3..=3 {
-        for y in -3..=3 {
+    for x in -5..=5 {
+        for y in -5..=5 {
             let mut tile_map = TileMap {
                 center_point: IVec3::new(x * 10, y * 10, 0),
                 texture_size: UVec3::new(64, 64, 1),

@@ -23,7 +23,7 @@ impl Plugin for TileMapPlugin {
             center_point: IVec3::new(0, 0, 0),
             texture_size: UVec3::new(64, 64, 1),
             chunk_size: UVec3::new(1, 1, 1),
-            map_size: UVec3::new(30, 30, 2),
+            map_size: UVec3::new(100, 100, 2),
             slot_map: HashMap::new(),
         })
         .add_startup_system(setup.system());
