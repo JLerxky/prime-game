@@ -5,11 +5,7 @@ use std::{
 };
 
 use bevy::{core::FixedTimestep, prelude::*};
-use protocol::{
-    data::account_data::AccountData,
-    packet::Packet,
-    route::{AccountRoute, GameRoute, HeartbeatRoute},
-};
+use protocol::{data::{account_data::AccountData, update_data::EntityType}, packet::Packet, route::{AccountRoute, GameRoute, HeartbeatRoute}};
 use tokio::net::UdpSocket;
 
 use crate::engine::event::{heart_beat_event::HeartBeatEvent, sync_event::SyncEvent};
@@ -26,7 +22,7 @@ pub struct NetWorkState {
 
 pub struct SynEntity {
     pub id: u64,
-    pub entity_type: u8,
+    pub entity_type: EntityType,
     pub health: u64,
     pub animate_type: u8,
     pub animate_index: usize,

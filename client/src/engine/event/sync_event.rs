@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
 use bevy::prelude::*;
-use protocol::data::update_data::UpdateData;
+use protocol::data::update_data::{EntityType, UpdateData};
 
 use crate::engine::plugin::{
     camera_ctrl_plugin::CameraCtrl,
@@ -55,7 +55,9 @@ fn event_listener_system(
                     syn_entity.health = health_now;
                     syn_entity.animate_type = rigid_body_state.animate;
                     unsafe {
-                        if rigid_body_state.entity_type == 1 && UID == rigid_body_state.id as u32 {
+                        if rigid_body_state.entity_type == EntityType::Player
+                            && UID == rigid_body_state.id as u32
+                        {
                             if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
                             {
                                 camera_transform.translation = Vec3::new(
@@ -71,37 +73,29 @@ fn event_listener_system(
             }
 
             // 未生成的实体根据实体类型生成新实体
-            let mut texture_handle = asset_server.load("textures/chars/0.png");
+            let texture_handle;
             let mut tile_size = Vec2::new(64f32, 64f32);
 
             match rigid_body_state.entity_type {
                 // tile
-                0 => {
+                EntityType::Static => {
                     texture_handle = asset_server
                         .load(format!("textures/tile/{}.png", rigid_body_state.texture.0).as_str());
                 }
                 // 玩家实体
-                1 => {
+                EntityType::Player => {
                     texture_handle = asset_server.load(
                         format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str(),
                     );
                     tile_size = Vec2::new(16f32, 17f32);
                 }
                 // 可动实体
-                2 => {
+                EntityType::Moveable => {
                     texture_handle = asset_server.load(
                         format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str(),
                     );
                     tile_size = Vec2::new(tile_size.x * 1f32, tile_size.y * 2f32);
                 }
-                // 不可动实体
-                3 => {
-                    texture_handle = asset_server.load(
-                        format!("textures/unmovable/{}.png", rigid_body_state.texture.0).as_str(),
-                    );
-                }
-                // 其它
-                _ => {}
             }
 
             let scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);
@@ -140,7 +134,7 @@ fn event_listener_system(
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    if rigid_body_state.entity_type == 1 {
+                    if rigid_body_state.entity_type == EntityType::Player {
                         parent.spawn_bundle(SpriteBundle {
                             material: blood_handle,
                             transform: Transform {

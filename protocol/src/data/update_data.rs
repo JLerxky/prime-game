@@ -25,7 +25,7 @@ pub struct EntityState {
     // 5b[40..44]
     pub texture: (u32, u8, u8),
     // 1b[45]
-    pub entity_type: u8,
+    pub entity_type: EntityType,
     pub animate: u8,
 }
 
@@ -50,7 +50,7 @@ impl EntityState {
 
         self.id = id;
         self.texture = (texture0, texture1, texture2);
-        self.entity_type = entity_type;
+        self.entity_type = EntityType::from(entity_type);
         self.animate = animate;
     }
     pub fn get_data(&self) -> u128 {
@@ -58,12 +58,29 @@ impl EntityState {
         data.append(&mut self.texture.0.to_le_bytes().to_vec());
         data.append(&mut self.texture.1.to_le_bytes().to_vec());
         data.append(&mut self.texture.2.to_le_bytes().to_vec());
-        data.append(&mut self.entity_type.to_le_bytes().to_vec());
+        data.append(&mut (self.entity_type as u8).to_le_bytes().to_vec());
         data.append(&mut self.animate.to_le_bytes().to_vec());
         data.append(&mut [0u8; 2].to_vec());
-
         let ptr: *const u8 = data[0..15].as_ptr();
         let ptr: *const u128 = ptr as *const u128;
         unsafe { *ptr }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EntityType {
+    Static = 0,
+    Moveable = 1,
+    Player = 2,
+}
+
+impl From<u8> for EntityType {
+    fn from(num: u8) -> Self {
+        match num {
+            0 => EntityType::Static,
+            1 => EntityType::Moveable,
+            2 => EntityType::Player,
+            _ => EntityType::Static,
+        }
     }
 }

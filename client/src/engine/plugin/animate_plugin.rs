@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use protocol::data::update_data::EntityType;
 
 use super::network_plugin::SynEntity;
 
@@ -33,7 +34,7 @@ fn animate_system(
         if timer.finished() {
             if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
                 // 特定动画组(玩家)
-                if syn_entity.entity_type == 1 {
+                if syn_entity.entity_type == EntityType::Player {
                     // 默认不动
                     let mut animate_list: Vec<u32> = [0].to_vec();
                     match syn_entity.animate_type {

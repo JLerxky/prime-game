@@ -6,7 +6,7 @@ use glam::IVec3;
 use protocol::{
     data::{
         tile_map_data::Tile,
-        update_data::{EntityState, UpdateData},
+        update_data::{EntityState, EntityType, UpdateData},
     },
     packet::Packet,
     route::GameRoute,
@@ -152,11 +152,11 @@ pub async fn engine_main_loop(
                         linvel: (body.linvel().x, body.linvel().y),
                         angvel: (body.angvel(), body.angvel()),
                         texture: (0, 0, 0),
-                        entity_type: 0,
+                        entity_type: EntityType::Moveable,
                         animate: 0,
                     };
                     state.make_up_data(body.user_data);
-                    if state.entity_type == 1 {
+                    if state.entity_type == EntityType::Player {
                         if body.linvel().amax().abs() > 0.0001f32 {
                             if body.linvel().x.abs() >= body.linvel().y.abs() {
                                 if body.linvel().x > 0.0 {
@@ -220,12 +220,12 @@ async fn clean_body(
                 linvel: (0., 0.),
                 angvel: (0., 0.),
                 texture: (0, 0, 0),
-                entity_type: 0,
+                entity_type: EntityType::Static,
                 animate: 0,
             };
             entity_state.make_up_data(body.user_data);
 
-            if entity_state.entity_type == 1 {
+            if entity_state.entity_type  == EntityType::Player {
                 match server_db::find(GameData::player_online(None)) {
                     Ok(data) => {
                         if data.len() > 0 {
@@ -265,7 +265,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             linvel: (0., 0.),
             angvel: (0., 0.),
             texture: (0, 5, 1),
-            entity_type: 2,
+            entity_type: EntityType::Moveable,
             animate: 1,
         };
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -413,7 +413,7 @@ async fn wait_for_net(
                             linvel: (0., 0.),
                             angvel: (0., 0.),
                             texture: (player_texture_index, 4, 3),
-                            entity_type: 1,
+                            entity_type: EntityType::Player,
                             animate: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -456,7 +456,7 @@ async fn wait_for_net(
                                         linvel: (body.linvel().x, body.linvel().y),
                                         angvel: (body.angvel(), body.angvel()),
                                         texture: (0, 0, 0),
-                                        entity_type: 0,
+                                        entity_type: EntityType::Static,
                                         animate: 0,
                                     };
                                     state.make_up_data(body.user_data);
