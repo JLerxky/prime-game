@@ -40,7 +40,9 @@ fn event_listener_system(
         'update_data: for rigid_body_state in update_data.states {
             for (mut syn_entity, mut transform) in syn_entity_query.iter_mut() {
                 // println!("3");
-                if syn_entity.id == rigid_body_state.id.into() {
+                if syn_entity.entity_type == rigid_body_state.entity_type
+                    && syn_entity.id == rigid_body_state.id
+                {
                     *transform = Transform {
                         translation: Vec3::new(
                             rigid_body_state.translation.0,
@@ -169,7 +171,7 @@ fn event_listener_system(
                 })
                 .insert(Timer::from_seconds(0.1, true))
                 .insert(SynEntity {
-                    id: rigid_body_state.id.into(),
+                    id: rigid_body_state.id,
                     entity_type: rigid_body_state.entity_type,
                     health: SystemTime::now()
                         .duration_since(SystemTime::UNIX_EPOCH)

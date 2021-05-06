@@ -25,7 +25,7 @@ pub struct NetWorkState {
 }
 
 pub struct SynEntity {
-    pub id: u128,
+    pub id: u64,
     pub entity_type: u8,
     pub health: u64,
     pub animate_type: u8,

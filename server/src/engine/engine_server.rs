@@ -259,7 +259,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     // 刚体类型
     for i in 0..40 {
         let rb_state = EntityState {
-            id: 1000 + i,
+            id: i,
             translation: (0., 0.),
             rotation: 0.,
             linvel: (0., 0.),
