@@ -147,7 +147,7 @@ fn event_listener_system(
                                     rigid_body_state.translation.1 + 12.,
                                     99.0,
                                 ),
-                                scale: Vec3::new(0.11, 0.1, 0.),
+                                scale: Vec3::new(0.1, 0.1, 0.),
                                 ..Default::default()
                             },
                             ..Default::default()
