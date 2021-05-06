@@ -23,7 +23,7 @@ impl Plugin for ControlEventPlugin {
 pub struct ControlEvent {
     //方向 模拟输入
     pub direction: (f32, f32),
-    // 动作 0停止, 1移动, 2跳跃
+    // 动作 0停止, 1走, 2跑...
     pub action: u8,
 }
 

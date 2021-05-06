@@ -21,7 +21,7 @@ fn keyboard_event_system(
         + (keyboard_input.pressed(KeyCode::D) as i8) as f32;
     let y_axis = -(keyboard_input.pressed(KeyCode::S) as i8) as f32
         + (keyboard_input.pressed(KeyCode::W) as i8) as f32;
-    let action = 1u8;
+    let action = 1u8 + (keyboard_input.pressed(KeyCode::LControl) as u8);
     if keyboard_input.just_released(KeyCode::Escape) {
         ui_state.windows_enabled[1] = !ui_state.windows_enabled[1];
     }
