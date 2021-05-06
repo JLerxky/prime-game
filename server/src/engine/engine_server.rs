@@ -157,18 +157,35 @@ pub async fn engine_main_loop(
                     };
                     state.make_up_data(body.user_data);
                     if state.entity_type == EntityType::Player {
-                        if body.linvel().amax().abs() > 0.0001f32 {
+                        let l = body.linvel().norm();
+                        if l > 0.0001f32 {
                             if body.linvel().x.abs() >= body.linvel().y.abs() {
                                 if body.linvel().x > 0.0 {
-                                    state.animate = 3;
+                                    if l < 101. {
+                                        state.animate = 3;
+                                    } else {
+                                        state.animate = 7;
+                                    }
                                 } else {
-                                    state.animate = 4;
+                                    if l < 101. {
+                                        state.animate = 4;
+                                    } else {
+                                        state.animate = 8;
+                                    }
                                 }
                             } else {
                                 if body.linvel().y > 0.0 {
-                                    state.animate = 2;
+                                    if l < 101. {
+                                        state.animate = 2;
+                                    } else {
+                                        state.animate = 6;
+                                    }
                                 } else {
-                                    state.animate = 1;
+                                    if l < 101. {
+                                        state.animate = 1;
+                                    } else {
+                                        state.animate = 5;
+                                    }
                                 }
                             }
                         } else {

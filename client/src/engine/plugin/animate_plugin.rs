@@ -40,19 +40,35 @@ fn animate_system(
                     match syn_entity.animate_type {
                         // 走-前
                         1 => {
-                            animate_list = [0, 4, 4, 0, 8, 8].to_vec();
+                            animate_list = [4, 4, 4, 0, 0, 0, 8, 8, 8, 0, 0, 0].to_vec();
                         }
                         // 走-后
                         2 => {
-                            animate_list = [2, 6, 6, 2, 10, 10].to_vec();
+                            animate_list = [6, 6, 6, 2, 2, 2, 10, 10, 10, 2, 2, 2].to_vec();
                         }
                         // 走-右
                         3 => {
-                            animate_list = [1, 5, 5, 1, 9, 9].to_vec();
+                            animate_list = [5, 5, 5, 1, 1, 1, 9, 9, 9, 1, 1, 1].to_vec();
                         }
                         // 走-左
                         4 => {
-                            animate_list = [3, 7, 7, 3, 11, 11].to_vec();
+                            animate_list = [7, 7, 7, 3, 3, 3, 11, 11, 11, 3, 3, 3].to_vec();
+                        }
+                        // 跑-前
+                        5 => {
+                            animate_list = [4, 0, 8, 0].to_vec();
+                        }
+                        // 跑-后
+                        6 => {
+                            animate_list = [6, 2, 10, 2].to_vec();
+                        }
+                        // 跑-右
+                        7 => {
+                            animate_list = [5, 5, 1, 1, 9, 9, 1, 1].to_vec();
+                        }
+                        // 跑-左
+                        8 => {
+                            animate_list = [7, 7, 3, 3, 11, 11, 3, 3].to_vec();
                         }
                         _ => {}
                     }
