@@ -498,7 +498,9 @@ async fn start_listening(
                                 ));
                             }
                         }
-                        _ => {}
+                        GameRoute::Update(_) => {}
+                        GameRoute::TileMap(_) => {}
+                        GameRoute::Player(_) => {}
                     },
                     // _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
                 }

@@ -5,15 +5,23 @@ use std::{
 };
 
 use bevy::{core::FixedTimestep, prelude::*};
-use protocol::{data::{account_data::AccountData, update_data::EntityType}, packet::Packet, route::{AccountRoute, GameRoute, HeartbeatRoute}};
+use protocol::{
+    data::{account_data::AccountData, player_data::PlayerData, update_data::EntityType},
+    packet::Packet,
+    route::{AccountRoute, GameRoute, HeartbeatRoute},
+};
 use tokio::net::UdpSocket;
 
 use crate::engine::event::{heart_beat_event::HeartBeatEvent, sync_event::SyncEvent};
 
 use super::camera_ctrl_plugin::CameraCtrl;
 
-// 当前玩家uid
-pub static mut UID: u32 = 0;
+// 当前玩家
+pub static mut PLAYER: PlayerData = PlayerData {
+    uid: 0,
+    hp: 100,
+    mp: 100,
+};
 
 pub struct NetWorkState {
     pub packet_queue: Arc<Mutex<Vec<Packet>>>,
@@ -97,11 +105,11 @@ fn net_handler_system(
                 },
                 Packet::Account(account_route) => match account_route {
                     AccountRoute::Login(login_data) => unsafe {
-                        UID = login_data.uid;
+                        PLAYER.uid = login_data.uid;
                     },
                     AccountRoute::Logout(_) => {}
                     AccountRoute::GetInfo(account_data) => unsafe {
-                        UID = account_data.uid;
+                        PLAYER.uid = account_data.uid;
                     },
                 },
                 Packet::Game(game_route) => match game_route {
@@ -119,6 +127,7 @@ fn net_handler_system(
                         // println!("rev: {}", point);
                         let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
                     }
+                    GameRoute::Player(_) => {}
                 },
             }
         }
@@ -166,7 +175,7 @@ async fn net_client_start(
             .unwrap();
 
             unsafe {
-                if UID == 0 {
+                if PLAYER.uid == 0 {
                     s.send(
                         &bincode::serialize(&Packet::Account(AccountRoute::GetInfo(AccountData {
                             uid: 0,

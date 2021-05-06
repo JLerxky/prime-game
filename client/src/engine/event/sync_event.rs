@@ -5,7 +5,7 @@ use protocol::data::update_data::{EntityType, UpdateData};
 
 use crate::engine::plugin::{
     camera_ctrl_plugin::CameraCtrl,
-    network_plugin::{SynEntity, UID},
+    network_plugin::{SynEntity, PLAYER},
 };
 
 pub struct SyncEventPlugin;
@@ -56,7 +56,7 @@ fn event_listener_system(
                     syn_entity.animate_type = rigid_body_state.animate;
                     unsafe {
                         if rigid_body_state.entity_type == EntityType::Player
-                            && UID == rigid_body_state.id as u32
+                            && PLAYER.uid == rigid_body_state.id as u32
                         {
                             if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
                             {

@@ -1,6 +1,7 @@
 use crate::data::{
     account_data::AccountData,
     control_data::ControlData,
+    player_data::PlayerData,
     tile_map_data::{TileData, TileMapData},
     update_data::UpdateData,
 };
@@ -27,4 +28,5 @@ pub enum GameRoute {
     Control(ControlData),
     TileMap(TileMapData),
     Tile(TileData),
+    Player(PlayerData),
 }
