@@ -13,13 +13,16 @@ use protocol::{
     route::GameRoute,
 };
 use rand::Rng;
-use rapier2d::dynamics::{
-    BodyStatus, CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle,
-    RigidBodySet,
-};
 use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, SharedShape};
 use rapier2d::na::Vector2;
 use rapier2d::pipeline::PhysicsPipeline;
+use rapier2d::{
+    dynamics::{
+        BodyStatus, CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle,
+        RigidBodySet,
+    },
+    pipeline::ChannelEventCollector,
+};
 use tokio::sync::{
     mpsc::{self, Receiver, Sender},
     Mutex,
@@ -101,7 +104,9 @@ pub async fn engine_main_loop(
     // 物理钩子
     let physics_hooks = ();
     // 事件处理器
-    let event_handler = ();
+    let (contact_send, contact_recv) = crossbeam::channel::unbounded();
+    let (intersection_send, intersection_recv) = crossbeam::channel::unbounded();
+    let event_handler = ChannelEventCollector::new(intersection_send, contact_send);
 
     // 世界初始化物体
     create_object(rigid_body_state.clone(), collider_state.clone()).await;
@@ -132,6 +137,45 @@ pub async fn engine_main_loop(
             &physics_hooks,
             &event_handler,
         );
+
+        while let Ok(intersection_event) = intersection_recv.try_recv() {
+            println!("交叉事件: {:?}", intersection_event);
+        }
+
+        while let Ok(contact_event) = contact_recv.try_recv() {
+            println!("接触事件: {:?}", contact_event);
+            match contact_event {
+                rapier2d::geometry::ContactEvent::Started(_ch1, ch2) => {
+                    if let Some(collider1) = colliders.get(ch2) {
+                        if let Some(body1) = bodies.get(collider1.parent()) {
+                            let mut entity_state = EntityState {
+                                id: body1.user_data as u64,
+                                translation: (
+                                    collider1.position().translation.x,
+                                    collider1.position().translation.y,
+                                ),
+                                rotation: collider1.position().rotation.angle(),
+                                linvel: (body1.linvel().x, body1.linvel().y),
+                                angvel: (body1.angvel(), body1.angvel()),
+                                texture: (0, 0, 0),
+                                entity_type: EntityType::Moveable,
+                                animate: 0,
+                            };
+                            entity_state.make_up_data(body1.user_data);
+                            if entity_state.entity_type == EntityType::Player {
+                                if let Ok(mut player) = find_player(entity_state.id as u32) {
+                                    if player.hp >= 5 {
+                                        player.hp -= 5;
+                                        let _ = save_player(player);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                rapier2d::geometry::ContactEvent::Stopped(_ch1, _ch2) => {}
+            }
+        }
 
         // 处理运行后结果世界状态
         let mut states = Vec::new();
@@ -193,11 +237,11 @@ pub async fn engine_main_loop(
                         } else {
                             state.animate = 0;
                         }
-                        if let Ok(mut player) = find_player(state.id as u32) {
-                            if frame_no % 120 == 0 && player.hp >= 5 {
-                                player.hp -= 5;
-                                let _ = save_player(player);
-                            }
+                        if let Ok(player) = find_player(state.id as u32) {
+                            // if frame_no % 120 == 0 && player.hp >= 5 {
+                            //     player.hp -= 5;
+                            //     let _ = save_player(player);
+                            // }
                             players.push(player);
                         }
                     }
