@@ -14,3 +14,8 @@ pub struct PlayerData {
     pub max_mp: u32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerListData {
+    pub frame: u128,
+    pub players: Vec<PlayerData>,
+}

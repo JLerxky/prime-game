@@ -12,15 +12,17 @@ use protocol::{
 };
 use tokio::net::UdpSocket;
 
-use crate::engine::event::{heart_beat_event::HeartBeatEvent, sync_event::SyncEvent};
+use crate::engine::event::{
+    heart_beat_event::HeartBeatEvent, player_update_event::PlayerUpdateEvent, sync_event::SyncEvent,
+};
 
 use super::camera_ctrl_plugin::CameraCtrl;
 
 // 当前玩家
 pub static mut PLAYER: PlayerData = PlayerData {
     uid: 0,
-    hp: 90,
-    mp: 100,
+    hp: 0,
+    mp: 0,
     max_hp: 100,
     max_mp: 100,
 };
@@ -88,6 +90,7 @@ fn net_handler_system(
     net_state: ResMut<NetWorkState>,
     mut hb_event_writer: EventWriter<HeartBeatEvent>,
     mut sync_event_writer: EventWriter<SyncEvent>,
+    mut player_event_writer: EventWriter<PlayerUpdateEvent>,
 ) {
     if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
         for _ in 0..512 {
@@ -130,6 +133,9 @@ fn net_handler_system(
                         let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
                     }
                     GameRoute::Player(_) => {}
+                    GameRoute::PlayerList(player_list_data) => {
+                        player_event_writer.send(PlayerUpdateEvent { player_list_data });
+                    }
                 },
             }
         }

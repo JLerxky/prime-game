@@ -16,7 +16,7 @@ use super::{
     event::{
         control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin,
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
-        sync_event::SyncEventPlugin,
+        player_update_event::PlayerUpdateEventPlugin, sync_event::SyncEventPlugin,
     },
     plugin::{
         animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl,
@@ -80,6 +80,7 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         .add_plugin(HeartBeatEventPlugin)
         .add_plugin(SyncEventPlugin)
+        .add_plugin(PlayerUpdateEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use protocol::data::tile_map_data::Tile;
+use protocol::data::{player_data::PlayerData, tile_map_data::Tile};
 
 use crate::sled_db::SledDB;
 
@@ -158,6 +158,36 @@ pub fn all_tile(path: &str) {
                 println!("{}", e);
             }
         }
+    }
+}
+
+pub fn save_player(player: PlayerData) -> Result<(), Box<dyn Error>> {
+    let db = &SledDB::open(DB_PATH)?.db;
+    let result = db.insert(
+        format!("player-({})", player.uid).as_bytes(),
+        bincode::serialize(&player)?,
+    );
+    match result {
+        std::result::Result::Ok(_old) => {
+            println!("save: {}==={:?}", player.uid, player);
+        }
+        std::result::Result::Err(e) => {
+            println!("error: {}", e);
+        }
+    }
+    Ok(())
+}
+
+pub fn find_player(uid: u32) -> Result<PlayerData, Box<dyn Error>> {
+    let db = &SledDB::open(DB_PATH)?.db;
+    let data = &db.get(format!("player-({})", uid).as_bytes())?;
+    if let Some(data) = data {
+        Ok(bincode::deserialize(data)?)
+    } else {
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "无数据!",
+        )))
     }
 }
 

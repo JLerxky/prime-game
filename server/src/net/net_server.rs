@@ -1,6 +1,6 @@
 use data::server_db::{self, GameData};
 use protocol::{
-    data::{control_data::ControlData, tile_map_data::TileData},
+    data::{control_data::ControlData, player_data::PlayerData, tile_map_data::TileData},
     packet::Packet,
     route::GameRoute,
 };
@@ -252,6 +252,13 @@ async fn start_listening(
                                                 addr.to_string(),
                                                 Some(uid.to_string()),
                                             ));
+                                            let _ = server_db::save_player(PlayerData {
+                                                uid,
+                                                hp: 100,
+                                                mp: 100,
+                                                max_hp: 100,
+                                                max_mp: 100,
+                                            });
                                         }
                                     }
                                 }
@@ -265,6 +272,13 @@ async fn start_listening(
                                             addr.to_string(),
                                             Some(uid.to_string()),
                                         ));
+                                        let _ = server_db::save_player(PlayerData {
+                                            uid,
+                                            hp: 100,
+                                            mp: 100,
+                                            max_hp: 100,
+                                            max_mp: 100,
+                                        });
                                     }
                                 }
                             }
@@ -501,6 +515,7 @@ async fn start_listening(
                         GameRoute::Update(_) => {}
                         GameRoute::TileMap(_) => {}
                         GameRoute::Player(_) => {}
+                        GameRoute::PlayerList(_) => {}
                     },
                     // _ => println!("{}收到事件未处理: {:?}", &addr, &packet),
                 }

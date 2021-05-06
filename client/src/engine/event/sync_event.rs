@@ -1,7 +1,10 @@
 use std::time::SystemTime;
 
 use bevy::prelude::*;
-use protocol::data::update_data::{EntityType, UpdateData};
+use protocol::data::{
+    player_data::PlayerData,
+    update_data::{EntityType, UpdateData},
+};
 
 use crate::engine::plugin::{
     camera_ctrl_plugin::CameraCtrl,
@@ -144,42 +147,42 @@ fn event_listener_system(
                         parent.spawn_bundle(SpriteBundle {
                             material: blood_backgound_handle,
                             transform: Transform {
-                                translation: Vec3::new(
-                                    rigid_body_state.translation.0,
-                                    rigid_body_state.translation.1 + 12.,
-                                    99.0,
-                                ),
+                                translation: Vec3::new(0., 12., 99.0),
                                 scale: Vec3::new(0.1, 0.1, 0.),
                                 ..Default::default()
                             },
                             ..Default::default()
                         });
                         // 血量值
-                        unsafe {
-                            let blood_len = 12. * (PLAYER.hp as f32 / PLAYER.max_hp as f32);
-                            parent.spawn_bundle(SpriteBundle {
+                        let mut player = PlayerData {
+                            uid: rigid_body_state.id as u32,
+                            hp: 0,
+                            mp: 0,
+                            max_hp: 100,
+                            max_mp: 100,
+                        };
+                        if let Ok(player_db) =
+                            data::client_db::find_player(rigid_body_state.id as u32)
+                        {
+                            player = player_db;
+                        }
+                        let blood_len = 12. * (player.hp as f32 / player.max_hp as f32);
+                        parent
+                            .spawn_bundle(SpriteBundle {
                                 material: blood_handle,
                                 transform: Transform {
-                                    translation: Vec3::new(
-                                        rigid_body_state.translation.0 - 6. + (blood_len / 2.),
-                                        rigid_body_state.translation.1 + 12.,
-                                        99.0,
-                                    ),
+                                    translation: Vec3::new((blood_len / 2.) - 6., 12., 99.0),
                                     scale: Vec3::new(blood_len / 4., 0.1, 0.),
                                     ..Default::default()
                                 },
                                 ..Default::default()
-                            });
-                        }
+                            })
+                            .insert(player);
                         // 血量框
                         parent.spawn_bundle(SpriteBundle {
                             material: blood_box_handle,
                             transform: Transform {
-                                translation: Vec3::new(
-                                    rigid_body_state.translation.0,
-                                    rigid_body_state.translation.1 + 12.,
-                                    99.0,
-                                ),
+                                translation: Vec3::new(0., 12., 99.0),
                                 scale: Vec3::new(0.1, 0.1, 0.),
                                 ..Default::default()
                             },

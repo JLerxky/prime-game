@@ -1,10 +1,11 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::net;
-use data::server_db::{self, GameData};
+use data::server_db::{self, find_player, save_player, GameData};
 use glam::IVec3;
 use protocol::{
     data::{
+        player_data::PlayerListData,
         tile_map_data::Tile,
         update_data::{EntityState, EntityType, UpdateData},
     },
@@ -134,6 +135,7 @@ pub async fn engine_main_loop(
 
         // 处理运行后结果世界状态
         let mut states = Vec::new();
+        let mut players = Vec::new();
         for (_colloder_handle, collider) in colliders.iter() {
             if let Some(body) = bodies.get(collider.parent()) {
                 // 更新所有动态物体
@@ -191,6 +193,13 @@ pub async fn engine_main_loop(
                         } else {
                             state.animate = 0;
                         }
+                        if let Ok(mut player) = find_player(state.id as u32) {
+                            if frame_no % 120 == 0 && player.hp >= 5 {
+                                player.hp -= 5;
+                                let _ = save_player(player);
+                            }
+                            players.push(player);
+                        }
                     }
                     states.push(state);
                 }
@@ -199,6 +208,11 @@ pub async fn engine_main_loop(
         let packet = Packet::Game(GameRoute::Update(UpdateData {
             frame: frame_no,
             states,
+        }));
+        let _ = engine_tx.send(packet.clone()).await;
+        let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
+            frame: frame_no,
+            players,
         }));
         let _ = engine_tx.send(packet.clone()).await;
         // println!("{:?}", &packet);
