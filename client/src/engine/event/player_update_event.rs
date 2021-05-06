@@ -25,7 +25,7 @@ fn event_listener_system(
             for (mut old_player_data, mut transform) in player_bar_query.iter_mut() {
                 if player_data.uid == old_player_data.uid {
                     *old_player_data = *player_data;
-                    println!("{:?}", &player_data);
+                    // println!("{:?}", &player_data);
                     let blood_len = 12. * (player_data.hp as f32 / player_data.max_hp as f32);
                     *transform = Transform {
                         translation: Vec3::new((blood_len / 2.) - 6., 12., 99.0),

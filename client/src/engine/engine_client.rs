@@ -50,7 +50,7 @@ pub fn engine_start() {
         })
         .insert_resource(Msaa { samples: 4 })
         // 窗口背景色
-        .insert_resource(ClearColor(Color::GRAY))
+        .insert_resource(ClearColor(Color::rgb_u8(192, 126, 104)))
         // 默认插件
         .add_plugins(DefaultPlugins)
         // esc退出系统

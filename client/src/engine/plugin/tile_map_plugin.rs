@@ -106,7 +106,7 @@ fn setup(
     let max_y = tile_map.center_point.y + (tile_map.map_size.y as i32 / 2);
 
     // 2. 按Z轴从小到大生成图层
-    for z in 0..tile_map.map_size.z {
+    for z in 1..tile_map.map_size.z {
         for x in min_x..=max_x {
             for y in min_y..=max_y {
                 let point = IVec3::new(x as i32, y as i32, z as i32);
