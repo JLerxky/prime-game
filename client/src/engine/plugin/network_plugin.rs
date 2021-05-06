@@ -19,8 +19,10 @@ use super::camera_ctrl_plugin::CameraCtrl;
 // 当前玩家
 pub static mut PLAYER: PlayerData = PlayerData {
     uid: 0,
-    hp: 100,
+    hp: 90,
     mp: 100,
+    max_hp: 100,
+    max_mp: 100,
 };
 
 pub struct NetWorkState {

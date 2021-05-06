@@ -107,7 +107,7 @@ fn event_listener_system(
                 rigid_body_state.texture.2.into(),
             );
             let texture_atlas_handle = texture_atlases.add(texture_atlas);
-            let blood_handle = materials.add(
+            let blood_box_handle = materials.add(
                 asset_server
                     .load("textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-top-1.png")
                     .into(),
@@ -117,6 +117,11 @@ fn event_listener_system(
                     .load(
                         "textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-backgound.png",
                     )
+                    .into(),
+            );
+            let blood_handle = materials.add(
+                asset_server
+                    .load("textures/rpg/2d misc/prehistoric-platformer/hud/bar-middle.png")
                     .into(),
             );
             commands
@@ -135,8 +140,9 @@ fn event_listener_system(
                 })
                 .with_children(|parent| {
                     if rigid_body_state.entity_type == EntityType::Player {
+                        // 血条背景
                         parent.spawn_bundle(SpriteBundle {
-                            material: blood_handle,
+                            material: blood_backgound_handle,
                             transform: Transform {
                                 translation: Vec3::new(
                                     rigid_body_state.translation.0,
@@ -148,15 +154,33 @@ fn event_listener_system(
                             },
                             ..Default::default()
                         });
+                        // 血量值
+                        unsafe {
+                            let blood_len = 12. * (PLAYER.hp as f32 / PLAYER.max_hp as f32);
+                            parent.spawn_bundle(SpriteBundle {
+                                material: blood_handle,
+                                transform: Transform {
+                                    translation: Vec3::new(
+                                        rigid_body_state.translation.0 - 6. + (blood_len / 2.),
+                                        rigid_body_state.translation.1 + 12.,
+                                        99.0,
+                                    ),
+                                    scale: Vec3::new(blood_len / 4., 0.1, 0.),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            });
+                        }
+                        // 血量框
                         parent.spawn_bundle(SpriteBundle {
-                            material: blood_backgound_handle,
+                            material: blood_box_handle,
                             transform: Transform {
                                 translation: Vec3::new(
                                     rigid_body_state.translation.0,
                                     rigid_body_state.translation.1 + 12.,
                                     99.0,
                                 ),
-                                scale: Vec3::new(0.11, 0.1, 0.),
+                                scale: Vec3::new(0.1, 0.1, 0.),
                                 ..Default::default()
                             },
                             ..Default::default()

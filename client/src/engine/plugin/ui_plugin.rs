@@ -22,7 +22,7 @@ impl Plugin for UIPlugin {
             .add_plugin(EguiPlugin)
             .insert_resource(UIState {
                 ping: 999f32,
-                windows_enabled: [true, false],
+                windows_enabled: [true, false, false],
             })
             .add_startup_system(setup.system())
             .add_system(ui_system.system());
@@ -31,7 +31,7 @@ impl Plugin for UIPlugin {
 
 pub struct UIState {
     pub ping: f32,
-    pub windows_enabled: [bool; 2],
+    pub windows_enabled: [bool; 3],
 }
 
 fn get_default_fonts() -> FontDefinitions {
@@ -189,109 +189,111 @@ fn ui_system(
             });
     }
     // 玩家状态栏
-    bevy_egui::egui::Window::new("玩家状态栏")
-        .title_bar(false)
-        .id(Id::new(3))
-        .resizable(false)
-        .fixed_rect(bevy_egui::egui::Rect::from_center_size(
-            bevy_egui::egui::Pos2::new(window.width / 2., window.height - 32.),
-            bevy_egui::egui::Vec2::new(400., 64.),
-        ))
-        .frame(Frame {
-            margin: bevy_egui::egui::Vec2::new(0., 0.),
-            corner_radius: 0.,
-            shadow: Shadow {
-                extrusion: 0.,
-                color: Color32::TRANSPARENT,
-            },
-            fill: Color32::TRANSPARENT,
-            stroke: Stroke {
-                width: 0.,
-                color: Color32::TRANSPARENT,
-            },
-        })
-        .show(egui_context.ctx(), |ui| {
-            ui.add(
-                Image::new(TextureId::User(PLAYER_STATE_TEXTURE_ID), (400., 64.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(8., 32.),
-                bevy_egui::egui::Vec2::new(16., 64.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_LEFT_TEXTURE_ID), (16., 64.)),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(200., 32.),
-                bevy_egui::egui::Vec2::new(368., 64.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_MIDDLE_TEXTURE_ID), (368., 64.)),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(392., 32.),
-                bevy_egui::egui::Vec2::new(16., 64.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_RIGHT_TEXTURE_ID), (16., 64.)),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(50., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(110., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(170., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(230., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(290., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-            let rect = bevy_egui::egui::Rect::from_center_size(
-                ui.min_rect().min + bevy_egui::egui::Vec2::new(350., 31.),
-                bevy_egui::egui::Vec2::new(49., 53.),
-            );
-            ui.put(
-                rect,
-                Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
-                    .bg_fill(Color32::TRANSPARENT),
-            );
-        });
+    if ui_state.windows_enabled[2] {
+        bevy_egui::egui::Window::new("玩家状态栏")
+            .title_bar(false)
+            .id(Id::new(3))
+            .resizable(false)
+            .fixed_rect(bevy_egui::egui::Rect::from_center_size(
+                bevy_egui::egui::Pos2::new(window.width / 2., window.height - 32.),
+                bevy_egui::egui::Vec2::new(400., 64.),
+            ))
+            .frame(Frame {
+                margin: bevy_egui::egui::Vec2::new(0., 0.),
+                corner_radius: 0.,
+                shadow: Shadow {
+                    extrusion: 0.,
+                    color: Color32::TRANSPARENT,
+                },
+                fill: Color32::TRANSPARENT,
+                stroke: Stroke {
+                    width: 0.,
+                    color: Color32::TRANSPARENT,
+                },
+            })
+            .show(egui_context.ctx(), |ui| {
+                ui.add(
+                    Image::new(TextureId::User(PLAYER_STATE_TEXTURE_ID), (400., 64.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(8., 32.),
+                    bevy_egui::egui::Vec2::new(16., 64.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_LEFT_TEXTURE_ID), (16., 64.)),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(200., 32.),
+                    bevy_egui::egui::Vec2::new(368., 64.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_MIDDLE_TEXTURE_ID), (368., 64.)),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(392., 32.),
+                    bevy_egui::egui::Vec2::new(16., 64.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_RIGHT_TEXTURE_ID), (16., 64.)),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(50., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(110., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(170., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(230., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(290., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+                let rect = bevy_egui::egui::Rect::from_center_size(
+                    ui.min_rect().min + bevy_egui::egui::Vec2::new(350., 31.),
+                    bevy_egui::egui::Vec2::new(49., 53.),
+                );
+                ui.put(
+                    rect,
+                    Image::new(TextureId::User(INVENTORY_CASE_TEXTURE_ID), (49., 53.))
+                        .bg_fill(Color32::TRANSPARENT),
+                );
+            });
+    }
 }

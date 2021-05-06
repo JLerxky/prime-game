@@ -39,8 +39,8 @@ pub fn engine_start() {
             resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 800f32,
-            height: 450f32,
+            width: 1600f32,
+            height: 900f32,
             // 窗口模式
             mode: WindowMode::Windowed,
             // 鼠标隐藏并锁定

@@ -8,5 +8,9 @@ pub struct PlayerData {
     pub hp: u32,
     // 魔力值
     pub mp: u32,
+    // 最大血量
+    pub max_hp: u32,
+    // 最大魔力值
+    pub max_mp: u32,
 }
 
