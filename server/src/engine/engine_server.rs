@@ -225,7 +225,7 @@ async fn clean_body(
             };
             entity_state.make_up_data(body.user_data);
 
-            if entity_state.entity_type  == EntityType::Player {
+            if entity_state.entity_type == EntityType::Player {
                 match server_db::find(GameData::player_online(None)) {
                     Ok(data) => {
                         if data.len() > 0 {
@@ -479,14 +479,24 @@ async fn wait_for_net(
                         if let Some(handle) = player_handle_map.get(&control_data.uid) {
                             // println!("2");
                             if let Some(body) = bodies.get_mut(*handle) {
-                                body.set_linvel(
-                                    Vector2::new(
-                                        control_data.direction.0 * 100f32,
-                                        control_data.direction.1 * 100f32,
-                                    ),
-                                    true,
-                                );
-                                // println!("控制移动");
+                                let s = Vector2::new(
+                                    control_data.direction.0,
+                                    control_data.direction.1,
+                                )
+                                .norm();
+                                if s == 0. {
+                                    body.set_linvel(Vector2::new(0., 0.), true);
+                                } else {
+                                    body.set_linvel(
+                                        Vector2::new(
+                                            control_data.direction.0,
+                                            control_data.direction.1,
+                                        ) / s
+                                            * 100.,
+                                        true,
+                                    );
+                                }
+                                // println!("速度: {}", body.linvel().norm());
                             }
                         }
                     }
