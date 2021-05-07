@@ -191,6 +191,27 @@ pub fn find_player(uid: u32) -> Result<PlayerData, Box<dyn Error>> {
     }
 }
 
+pub fn next_entity_id(entity_type: u8) -> Result<u64, Box<dyn Error>> {
+    let db = &SledDB::open(DB_PATH)?.db;
+    let data_bt = &db.get(format!("entity-id-({})", entity_type).as_bytes())?;
+    if let Some(data) = data_bt {
+        let data_str = String::from_utf8(data.to_vec())?;
+        if let Ok(mut next) = data_str.parse::<u64>() {
+            next += 1;
+            let _ = db.insert(
+                format!("entity-id-({})", entity_type).as_bytes(),
+                format!("{}", next).as_bytes().to_vec(),
+            )?;
+            return Ok(next);
+        }
+    }
+    let _ = db.insert(
+        format!("entity-id-({})", entity_type).as_bytes(),
+        "0".as_bytes().to_vec(),
+    )?;
+    Ok(0)
+}
+
 #[test]
 fn test_server_db() {
     let point = glam::IVec3::new(0, 0, 0);

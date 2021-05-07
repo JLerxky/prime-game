@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::net;
-use data::server_db::{self, find_player, save_player, GameData};
+use data::server_db::{self, find_player, next_entity_id, save_player, GameData};
 use glam::IVec3;
 use protocol::{
     data::{
@@ -140,11 +140,11 @@ pub async fn engine_main_loop(
         while let Ok(contact_event) = contact_recv.try_recv() {
             // println!("接触事件: {:?}", contact_event);
             // 处理碰撞事件
-            handle_contact(contact_event, &colliders, &bodies);
+            tokio::join!(handle_contact(contact_event, colliders, bodies, joints));
         }
 
         // 处理运行后结果世界状态
-        send_aync(colliders, bodies, frame_no, engine_tx.clone()).await;
+        tokio::join!(send_aync(colliders, bodies, frame_no, engine_tx.clone()));
 
         frame_no += 1;
     }
@@ -153,10 +153,11 @@ pub async fn engine_main_loop(
 }
 
 /// 处理碰撞事件
-fn handle_contact(
+async fn handle_contact(
     contact_event: rapier2d::geometry::ContactEvent,
-    colliders: &&mut tokio::sync::MutexGuard<ColliderSet>,
-    bodies: &&mut tokio::sync::MutexGuard<RigidBodySet>,
+    colliders: &mut tokio::sync::MutexGuard<'_, ColliderSet>,
+    bodies: &mut tokio::sync::MutexGuard<'_, RigidBodySet>,
+    joints: &mut tokio::sync::MutexGuard<'_, JointSet>,
 ) {
     match contact_event {
         rapier2d::geometry::ContactEvent::Started(ch1, ch2) => {
@@ -196,6 +197,9 @@ fn handle_contact(
                         animate: 0,
                     };
                     entity_state1.make_up_data(body1.user_data);
+                    if entity_state1.entity_type == EntityType::Skill {
+                        bodies.remove(collider1.parent(), colliders, joints);
+                    }
                 }
             }
             if let Some(collider2) = colliders.get(ch2) {
@@ -214,12 +218,16 @@ fn handle_contact(
                         animate: 0,
                     };
                     entity_state2.make_up_data(body2.user_data);
+                    if entity_state2.entity_type == EntityType::Skill {
+                        bodies.remove(collider2.parent(), colliders, joints);
+                    }
                 }
             }
             // println!("{:?}", entity_state1);
             // println!("{:?}", entity_state2);
             if entity_state1.entity_type == EntityType::Player
-                && entity_state2.entity_type == EntityType::Skill
+                && (entity_state2.entity_type == EntityType::Skill
+                    || entity_state2.entity_type == EntityType::Trap)
             {
                 if let Ok(mut player) = find_player(entity_state1.id as u32) {
                     if player.hp >= 5 {
@@ -229,7 +237,8 @@ fn handle_contact(
                 }
             }
             if entity_state2.entity_type == EntityType::Player
-                && entity_state1.entity_type == EntityType::Skill
+                && (entity_state1.entity_type == EntityType::Skill
+                    || entity_state1.entity_type == EntityType::Trap)
             {
                 if let Ok(mut player) = find_player(entity_state2.id as u32) {
                     if player.hp >= 5 {
@@ -321,16 +330,26 @@ async fn send_aync(
             }
         }
     }
-    let packet = Packet::Game(GameRoute::Update(UpdateData {
-        frame: frame_no,
-        states,
-    }));
-    let _ = engine_tx.send(packet.clone()).await;
-    let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
-        frame: frame_no,
-        players,
-    }));
-    let _ = engine_tx.send(packet.clone()).await;
+    // println!("同步包: {:?}", &states);
+    let mut states_iter = states.chunks(30);
+    while let Some(s) = states_iter.next() {
+        let packet = Packet::Game(GameRoute::Update(UpdateData {
+            frame: frame_no,
+            states: s.to_vec(),
+        }));
+
+        let _ = engine_tx.send(packet.clone()).await;
+        // println!("同步包: {:?}", packet);
+    }
+    // println!("同步包大小: {:?}", states.len());
+    let mut players_iter = players.chunks(30);
+    while let Some(p) = players_iter.next() {
+        let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
+            frame: frame_no,
+            players: p.to_vec(),
+        }));
+        let _ = engine_tx.send(packet.clone()).await;
+    }
 }
 
 async fn clean_body(
@@ -399,15 +418,15 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 旋转体
     // 刚体类型
-    for i in 0..40 {
+    for _ in 0..40 {
         let rb_state = EntityState {
-            id: i,
+            id: next_entity_id(EntityType::Trap as u8).unwrap(),
             translation: (0., 0.),
             rotation: 0.,
             linvel: (0., 0.),
             angvel: (0., 0.),
             texture: (3, 5, 1),
-            entity_type: EntityType::Skill,
+            entity_type: EntityType::Trap,
             animate: 1,
         };
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
@@ -620,51 +639,106 @@ async fn wait_for_net(
                 // 玩家控制
                 Packet::Game(game_route) => match game_route {
                     protocol::route::GameRoute::Control(control_data) => {
-                        // println!("1");
-                        if let Ok(player_data) = find_player(control_data.uid) {
-                            if player_data.hp > 0 {
-                                if let Some(handle) = player_handle_map.get(&control_data.uid) {
-                                    // println!("2");
-                                    if let Some(body) = bodies.get_mut(*handle) {
-                                        let s = Vector2::new(
-                                            control_data.direction.0,
-                                            control_data.direction.1,
-                                        )
-                                        .norm();
-                                        if s == 0. {
-                                            body.set_linvel(Vector2::new(0., 0.), true);
-                                        } else {
-                                            if control_data.action == 1 {
-                                                body.set_linvel(
-                                                    Vector2::new(
-                                                        control_data.direction.0,
-                                                        control_data.direction.1,
-                                                    ) / s
-                                                        * 100.,
-                                                    true,
-                                                );
-                                            }
-                                            if control_data.action == 2 {
-                                                body.set_linvel(
-                                                    Vector2::new(
-                                                        control_data.direction.0,
-                                                        control_data.direction.1,
-                                                    ) / s
-                                                        * 150.,
-                                                    true,
-                                                );
-                                            }
+                        if check_player_health(control_data.uid) {
+                            if let Some(handle) = player_handle_map.get(&control_data.uid) {
+                                if let Some(body) = bodies.get_mut(*handle) {
+                                    let s = Vector2::new(
+                                        control_data.direction.0,
+                                        control_data.direction.1,
+                                    )
+                                    .norm();
+                                    if s == 0. {
+                                        body.set_linvel(Vector2::new(0., 0.), true);
+                                    } else {
+                                        if control_data.action == 1 {
+                                            body.set_linvel(
+                                                Vector2::new(
+                                                    control_data.direction.0,
+                                                    control_data.direction.1,
+                                                ) / s
+                                                    * 100.,
+                                                true,
+                                            );
                                         }
-                                        // println!("速度: {}", body.linvel().norm());
+                                        if control_data.action == 2 {
+                                            body.set_linvel(
+                                                Vector2::new(
+                                                    control_data.direction.0,
+                                                    control_data.direction.1,
+                                                ) / s
+                                                    * 150.,
+                                                true,
+                                            );
+                                        }
                                     }
+                                    // println!("速度: {}", body.linvel().norm());
                                 }
                             }
                         }
                     }
-                    _ => {}
+                    GameRoute::Skill(skill_data) => {
+                        if check_player_health(skill_data.uid) {
+                            if let Some(handle) = player_handle_map.get(&skill_data.uid) {
+                                if let Some(body) = bodies.get_mut(*handle) {
+                                    let translation = body.position().translation;
+                                    let entity_id =
+                                        next_entity_id(EntityType::Skill as u8).unwrap();
+                                    // println!("entity_id: {}", entity_id);
+                                    let rb_state = EntityState {
+                                        id: entity_id,
+                                        translation: (0., 0.),
+                                        rotation: 0.,
+                                        linvel: (0., 0.),
+                                        angvel: (0., 0.),
+                                        texture: (0, 6, 1),
+                                        entity_type: EntityType::Skill,
+                                        animate: 1,
+                                    };
+                                    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
+                                        .translation(translation.x + 64., translation.y)
+                                        // .rotation(0.0)
+                                        // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
+                                        // 线速度
+                                        .linvel(skill_data.direction.0, skill_data.direction.1)
+                                        // 角速度
+                                        .angvel(1.0)
+                                        // 重力
+                                        .gravity_scale(0.0)
+                                        // .can_sleep(true)
+                                        .user_data(rb_state.get_data())
+                                        .build();
+                                    // 碰撞体类型
+                                    let collider = ColliderBuilder::new(SharedShape::ball(25.0))
+                                        // 密度
+                                        .density(0.1)
+                                        // 摩擦
+                                        .friction(1.0)
+                                        // 是否为传感器
+                                        // .sensor(true)
+                                        .build();
+                                    let rb_handle = bodies.insert(rigid_body);
+                                    colliders.insert(collider, rb_handle, bodies);
+                                }
+                            }
+                        }
+                    }
+                    GameRoute::Update(_) => {}
+                    GameRoute::TileMap(_) => {}
+                    GameRoute::Tile(_) => {}
+                    GameRoute::Player(_) => {}
+                    GameRoute::PlayerList(_) => {}
                 },
                 _ => {}
             }
         }
     }
+}
+
+fn check_player_health(uid: u32) -> bool {
+    if let Ok(player_data) = find_player(uid) {
+        if player_data.hp > 0 {
+            return true;
+        }
+    }
+    return false;
 }

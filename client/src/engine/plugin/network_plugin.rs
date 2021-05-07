@@ -136,6 +136,7 @@ fn net_handler_system(
                     GameRoute::PlayerList(player_list_data) => {
                         player_event_writer.send(PlayerUpdateEvent { player_list_data });
                     }
+                    GameRoute::Skill(_) => {}
                 },
             }
         }

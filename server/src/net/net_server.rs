@@ -1,6 +1,9 @@
 use data::server_db::{self, GameData};
 use protocol::{
-    data::{control_data::ControlData, player_data::PlayerData, tile_map_data::TileData},
+    data::{
+        control_data::ControlData, player_data::PlayerData, skill_data::SkillData,
+        tile_map_data::TileData,
+    },
     packet::Packet,
     route::GameRoute,
 };
@@ -510,6 +513,31 @@ async fn start_listening(
                                     bincode::serialize(&packet_tile).unwrap(),
                                     addr,
                                 ));
+                            }
+                        }
+                        GameRoute::Skill(skill_data) => {
+                            let uid;
+                            match server_db::find(GameData::player_addr_uid(addr.to_string(), None))
+                            {
+                                Ok(data) => {
+                                    if let Ok(id) = data.parse::<u32>() {
+                                        uid = id;
+                                    } else {
+                                        continue;
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("{}报错: {}", &addr, e);
+                                    continue;
+                                }
+                            }
+                            let packet_control = Packet::Game(GameRoute::Skill(SkillData {
+                                uid,
+                                direction: skill_data.direction,
+                                skill_type: skill_data.skill_type,
+                            }));
+                            if let Ok(_) = net_tx.try_send(packet_control) {
+                                // println!("{}转递控制: {:?}", &addr, &control_data);
                             }
                         }
                         GameRoute::Update(_) => {}
