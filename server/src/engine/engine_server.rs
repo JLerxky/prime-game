@@ -701,14 +701,14 @@ async fn wait_for_net(
                                         // 线速度
                                         .linvel(skill_data.direction.0, skill_data.direction.1)
                                         // 角速度
-                                        .angvel(1.0)
+                                        .angvel(60.)
                                         // 重力
                                         .gravity_scale(0.0)
                                         // .can_sleep(true)
                                         .user_data(rb_state.get_data())
                                         .build();
                                     // 碰撞体类型
-                                    let collider = ColliderBuilder::new(SharedShape::ball(25.0))
+                                    let collider = ColliderBuilder::new(SharedShape::ball(10.0))
                                         // 密度
                                         .density(0.1)
                                         // 摩擦

@@ -108,10 +108,18 @@ fn event_listener_system(
                     texture_handle = asset_server.load(
                         format!("textures/prime/fx/{}.png", rigid_body_state.texture.0).as_str(),
                     );
+                    tile_size = Vec2::new(32f32, 32f32);
                 }
             }
 
-            let scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);
+            let mut scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);
+
+            match rigid_body_state.entity_type {
+                EntityType::Skill => {
+                    scale = Vec3::new(1., 1., 0.);
+                }
+                _ => {}
+            }
 
             let texture_atlas = TextureAtlas::from_grid(
                 texture_handle,
