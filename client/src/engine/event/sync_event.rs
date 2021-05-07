@@ -99,6 +99,16 @@ fn event_listener_system(
                     );
                     tile_size = Vec2::new(tile_size.x * 1f32, tile_size.y * 2f32);
                 }
+                EntityType::Flyer => {
+                    texture_handle = asset_server.load(
+                        format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str(),
+                    );
+                }
+                EntityType::Skill => {
+                    texture_handle = asset_server.load(
+                        format!("textures/prime/fx/{}.png", rigid_body_state.texture.0).as_str(),
+                    );
+                }
             }
 
             let scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);

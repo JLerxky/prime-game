@@ -218,7 +218,9 @@ fn handle_contact(
             }
             // println!("{:?}", entity_state1);
             // println!("{:?}", entity_state2);
-            if entity_state1.entity_type == EntityType::Player {
+            if entity_state1.entity_type == EntityType::Player
+                && entity_state2.entity_type == EntityType::Skill
+            {
                 if let Ok(mut player) = find_player(entity_state1.id as u32) {
                     if player.hp >= 5 {
                         player.hp -= 5;
@@ -226,7 +228,9 @@ fn handle_contact(
                     }
                 }
             }
-            if entity_state2.entity_type == EntityType::Player {
+            if entity_state2.entity_type == EntityType::Player
+                && entity_state1.entity_type == EntityType::Skill
+            {
                 if let Ok(mut player) = find_player(entity_state2.id as u32) {
                     if player.hp >= 5 {
                         player.hp -= 5;
@@ -402,12 +406,15 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             rotation: 0.,
             linvel: (0., 0.),
             angvel: (0., 0.),
-            texture: (0, 5, 1),
-            entity_type: EntityType::Moveable,
+            texture: (3, 5, 1),
+            entity_type: EntityType::Skill,
             animate: 1,
         };
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-            .translation(0.0, i as f32 * 10.0)
+            .translation(
+                rand::thread_rng().gen_range(-500..500) as f32,
+                rand::thread_rng().gen_range(-500..500) as f32,
+            )
             // .rotation(0.0)
             // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
             // 线速度
@@ -420,7 +427,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             .user_data(rb_state.get_data())
             .build();
         // 碰撞体类型
-        let collider = ColliderBuilder::new(SharedShape::ball(5.0))
+        let collider = ColliderBuilder::new(SharedShape::ball(25.0))
             // 密度
             .density(0.1)
             // 摩擦
@@ -552,7 +559,10 @@ async fn wait_for_net(
                             animate: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                            .translation(0.0, 0.0)
+                            .translation(
+                                rand::thread_rng().gen_range(-500..500) as f32,
+                                rand::thread_rng().gen_range(-500..500) as f32,
+                            )
                             // 线速度
                             .linvel(0.0, 0.0)
                             // 角速度

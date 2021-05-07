@@ -72,6 +72,8 @@ pub enum EntityType {
     Static = 0,
     Moveable = 1,
     Player = 2,
+    Flyer = 3,
+    Skill = 4,
 }
 
 impl From<u8> for EntityType {
@@ -80,6 +82,8 @@ impl From<u8> for EntityType {
             0 => EntityType::Static,
             1 => EntityType::Moveable,
             2 => EntityType::Player,
+            3 => EntityType::Flyer,
+            4 => EntityType::Skill,
             _ => EntityType::Static,
         }
     }
