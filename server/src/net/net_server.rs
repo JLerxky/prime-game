@@ -535,6 +535,7 @@ async fn start_listening(
                                 uid,
                                 direction: skill_data.direction,
                                 skill_type: skill_data.skill_type,
+                                texture: skill_data.texture,
                             }));
                             if let Ok(_) = net_tx.try_send(packet_control) {
                                 // println!("{}转递控制: {:?}", &addr, &control_data);

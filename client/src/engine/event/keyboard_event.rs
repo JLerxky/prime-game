@@ -17,6 +17,7 @@ fn keyboard_event_system(
     mut control_events: EventWriter<ControlEvent>,
     mut skill_events: EventWriter<SkillEvent>,
     keyboard_input: Res<Input<KeyCode>>,
+    mourse_input: Res<Input<MouseButton>>,
     mut ui_state: ResMut<UIState>,
     windows: Res<Windows>,
 ) {
@@ -45,13 +46,13 @@ fn keyboard_event_system(
         ui_state.windows_enabled[1] = !ui_state.windows_enabled[1];
     }
     // 释放技能
-    if keyboard_input.just_released(KeyCode::Space) {
+    if mourse_input.just_pressed(MouseButton::Left) {
         if let Some(window) = windows.get_primary() {
             let center_point = Vec2::new(window.width() / 2., window.height() / 2.);
             // println!("camera_point: {}", &center_point);
             if let Some(cursor_point) = window.cursor_position() {
                 // println!("cursor_point: {}", &cursor_point);
-                let direction = (cursor_point - center_point).normalize() * 110.;
+                let direction = (cursor_point - center_point).normalize();
                 // println!("direction: {}", &direction);
                 skill_events.send(SkillEvent {
                     direction: (direction.x, direction.y),

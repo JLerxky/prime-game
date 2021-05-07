@@ -34,6 +34,7 @@ fn event_listener_system(
                 uid: 0,
                 direction: skill_event.direction,
                 skill_type: skill_event.skill_type,
+                texture: (0, 6, 1),
             })));
             // println!("收到技能事件: {:?}", skill_event);
         }

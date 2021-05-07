@@ -7,6 +7,7 @@ pub struct SkillData {
     pub uid: u32,
     pub direction: (f32, f32),
     pub skill_type: SkillType,
+    pub texture: (u32, u8, u8),
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

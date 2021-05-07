@@ -197,9 +197,6 @@ async fn handle_contact(
                         animate: 0,
                     };
                     entity_state1.make_up_data(body1.user_data);
-                    if entity_state1.entity_type == EntityType::Skill {
-                        bodies.remove(collider1.parent(), colliders, joints);
-                    }
                 }
             }
             if let Some(collider2) = colliders.get(ch2) {
@@ -218,9 +215,6 @@ async fn handle_contact(
                         animate: 0,
                     };
                     entity_state2.make_up_data(body2.user_data);
-                    if entity_state2.entity_type == EntityType::Skill {
-                        bodies.remove(collider2.parent(), colliders, joints);
-                    }
                 }
             }
             // println!("{:?}", entity_state1);
@@ -248,7 +242,50 @@ async fn handle_contact(
                 }
             }
         }
-        rapier2d::geometry::ContactEvent::Stopped(_ch1, _ch2) => {}
+        rapier2d::geometry::ContactEvent::Stopped(ch1, ch2) => {
+            if let Some(collider1) = colliders.get(ch1) {
+                if let Some(body1) = bodies.get(collider1.parent()) {
+                    let mut entity_state1 = EntityState {
+                        id: body1.user_data as u64,
+                        translation: (
+                            collider1.position().translation.x,
+                            collider1.position().translation.y,
+                        ),
+                        rotation: collider1.position().rotation.angle(),
+                        linvel: (body1.linvel().x, body1.linvel().y),
+                        angvel: (body1.angvel(), body1.angvel()),
+                        texture: (0, 0, 0),
+                        entity_type: EntityType::Moveable,
+                        animate: 0,
+                    };
+                    entity_state1.make_up_data(body1.user_data);
+                    if entity_state1.entity_type == EntityType::Skill {
+                        bodies.remove(collider1.parent(), colliders, joints);
+                    }
+                }
+            }
+            if let Some(collider2) = colliders.get(ch2) {
+                if let Some(body2) = bodies.get(collider2.parent()) {
+                    let mut entity_state2 = EntityState {
+                        id: body2.user_data as u64,
+                        translation: (
+                            collider2.position().translation.x,
+                            collider2.position().translation.y,
+                        ),
+                        rotation: collider2.position().rotation.angle(),
+                        linvel: (body2.linvel().x, body2.linvel().y),
+                        angvel: (body2.angvel(), body2.angvel()),
+                        texture: (0, 0, 0),
+                        entity_type: EntityType::Moveable,
+                        animate: 0,
+                    };
+                    entity_state2.make_up_data(body2.user_data);
+                    if entity_state2.entity_type == EntityType::Skill {
+                        bodies.remove(collider2.parent(), colliders, joints);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -418,7 +455,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
 
     // 旋转体
     // 刚体类型
-    for _ in 0..40 {
+    for _ in 0..100 {
         let rb_state = EntityState {
             id: next_entity_id(EntityType::Trap as u8).unwrap(),
             translation: (0., 0.),
@@ -431,8 +468,8 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
         };
         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
             .translation(
-                rand::thread_rng().gen_range(-500..500) as f32,
-                rand::thread_rng().gen_range(-500..500) as f32,
+                rand::thread_rng().gen_range(-1000..1000) as f32,
+                rand::thread_rng().gen_range(-1000..1000) as f32,
             )
             // .rotation(0.0)
             // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
@@ -689,6 +726,9 @@ async fn wait_for_net(
                                     )
                                     .normalize()
                                         * 40.);
+                                    let linvel =
+                                        Vec2::new(skill_data.direction.0, skill_data.direction.1)
+                                            * 200.;
                                     let entity_id =
                                         next_entity_id(EntityType::Skill as u8).unwrap();
                                     // println!("entity_id: {}", entity_id);
@@ -698,7 +738,7 @@ async fn wait_for_net(
                                         rotation: 0.,
                                         linvel: (0., 0.),
                                         angvel: (0., 0.),
-                                        texture: (0, 6, 1),
+                                        texture: skill_data.texture,
                                         entity_type: EntityType::Skill,
                                         animate: 1,
                                     };
@@ -707,7 +747,7 @@ async fn wait_for_net(
                                         // .rotation(0.0)
                                         // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
                                         // 线速度
-                                        .linvel(skill_data.direction.0, skill_data.direction.1)
+                                        .linvel(linvel.x, linvel.y)
                                         // 角速度
                                         .angvel(60.)
                                         // 重力
