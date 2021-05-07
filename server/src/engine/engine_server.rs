@@ -2,7 +2,7 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::net;
 use data::server_db::{self, find_player, next_entity_id, save_player, GameData};
-use glam::IVec3;
+use glam::{IVec3, Vec2};
 use protocol::{
     data::{
         player_data::PlayerListData,
@@ -680,7 +680,15 @@ async fn wait_for_net(
                         if check_player_health(skill_data.uid) {
                             if let Some(handle) = player_handle_map.get(&skill_data.uid) {
                                 if let Some(body) = bodies.get_mut(*handle) {
-                                    let translation = body.position().translation;
+                                    let translation = Vec2::new(
+                                        body.position().translation.x,
+                                        body.position().translation.y,
+                                    ) + (Vec2::new(
+                                        skill_data.direction.0,
+                                        skill_data.direction.1,
+                                    )
+                                    .normalize()
+                                        * 40.);
                                     let entity_id =
                                         next_entity_id(EntityType::Skill as u8).unwrap();
                                     // println!("entity_id: {}", entity_id);
@@ -695,7 +703,7 @@ async fn wait_for_net(
                                         animate: 1,
                                     };
                                     let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                                        .translation(translation.x + 64., translation.y)
+                                        .translation(translation.x, translation.y)
                                         // .rotation(0.0)
                                         // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
                                         // 线速度

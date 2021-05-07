@@ -18,6 +18,7 @@ fn keyboard_event_system(
     mut skill_events: EventWriter<SkillEvent>,
     keyboard_input: Res<Input<KeyCode>>,
     mut ui_state: ResMut<UIState>,
+    windows: Res<Windows>,
 ) {
     // 控制移动
     let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8) as f32
@@ -45,9 +46,18 @@ fn keyboard_event_system(
     }
     // 释放技能
     if keyboard_input.just_released(KeyCode::Space) {
-        skill_events.send(SkillEvent {
-            direction: (100., 0.),
-            skill_type: SkillType::Shot,
-        });
+        if let Some(window) = windows.get_primary() {
+            let center_point = Vec2::new(window.width() / 2., window.height() / 2.);
+            // println!("camera_point: {}", &center_point);
+            if let Some(cursor_point) = window.cursor_position() {
+                // println!("cursor_point: {}", &cursor_point);
+                let direction = (cursor_point - center_point).normalize() * 110.;
+                // println!("direction: {}", &direction);
+                skill_events.send(SkillEvent {
+                    direction: (direction.x, direction.y),
+                    skill_type: SkillType::Shot,
+                });
+            }
+        }
     }
 }
