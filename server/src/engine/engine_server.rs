@@ -611,39 +611,43 @@ async fn wait_for_net(
                 Packet::Game(game_route) => match game_route {
                     protocol::route::GameRoute::Control(control_data) => {
                         // println!("1");
-                        if let Some(handle) = player_handle_map.get(&control_data.uid) {
-                            // println!("2");
-                            if let Some(body) = bodies.get_mut(*handle) {
-                                let s = Vector2::new(
-                                    control_data.direction.0,
-                                    control_data.direction.1,
-                                )
-                                .norm();
-                                if s == 0. {
-                                    body.set_linvel(Vector2::new(0., 0.), true);
-                                } else {
-                                    if control_data.action == 1 {
-                                        body.set_linvel(
-                                            Vector2::new(
-                                                control_data.direction.0,
-                                                control_data.direction.1,
-                                            ) / s
-                                                * 100.,
-                                            true,
-                                        );
-                                    }
-                                    if control_data.action == 2 {
-                                        body.set_linvel(
-                                            Vector2::new(
-                                                control_data.direction.0,
-                                                control_data.direction.1,
-                                            ) / s
-                                                * 150.,
-                                            true,
-                                        );
+                        if let Ok(player_data) = find_player(control_data.uid) {
+                            if player_data.hp > 0 {
+                                if let Some(handle) = player_handle_map.get(&control_data.uid) {
+                                    // println!("2");
+                                    if let Some(body) = bodies.get_mut(*handle) {
+                                        let s = Vector2::new(
+                                            control_data.direction.0,
+                                            control_data.direction.1,
+                                        )
+                                        .norm();
+                                        if s == 0. {
+                                            body.set_linvel(Vector2::new(0., 0.), true);
+                                        } else {
+                                            if control_data.action == 1 {
+                                                body.set_linvel(
+                                                    Vector2::new(
+                                                        control_data.direction.0,
+                                                        control_data.direction.1,
+                                                    ) / s
+                                                        * 100.,
+                                                    true,
+                                                );
+                                            }
+                                            if control_data.action == 2 {
+                                                body.set_linvel(
+                                                    Vector2::new(
+                                                        control_data.direction.0,
+                                                        control_data.direction.1,
+                                                    ) / s
+                                                        * 150.,
+                                                    true,
+                                                );
+                                            }
+                                        }
+                                        // println!("速度: {}", body.linvel().norm());
                                     }
                                 }
-                                // println!("速度: {}", body.linvel().norm());
                             }
                         }
                     }
