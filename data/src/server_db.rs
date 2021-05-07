@@ -169,7 +169,7 @@ pub fn save_player(player: PlayerData) -> Result<(), Box<dyn Error>> {
     );
     match result {
         std::result::Result::Ok(_old) => {
-            println!("save: {}==={:?}", player.uid, player);
+            // println!("save: {}==={:?}", player.uid, player);
         }
         std::result::Result::Err(e) => {
             println!("error: {}", e);

@@ -1,12 +1,19 @@
 pub const SERVER_PORT: u16 = 2101;
 /// 服务器地址
-pub const SERVER_ADDR: &str = "192.168.101.198:2101";
+// PC
+// pub const SERVER_ADDR: &str = "192.168.101.198:2101";
+// ROG JLer-0
 // pub const SERVER_ADDR: &str = "192.168.101.17:2101";
+// ROG JLer
 // pub const SERVER_ADDR: &str = "192.168.101.220:2101";
-// pub const SERVER_ADDR: &str = "0.0.0.0:2101";
+// 野兽
 // pub const SERVER_ADDR: &str = "115.197.164.108:2101";
+// 发布 server
+// pub const SERVER_ADDR: &str = "0.0.0.0:2101";
+// 发布 client
 // pub const SERVER_ADDR: &str = "jler.vip:2101";
-// pub const SERVER_ADDR: &str = "172.20.10.5:2101";
+// Mac USB
+pub const SERVER_ADDR: &str = "172.20.10.5:2101";
 /// 客户端地址
 pub const CLIENT_ADDR: &str = "0.0.0.0:0";
 /// 帧间时间

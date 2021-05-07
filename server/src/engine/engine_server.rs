@@ -37,8 +37,6 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
     let (net_tx, net_rx) = mpsc::channel::<Packet>(100);
     let (engine_tx, engine_rx) = mpsc::channel::<Packet>(100);
 
-    // let _ = tokio::join!(net_server);
-
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
     let joint_state = Arc::new(Mutex::new(JointSet::new()));
@@ -115,12 +113,9 @@ pub async fn engine_main_loop(
     // let start_time = Instant::now();
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 60f64));
     let mut frame_no: u128 = 0;
-    // println!("main_0");
     loop {
-        // println!("main_1");
         // println!("{}", &frame_no);
         interval.tick().await;
-        // println!("main_2");
         let mut bodies = &mut rigid_body_state.lock().await;
         let mut colliders = &mut collider_state.lock().await;
         let mut joints = &mut joint_state.lock().await;
@@ -143,127 +138,195 @@ pub async fn engine_main_loop(
         }
 
         while let Ok(contact_event) = contact_recv.try_recv() {
-            println!("接触事件: {:?}", contact_event);
-            match contact_event {
-                rapier2d::geometry::ContactEvent::Started(_ch1, ch2) => {
-                    if let Some(collider1) = colliders.get(ch2) {
-                        if let Some(body1) = bodies.get(collider1.parent()) {
-                            let mut entity_state = EntityState {
-                                id: body1.user_data as u64,
-                                translation: (
-                                    collider1.position().translation.x,
-                                    collider1.position().translation.y,
-                                ),
-                                rotation: collider1.position().rotation.angle(),
-                                linvel: (body1.linvel().x, body1.linvel().y),
-                                angvel: (body1.angvel(), body1.angvel()),
-                                texture: (0, 0, 0),
-                                entity_type: EntityType::Moveable,
-                                animate: 0,
-                            };
-                            entity_state.make_up_data(body1.user_data);
-                            if entity_state.entity_type == EntityType::Player {
-                                if let Ok(mut player) = find_player(entity_state.id as u32) {
-                                    if player.hp >= 5 {
-                                        player.hp -= 5;
-                                        let _ = save_player(player);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                rapier2d::geometry::ContactEvent::Stopped(_ch1, _ch2) => {}
-            }
+            // println!("接触事件: {:?}", contact_event);
+            // 处理碰撞事件
+            handle_contact(contact_event, &colliders, &bodies);
         }
 
         // 处理运行后结果世界状态
-        let mut states = Vec::new();
-        let mut players = Vec::new();
-        for (_colloder_handle, collider) in colliders.iter() {
-            if let Some(body) = bodies.get(collider.parent()) {
-                // 更新所有动态物体
-                if body.is_dynamic()
-                // 只更新在运动的物体
-                // if body.is_moving()
-                //     && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
-                {
-                    let mut state = EntityState {
-                        id: body.user_data as u64,
-                        translation: (
-                            collider.position().translation.x,
-                            collider.position().translation.y,
-                        ),
-                        rotation: collider.position().rotation.angle(),
-                        linvel: (body.linvel().x, body.linvel().y),
-                        angvel: (body.angvel(), body.angvel()),
-                        texture: (0, 0, 0),
-                        entity_type: EntityType::Moveable,
-                        animate: 0,
-                    };
-                    state.make_up_data(body.user_data);
-                    if state.entity_type == EntityType::Player {
-                        let l = body.linvel().norm();
-                        if l > 0.0001f32 {
-                            if body.linvel().x.abs() >= body.linvel().y.abs() {
-                                if body.linvel().x > 0.0 {
-                                    if l < 101. {
-                                        state.animate = 3;
-                                    } else {
-                                        state.animate = 7;
-                                    }
-                                } else {
-                                    if l < 101. {
-                                        state.animate = 4;
-                                    } else {
-                                        state.animate = 8;
-                                    }
-                                }
-                            } else {
-                                if body.linvel().y > 0.0 {
-                                    if l < 101. {
-                                        state.animate = 2;
-                                    } else {
-                                        state.animate = 6;
-                                    }
-                                } else {
-                                    if l < 101. {
-                                        state.animate = 1;
-                                    } else {
-                                        state.animate = 5;
-                                    }
-                                }
-                            }
-                        } else {
-                            state.animate = 0;
-                        }
-                        if let Ok(player) = find_player(state.id as u32) {
-                            // if frame_no % 120 == 0 && player.hp >= 5 {
-                            //     player.hp -= 5;
-                            //     let _ = save_player(player);
-                            // }
-                            players.push(player);
-                        }
-                    }
-                    states.push(state);
-                }
-            }
-        }
-        let packet = Packet::Game(GameRoute::Update(UpdateData {
-            frame: frame_no,
-            states,
-        }));
-        let _ = engine_tx.send(packet.clone()).await;
-        let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
-            frame: frame_no,
-            players,
-        }));
-        let _ = engine_tx.send(packet.clone()).await;
-        // println!("{:?}", &packet);
+        send_aync(colliders, bodies, frame_no, engine_tx.clone()).await;
+
         frame_no += 1;
     }
     // let time = start_time.elapsed().as_secs_f64();
     // println!("{}", time);
+}
+
+/// 处理碰撞事件
+fn handle_contact(
+    contact_event: rapier2d::geometry::ContactEvent,
+    colliders: &&mut tokio::sync::MutexGuard<ColliderSet>,
+    bodies: &&mut tokio::sync::MutexGuard<RigidBodySet>,
+) {
+    match contact_event {
+        rapier2d::geometry::ContactEvent::Started(ch1, ch2) => {
+            let mut entity_state1 = EntityState {
+                id: 0u64,
+                translation: (0., 0.),
+                rotation: 0.,
+                linvel: (0., 0.),
+                angvel: (0., 0.),
+                texture: (0, 0, 0),
+                entity_type: EntityType::Static,
+                animate: 0,
+            };
+            let mut entity_state2 = EntityState {
+                id: 0u64,
+                translation: (0., 0.),
+                rotation: 0.,
+                linvel: (0., 0.),
+                angvel: (0., 0.),
+                texture: (0, 0, 0),
+                entity_type: EntityType::Static,
+                animate: 0,
+            };
+            if let Some(collider1) = colliders.get(ch1) {
+                if let Some(body1) = bodies.get(collider1.parent()) {
+                    entity_state1 = EntityState {
+                        id: body1.user_data as u64,
+                        translation: (
+                            collider1.position().translation.x,
+                            collider1.position().translation.y,
+                        ),
+                        rotation: collider1.position().rotation.angle(),
+                        linvel: (body1.linvel().x, body1.linvel().y),
+                        angvel: (body1.angvel(), body1.angvel()),
+                        texture: (0, 0, 0),
+                        entity_type: EntityType::Moveable,
+                        animate: 0,
+                    };
+                    entity_state1.make_up_data(body1.user_data);
+                }
+            }
+            if let Some(collider2) = colliders.get(ch2) {
+                if let Some(body2) = bodies.get(collider2.parent()) {
+                    entity_state2 = EntityState {
+                        id: body2.user_data as u64,
+                        translation: (
+                            collider2.position().translation.x,
+                            collider2.position().translation.y,
+                        ),
+                        rotation: collider2.position().rotation.angle(),
+                        linvel: (body2.linvel().x, body2.linvel().y),
+                        angvel: (body2.angvel(), body2.angvel()),
+                        texture: (0, 0, 0),
+                        entity_type: EntityType::Moveable,
+                        animate: 0,
+                    };
+                    entity_state2.make_up_data(body2.user_data);
+                }
+            }
+            // println!("{:?}", entity_state1);
+            // println!("{:?}", entity_state2);
+            if entity_state1.entity_type == EntityType::Player {
+                if let Ok(mut player) = find_player(entity_state1.id as u32) {
+                    if player.hp >= 5 {
+                        player.hp -= 5;
+                        let _ = save_player(player);
+                    }
+                }
+            }
+            if entity_state2.entity_type == EntityType::Player {
+                if let Ok(mut player) = find_player(entity_state2.id as u32) {
+                    if player.hp >= 5 {
+                        player.hp -= 5;
+                        let _ = save_player(player);
+                    }
+                }
+            }
+        }
+        rapier2d::geometry::ContactEvent::Stopped(_ch1, _ch2) => {}
+    }
+}
+
+/// 更新状态并同步给客户端
+async fn send_aync(
+    colliders: &mut tokio::sync::MutexGuard<'_, ColliderSet>,
+    bodies: &mut tokio::sync::MutexGuard<'_, RigidBodySet>,
+    frame_no: u128,
+    engine_tx: Sender<Packet>,
+) {
+    let mut states = Vec::new();
+    let mut players = Vec::new();
+    for (_colloder_handle, collider) in colliders.iter() {
+        if let Some(body) = bodies.get(collider.parent()) {
+            // 更新所有动态物体
+            if body.is_dynamic()
+            // 只更新在运动的物体
+            // if body.is_moving()
+            //     && (body.linvel().amax().abs() >= 0.0001f32 || body.angvel().abs() >= 0.0001f32)
+            {
+                let mut state = EntityState {
+                    id: body.user_data as u64,
+                    translation: (
+                        collider.position().translation.x,
+                        collider.position().translation.y,
+                    ),
+                    rotation: collider.position().rotation.angle(),
+                    linvel: (body.linvel().x, body.linvel().y),
+                    angvel: (body.angvel(), body.angvel()),
+                    texture: (0, 0, 0),
+                    entity_type: EntityType::Moveable,
+                    animate: 0,
+                };
+                state.make_up_data(body.user_data);
+                if state.entity_type == EntityType::Player {
+                    let l = body.linvel().norm();
+                    if l > 0.0001f32 {
+                        if body.linvel().x.abs() >= body.linvel().y.abs() {
+                            if body.linvel().x > 0.0 {
+                                if l < 101. {
+                                    state.animate = 3;
+                                } else {
+                                    state.animate = 7;
+                                }
+                            } else {
+                                if l < 101. {
+                                    state.animate = 4;
+                                } else {
+                                    state.animate = 8;
+                                }
+                            }
+                        } else {
+                            if body.linvel().y > 0.0 {
+                                if l < 101. {
+                                    state.animate = 2;
+                                } else {
+                                    state.animate = 6;
+                                }
+                            } else {
+                                if l < 101. {
+                                    state.animate = 1;
+                                } else {
+                                    state.animate = 5;
+                                }
+                            }
+                        }
+                    } else {
+                        state.animate = 0;
+                    }
+                    if let Ok(player) = find_player(state.id as u32) {
+                        // if frame_no % 120 == 0 && player.hp >= 5 {
+                        //     player.hp -= 5;
+                        //     let _ = save_player(player);
+                        // }
+                        players.push(player);
+                    }
+                }
+                states.push(state);
+            }
+        }
+    }
+    let packet = Packet::Game(GameRoute::Update(UpdateData {
+        frame: frame_no,
+        states,
+    }));
+    let _ = engine_tx.send(packet.clone()).await;
+    let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
+        frame: frame_no,
+        players,
+    }));
+    let _ = engine_tx.send(packet.clone()).await;
 }
 
 async fn clean_body(
@@ -466,10 +529,7 @@ async fn wait_for_net(
     _joint_state: JointSetState,
     player_handle_state: PlayerHandleMapState,
 ) {
-    // let mut entity_id: u64 = 1000;
-    // let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(100));
     loop {
-        // interval.tick().await;
         if let Some(game_event) = net_rx.recv().await {
             let bodies = &mut rigid_body_state.lock().await;
             let colliders = &mut collider_state.lock().await;
