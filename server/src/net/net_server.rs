@@ -507,7 +507,7 @@ async fn start_listening(
                                         point: tile_data.point,
                                         tile: Some(tile),
                                     }));
-                                println!("send: {:?}", &packet_tile);
+                                // println!("send: {:?}", &packet_tile);
                                 let _ = tokio::spawn(send(
                                     send_socket.clone(),
                                     bincode::serialize(&packet_tile).unwrap(),
