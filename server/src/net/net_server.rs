@@ -499,12 +499,7 @@ async fn start_listening(
                             }
                         }
                         protocol::route::GameRoute::Tile(tile_data) => {
-                            let point = glam::IVec3::new(
-                                tile_data.point.0,
-                                tile_data.point.1,
-                                tile_data.point.2,
-                            );
-                            if let Ok(tile) = server_db::find_tile_map(point) {
+                            if let Ok(tile) = server_db::find_tile_map(tile_data.point) {
                                 let packet_tile =
                                     Packet::Game(protocol::route::GameRoute::Tile(TileData {
                                         point: tile_data.point,

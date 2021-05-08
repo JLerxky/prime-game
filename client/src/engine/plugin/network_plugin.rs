@@ -125,13 +125,9 @@ fn net_handler_system(
                     }
                     GameRoute::Control(_control_data) => {}
                     GameRoute::TileMap(tile_map_data) => {
+                        // println!("map_size: {}", tile_map_data.tiles.len());
                         for tile_data in tile_map_data.tiles {
-                            let point = glam::IVec3::new(
-                                tile_data.point.0,
-                                tile_data.point.1,
-                                tile_data.point.2,
-                            );
-                            let _ = data::client_db::save_tile_map(point, tile_data);
+                            let _ = data::client_db::save_tile_map(tile_data);
                         }
                     }
                     GameRoute::Tile(_tile_data) => {

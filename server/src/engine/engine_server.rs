@@ -6,7 +6,7 @@ use glam::{IVec3, Vec2};
 use protocol::{
     data::{
         player_data::PlayerListData,
-        tile_map_data::Tile,
+        tile_map_data::TileState,
         update_data::{EntityState, EntityType, UpdateData},
     },
     packet::Packet,
@@ -498,14 +498,18 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     let db = &data::sled_db::SledDB::open(config::DB_PATH_SERVER)
         .unwrap()
         .db;
-    for iter in db.scan_prefix("tile_map-(") {
+    for iter in db.scan_prefix("tile_map-") {
         match iter {
             Ok((k, v)) => {
-                if let Ok(tile) = bincode::deserialize::<Tile>(&v) {
+                if let Ok(tile) = bincode::deserialize::<TileState>(&v) {
                     match tile.collider {
                         protocol::data::tile_map_data::TileCollider::Full => {
                             let mut k_str = String::from_utf8(k.to_vec()).unwrap();
-                            k_str = k_str.replace("tile_map-(", "").replace(")", "");
+                            println!("{}", k_str);
+                            k_str = k_str
+                                .replace("tile_map-(", "")
+                                .replace(")", "")
+                                .replace(" ", "");
                             let mut point_str = k_str.split(",").take(3);
                             let point = IVec3::new(
                                 point_str.next().unwrap().parse().unwrap(),

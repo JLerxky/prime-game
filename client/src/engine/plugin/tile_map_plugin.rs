@@ -46,7 +46,7 @@ struct TileSpriteHandles {
     atlas_loaded: bool,
 }
 
-fn get_tile(point: IVec3) -> Option<Tile> {
+fn get_tile(point: (i32, i32, i32)) -> Option<Tile> {
     if let Ok(tile_state) = data::client_db::find_tile_map(point) {
         let tile = get_tile_by_filename(tile_state.filename);
         return Some(tile);
@@ -62,7 +62,7 @@ fn get_tile(point: IVec3) -> Option<Tile> {
 }
 
 /// 请求获取最新地图数据
-pub fn refreshMapData(net_state: &ResMut<NetWorkState>) {
+pub fn refresh_map_data(net_state: &ResMut<NetWorkState>) {
     if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
         to_be_sent_queue.push(Packet::Game(GameRoute::TileMap(TileMapData {
             map_id: 0,
@@ -71,7 +71,12 @@ pub fn refreshMapData(net_state: &ResMut<NetWorkState>) {
     }
 }
 
-fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<AssetServer>) {
+fn setup(
+    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
+    asset_server: Res<AssetServer>,
+    net_state: ResMut<NetWorkState>,
+) {
+    refresh_map_data(&net_state);
     tile_sprite_handles.handles = asset_server.load_folder("textures/prime/tiles").unwrap();
 }
 
@@ -157,7 +162,7 @@ fn build(
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
-                let point = IVec3::new(x as i32, y as i32, 1i32);
+                let point = (x as i32, y as i32, 1i32);
                 let tile_point = (x, y);
 
                 if let Some(tile) = get_tile(point) {

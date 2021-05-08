@@ -103,14 +103,9 @@ pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn find_tile_map(point: glam::IVec3) -> Result<TileState, Box<dyn Error>> {
+pub fn find_tile_map(point: (i32, i32, i32)) -> Result<TileState, Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
-    let key = GameData {
-        table: "tile_map".to_string(),
-        key: format!("{},{},{}", point.x, point.y, point.z),
-        data: None,
-    };
-    let data = &db.get(format!("{}-({})", key.table, key.key).as_bytes())?;
+    let data = &db.get(format!("tile_map-{:?}", point).as_bytes())?;
     if let Some(data) = data {
         Ok(bincode::deserialize(data)?)
     } else {
@@ -121,15 +116,10 @@ pub fn find_tile_map(point: glam::IVec3) -> Result<TileState, Box<dyn Error>> {
     }
 }
 
-pub fn save_tile_map(point: glam::IVec3, tile: TileState) -> Result<(), Box<dyn Error>> {
+pub fn save_tile_map(tile: TileState) -> Result<(), Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
-    let data = GameData {
-        table: "tile_map".to_string(),
-        key: format!("{},{},{}", point.x, point.y, point.z),
-        data: None,
-    };
     let result = db.insert(
-        format!("{}-({})", data.table, data.key).as_bytes(),
+        format!("tile_map-{:?}", tile.point).as_bytes(),
         bincode::serialize(&tile)?,
     );
     match result {
@@ -146,7 +136,7 @@ pub fn save_tile_map(point: glam::IVec3, tile: TileState) -> Result<(), Box<dyn 
 pub fn find_all_tile() -> Vec<TileState> {
     let mut tiles = Vec::new();
     let db = &SledDB::open(DB_PATH).unwrap().db;
-    for iter in db.scan_prefix("tile_map-(") {
+    for iter in db.scan_prefix("tile_map-") {
         match iter {
             Ok((_k, v)) => {
                 if let Ok(t) = bincode::deserialize(&v) {
@@ -163,7 +153,7 @@ pub fn find_all_tile() -> Vec<TileState> {
 
 pub fn all_tile(path: &str) {
     let db = &SledDB::open(path).unwrap().db;
-    for iter in db.scan_prefix("tile_map-(") {
+    for iter in db.scan_prefix("tile_map-") {
         match iter {
             Ok((k, v)) => {
                 println!(
@@ -228,12 +218,4 @@ pub fn next_entity_id(entity_type: u8) -> Result<u64, Box<dyn Error>> {
         "0".as_bytes().to_vec(),
     )?;
     Ok(0)
-}
-
-#[test]
-fn test_server_db() {
-    let point = glam::IVec3::new(0, 0, 0);
-    if let Ok(tile) = find_tile_map(point) {
-        println!("{:?}", tile);
-    }
 }

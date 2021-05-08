@@ -7,8 +7,8 @@ use rand::Rng;
 
 /// 创建地图
 pub fn create_init_map() {
-    for x in -5..=5 {
-        for y in -5..=5 {
+    for x in -1..=1 {
+        for y in -1..=1 {
             let mut tile_map = TileMap {
                 center_point: IVec3::new(x * 10, y * 10, 0),
                 texture_size: UVec3::new(64, 64, 1),
@@ -24,11 +24,11 @@ pub fn create_init_map() {
                         filename: tile.filename,
                         collider: tile.collider,
                     };
-                    if let Ok(_result) = data::server_db::save_tile_map(point, tile_state) {
+                    if let Ok(_result) = data::server_db::save_tile_map(tile_state.clone()) {
                         // println!("save: {}==={:?}", point, &slot.tile.unwrap());
                     }
-                    if let Ok(data) = data::server_db::find_tile_map(point) {
-                        println!("saved: {}==={:?}", point, data);
+                    if let Ok(data) = data::server_db::find_tile_map(tile_state.point) {
+                        println!("saved: {:?}==={:?}", tile_state.point, data);
                     }
                 }
             }
@@ -65,7 +65,7 @@ pub fn create_map(tile_map: &mut TileMap) {
                     tile: None,
                 };
                 // 获取数据库数据, 存在则载入, 不存在则保持初始化
-                if let Ok(tile_state) = find_tile_map(point) {
+                if let Ok(tile_state) = find_tile_map((point.x, point.y, point.z)) {
                     let tile = get_tile_by_filename(tile_state.filename);
                     slot = Slot {
                         point,

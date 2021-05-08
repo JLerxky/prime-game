@@ -103,14 +103,9 @@ pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn find_tile_map(point: glam::IVec3) -> Result<TileState, Box<dyn Error>> {
+pub fn find_tile_map(point: (i32, i32, i32)) -> Result<TileState, Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
-    let key = GameData {
-        table: "tile_map".to_string(),
-        key: format!("{},{},{}", point.x, point.y, point.z),
-        data: None,
-    };
-    let data = &db.get(format!("{}-({})", key.table, key.key).as_bytes())?;
+    let data = &db.get(format!("tile_map-{:?}", point).as_bytes())?;
     if let Some(data) = data {
         Ok(bincode::deserialize(data)?)
     } else {
@@ -121,15 +116,10 @@ pub fn find_tile_map(point: glam::IVec3) -> Result<TileState, Box<dyn Error>> {
     }
 }
 
-pub fn save_tile_map(point: glam::IVec3, tile: TileState) -> Result<(), Box<dyn Error>> {
+pub fn save_tile_map(tile: TileState) -> Result<(), Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
-    let data = GameData {
-        table: "tile_map".to_string(),
-        key: format!("{},{},{}", point.x, point.y, point.z),
-        data: None,
-    };
     let result = db.insert(
-        format!("{}-({})", data.table, data.key).as_bytes(),
+        format!("tile_map-{:?}", tile.point).as_bytes(),
         bincode::serialize(&tile)?,
     );
     match result {
@@ -170,14 +160,6 @@ pub fn find_player(uid: u32) -> Result<PlayerData, Box<dyn Error>> {
             std::io::ErrorKind::Other,
             "无数据!",
         )))
-    }
-}
-
-#[test]
-fn test_server_db() {
-    let point = glam::IVec3::new(0, 0, 0);
-    if let Ok(tile) = find_tile_map(point) {
-        println!("{:?}", tile);
     }
 }
 
