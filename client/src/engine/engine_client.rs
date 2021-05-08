@@ -37,11 +37,11 @@ pub fn engine_start() {
             // 垂直同步
             vsync: true,
             // 是否可调整窗口大小
-            resizable: true,
+            resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 1280f32,
-            height: 720f32,
+            width: 1366f32,
+            height: 768f32,
             // 窗口模式
             mode: WindowMode::Windowed,
             // 鼠标隐藏并锁定
