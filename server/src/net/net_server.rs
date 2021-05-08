@@ -1,11 +1,8 @@
-use common::tile_map::get_tile_by_filename;
 use data::server_db::{self, find_all_tile, GameData};
 use protocol::{
     data::{
-        control_data::ControlData,
-        player_data::PlayerData,
-        skill_data::SkillData,
-        tile_map_data::{TileData, TileMapData},
+        control_data::ControlData, player_data::PlayerData, skill_data::SkillData,
+        tile_map_data::TileMapData,
     },
     packet::Packet,
     route::GameRoute,
@@ -498,13 +495,10 @@ async fn start_listening(
                                 // println!("{}转递控制: {:?}", &addr, &control_data);
                             }
                         }
-                        protocol::route::GameRoute::Tile(tile_data) => {
-                            if let Ok(tile) = server_db::find_tile_map(tile_data.point) {
+                        protocol::route::GameRoute::Tile(tile_state) => {
+                            if let Ok(tile) = server_db::find_tile_map(tile_state.point) {
                                 let packet_tile =
-                                    Packet::Game(protocol::route::GameRoute::Tile(TileData {
-                                        point: tile_data.point,
-                                        tile: Some(get_tile_by_filename(tile.filename)),
-                                    }));
+                                    Packet::Game(protocol::route::GameRoute::Tile(tile));
                                 // println!("send: {:?}", &packet_tile);
                                 let _ = tokio::spawn(send(
                                     send_socket.clone(),

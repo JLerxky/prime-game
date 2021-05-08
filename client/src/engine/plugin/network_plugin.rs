@@ -93,7 +93,7 @@ fn net_handler_system(
     mut player_event_writer: EventWriter<PlayerUpdateEvent>,
 ) {
     if let Ok(mut packet_queue) = net_state.packet_queue.lock() {
-        // println!("packet_queue: {}", packet_queue.len());
+        println!("packet_queue: {}", packet_queue.len());
         for _ in 0..10 {
             if packet_queue.is_empty() {
                 return;
@@ -130,14 +130,8 @@ fn net_handler_system(
                             let _ = data::client_db::save_tile_map(tile_data);
                         }
                     }
-                    GameRoute::Tile(_tile_data) => {
-                        // let point = glam::IVec3::new(
-                        //     tile_data.point.0,
-                        //     tile_data.point.1,
-                        //     tile_data.point.2,
-                        // );
-                        // // println!("rev: {}", point);
-                        // let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
+                    GameRoute::Tile(tile_state) => {
+                        let _ = data::client_db::save_tile_map(tile_state);
                     }
                     GameRoute::Player(_) => {}
                     GameRoute::PlayerList(player_list_data) => {
@@ -216,7 +210,7 @@ async fn net_client_start(
             // 转发事件
             if let Ok(packet) = packet {
                 if let Ok(mut packet_queue) = packet_queue.lock() {
-                    if packet_queue.len() > 1024 {
+                    if packet_queue.len() > 204800 {
                         packet_queue.remove(0);
                     }
                     packet_queue.push(packet);

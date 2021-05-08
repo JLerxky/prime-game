@@ -1,7 +1,7 @@
 use bevy_tilemap::prelude::*;
 use common::tile_map::get_tile_by_filename;
 use protocol::{
-    data::tile_map_data::{Tile, TileMapData},
+    data::tile_map_data::{Tile, TileMapData, TileState},
     packet::Packet,
     route::GameRoute,
 };
@@ -46,17 +46,18 @@ struct TileSpriteHandles {
     atlas_loaded: bool,
 }
 
-fn get_tile(point: (i32, i32, i32)) -> Option<Tile> {
+fn get_tile(point: (i32, i32, i32), net_state: &ResMut<NetWorkState>) -> Option<Tile> {
     if let Ok(tile_state) = data::client_db::find_tile_map(point) {
         let tile = get_tile_by_filename(tile_state.filename);
         return Some(tile);
-        // } else {
-        //     if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
-        //         to_be_sent_queue.push(Packet::Game(GameRoute::Tile(TileData {
-        //             point: (point.x, point.y, point.z),
-        //             tile: None,
-        //         })));
-        //     }
+    } else {
+        if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
+            to_be_sent_queue.push(Packet::Game(GameRoute::Tile(TileState {
+                point,
+                filename: "".to_string(),
+                collider: protocol::data::tile_map_data::TileCollider::Full,
+            })));
+        }
     }
     None
 }
@@ -146,6 +147,7 @@ fn build(
     texture_atlases: Res<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
     mut query: Query<&mut Tilemap>,
+    net_state: ResMut<NetWorkState>,
 ) {
     if map_state.map_loaded {
         return;
@@ -165,7 +167,7 @@ fn build(
                 let point = (x as i32, y as i32, 1i32);
                 let tile_point = (x, y);
 
-                if let Some(tile) = get_tile(point) {
+                if let Some(tile) = get_tile(point, &net_state) {
                     // 若最上层也为泥地则不创建精灵
                     if tile.filename.eq("0-tileset_30.png") {
                         continue;
