@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::net;
 use data::server_db::{self, find_player, next_entity_id, save_player, GameData};
@@ -33,7 +33,7 @@ type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
 type JointSetState = Arc<Mutex<JointSet>>;
 type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
-pub async fn engine_start() -> Result<(), Box<dyn Error>> {
+pub async fn engine_start() {
     let (net_tx, net_rx) = mpsc::channel::<Packet>(100);
     let (engine_tx, engine_rx) = mpsc::channel::<Packet>(100);
 
@@ -51,7 +51,7 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
         collider_state.clone(),
         joint_state.clone(),
     );
-    tokio::spawn(async move { engine_future.await.unwrap() });
+    tokio::spawn(async move { engine_future.await });
 
     let clean_body_future = clean_body(
         rigid_body_state.clone(),
@@ -74,8 +74,7 @@ pub async fn engine_start() -> Result<(), Box<dyn Error>> {
     // 网络监听
     let net_server = net::net_server::start_server(net_tx, engine_rx);
 
-    let _ = net_server.await;
-    Ok(())
+    tokio::join!(net_server);
 }
 
 pub async fn engine_main_loop(
@@ -83,7 +82,7 @@ pub async fn engine_main_loop(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
     joint_state: JointSetState,
-) -> Result<(), Box<dyn Error>> {
+) {
     println!("物理引擎已启动!");
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();

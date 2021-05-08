@@ -4,7 +4,7 @@ use std::{
     time::SystemTime,
 };
 
-use bevy::{core::FixedTimestep, prelude::*};
+use bevy::prelude::*;
 use protocol::{
     data::{account_data::AccountData, player_data::PlayerData, update_data::EntityType},
     packet::Packet,
@@ -15,8 +15,6 @@ use tokio::net::UdpSocket;
 use crate::engine::event::{
     heart_beat_event::HeartBeatEvent, player_update_event::PlayerUpdateEvent, sync_event::SyncEvent,
 };
-
-use super::camera_ctrl_plugin::CameraCtrl;
 
 // 当前玩家
 pub static mut PLAYER: PlayerData = PlayerData {
@@ -40,9 +38,6 @@ pub struct SynEntity {
     pub animate_index: usize,
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
-struct CheckEntityHealthFixedUpdateStage;
-
 pub struct NetworkPlugin;
 
 impl Plugin for NetworkPlugin {
@@ -60,29 +55,7 @@ impl Plugin for NetworkPlugin {
             packet_queue,
             to_be_sent_queue,
         })
-        .add_system(net_handler_system.system())
-        .add_stage_after(
-            CoreStage::Update,
-            CheckEntityHealthFixedUpdateStage,
-            SystemStage::parallel()
-                .with_run_criteria(FixedTimestep::step(1.).with_label("build_map_fixed_timestep"))
-                .with_system(check_entity_health.system()),
-        );
-    }
-}
-
-fn check_entity_health(
-    mut commands: Commands,
-    syn_entity_query: Query<(&SynEntity, Entity), Without<CameraCtrl>>,
-) {
-    let health_now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    for (syn_entity, entity) in syn_entity_query.iter() {
-        if health_now > (syn_entity.health + 1) {
-            commands.entity(entity).despawn_recursive();
-        }
+        .add_system(net_handler_system.system());
     }
 }
 

@@ -10,33 +10,29 @@ use protocol::{
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use std::{error::Error, str::FromStr};
+use std::str::FromStr;
 use std::{net::SocketAddr, sync::Arc, time::SystemTime};
 
-pub async fn start_server(
-    net_tx: Sender<Packet>,
-    engine_rx: Receiver<Packet>,
-) -> Result<(), Box<dyn Error>> {
-    let game_server_socket = UdpSocket::bind(config::SERVER_ADDR).await?;
-    let game_server_addr = &game_server_socket.local_addr()?;
+pub async fn start_server(net_tx: Sender<Packet>, engine_rx: Receiver<Packet>) {
+    if let Ok(game_server_socket) = UdpSocket::bind(config::SERVER_ADDR).await {
+        if let Ok(game_server_addr) = &game_server_socket.local_addr() {
+            println!("网络服务器已启动: {:?}", game_server_addr);
 
-    println!("网络服务器已启动: {:?}", game_server_addr);
+            let r = Arc::new(game_server_socket);
+            let s = r.clone();
 
-    let r = Arc::new(game_server_socket);
-    let s = r.clone();
+            // let game_server_framed = UdpFramed::new(**r, BytesCodec::new());
 
-    // let game_server_framed = UdpFramed::new(**r, BytesCodec::new());
+            let game_server_future = start_listening(r, s.clone(), net_tx);
 
-    let game_server_future = start_listening(r, s.clone(), net_tx);
+            let wait_for_send_future = wait_for_send(s, engine_rx);
+            let clean_offline_user_future = clean_offline_user();
 
-    let wait_for_send_future = wait_for_send(s, engine_rx);
-    let clean_offline_user_future = clean_offline_user();
-
-    tokio::spawn(async move { clean_offline_user_future.await });
-    tokio::spawn(async move { wait_for_send_future.await });
-    tokio::join!(game_server_future);
-
-    Ok(())
+            tokio::spawn(async move { clean_offline_user_future.await });
+            tokio::spawn(async move { wait_for_send_future.await });
+            tokio::join!(game_server_future);
+        }
+    }
 }
 
 pub async fn send(socket: Arc<UdpSocket>, packet: Vec<u8>, recv_addr: SocketAddr) {
@@ -187,7 +183,7 @@ pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
 }
 
 async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) {
-    // let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
+    // let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
     loop {
         // interval.tick().await;
         if let Some(packet) = engine_rx.recv().await {

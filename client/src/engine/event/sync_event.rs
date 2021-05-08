@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use bevy::prelude::*;
+use bevy::{core::FixedTimestep, prelude::*};
 use protocol::data::{
     player_data::PlayerData,
     update_data::{EntityType, UpdateData},
@@ -11,17 +11,44 @@ use crate::engine::plugin::{
     network_plugin::{SynEntity, PLAYER},
 };
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+struct CheckEntityHealthFixedUpdateStage;
+
 pub struct SyncEventPlugin;
 
 impl Plugin for SyncEventPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<SyncEvent>()
-            .add_system(event_listener_system.system());
+            .add_system(event_listener_system.system())
+            .add_stage_after(
+                CoreStage::Update,
+                CheckEntityHealthFixedUpdateStage,
+                SystemStage::parallel()
+                    .with_run_criteria(
+                        FixedTimestep::step(1.).with_label("build_map_fixed_timestep"),
+                    )
+                    .with_system(check_entity_health.system()),
+            );
     }
 }
 
 pub struct SyncEvent {
     pub update_data: UpdateData,
+}
+
+fn check_entity_health(
+    mut commands: Commands,
+    syn_entity_query: Query<(&SynEntity, Entity), Without<CameraCtrl>>,
+) {
+    let health_now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    for (syn_entity, entity) in syn_entity_query.iter() {
+        if health_now > (syn_entity.health + 1) {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }
 
 fn event_listener_system(
