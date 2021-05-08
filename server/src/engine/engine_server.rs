@@ -374,8 +374,7 @@ async fn send_aync(
             frame: frame_no,
             states: s.to_vec(),
         }));
-
-        let _ = tokio::join!(engine_tx.send(packet.clone()));
+        let _ = engine_tx.send(packet).await;
         // println!("同步包: {:?}", packet);
     }
     // println!("同步包大小: {:?}", states.len());
@@ -385,7 +384,7 @@ async fn send_aync(
             frame: frame_no,
             players: p.to_vec(),
         }));
-        let _ = tokio::join!(engine_tx.send(packet.clone()));
+        let _ = engine_tx.send(packet).await;
     }
 }
 

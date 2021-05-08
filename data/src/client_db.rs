@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use protocol::data::{player_data::PlayerData, tile_map_data::Tile};
+use protocol::data::{player_data::PlayerData, tile_map_data::TileState};
 
 use crate::sled_db::SledDB;
 
@@ -103,7 +103,7 @@ pub fn save(data: GameData) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn find_tile_map(point: glam::IVec3) -> Result<Tile, Box<dyn Error>> {
+pub fn find_tile_map(point: glam::IVec3) -> Result<TileState, Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
     let key = GameData {
         table: "tile_map".to_string(),
@@ -121,7 +121,7 @@ pub fn find_tile_map(point: glam::IVec3) -> Result<Tile, Box<dyn Error>> {
     }
 }
 
-pub fn save_tile_map(point: glam::IVec3, tile: Tile) -> Result<(), Box<dyn Error>> {
+pub fn save_tile_map(point: glam::IVec3, tile: TileState) -> Result<(), Box<dyn Error>> {
     let db = &SledDB::open(DB_PATH)?.db;
     let data = GameData {
         table: "tile_map".to_string(),
@@ -134,7 +134,7 @@ pub fn save_tile_map(point: glam::IVec3, tile: Tile) -> Result<(), Box<dyn Error
     );
     match result {
         std::result::Result::Ok(_old) => {
-            println!("save: {}==={:?}", point, tile);
+            // println!("old: {:?}", old);
         }
         std::result::Result::Err(e) => {
             println!("error: {}", e);

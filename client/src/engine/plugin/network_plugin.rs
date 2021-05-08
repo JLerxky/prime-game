@@ -124,15 +124,24 @@ fn net_handler_system(
                         sync_event_writer.send(SyncEvent { update_data });
                     }
                     GameRoute::Control(_control_data) => {}
-                    GameRoute::TileMap(_tile_map_data) => {}
-                    GameRoute::Tile(tile_data) => {
-                        let point = glam::IVec3::new(
-                            tile_data.point.0,
-                            tile_data.point.1,
-                            tile_data.point.2,
-                        );
-                        // println!("rev: {}", point);
-                        let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
+                    GameRoute::TileMap(tile_map_data) => {
+                        for tile_data in tile_map_data.tiles {
+                            let point = glam::IVec3::new(
+                                tile_data.point.0,
+                                tile_data.point.1,
+                                tile_data.point.2,
+                            );
+                            let _ = data::client_db::save_tile_map(point, tile_data);
+                        }
+                    }
+                    GameRoute::Tile(_tile_data) => {
+                        // let point = glam::IVec3::new(
+                        //     tile_data.point.0,
+                        //     tile_data.point.1,
+                        //     tile_data.point.2,
+                        // );
+                        // // println!("rev: {}", point);
+                        // let _ = data::client_db::save_tile_map(point, tile_data.tile.unwrap());
                     }
                     GameRoute::Player(_) => {}
                     GameRoute::PlayerList(player_list_data) => {
@@ -220,19 +229,15 @@ async fn net_client_start(
         }
 
         if let Ok(mut to_be_sent_queue) = to_be_sent_queue.lock() {
-            // println!("0");
             let to_be_sent_queue_c = to_be_sent_queue.clone();
             to_be_sent_queue.clear();
             for to_be_sent_packet in to_be_sent_queue_c.iter() {
-                // println!("1");
                 let s = r.clone();
                 let to_be_sent_packet = to_be_sent_packet.clone();
                 tokio::spawn(async move {
-                    // println!("2");
                     s.send(&bincode::serialize(&to_be_sent_packet).unwrap()[0..])
                         .await
                         .unwrap();
-                    // println!("3");
                 });
             }
         }

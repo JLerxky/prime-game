@@ -1,8 +1,11 @@
-use data::server_db::{self, GameData};
+use common::tile_map::get_tile_by_filename;
+use data::server_db::{self, find_all_tile, GameData};
 use protocol::{
     data::{
-        control_data::ControlData, player_data::PlayerData, skill_data::SkillData,
-        tile_map_data::TileData,
+        control_data::ControlData,
+        player_data::PlayerData,
+        skill_data::SkillData,
+        tile_map_data::{TileData, TileMapData},
     },
     packet::Packet,
     route::GameRoute,
@@ -505,7 +508,7 @@ async fn start_listening(
                                 let packet_tile =
                                     Packet::Game(protocol::route::GameRoute::Tile(TileData {
                                         point: tile_data.point,
-                                        tile: Some(tile),
+                                        tile: Some(get_tile_by_filename(tile.filename)),
                                     }));
                                 // println!("send: {:?}", &packet_tile);
                                 let _ = tokio::spawn(send(
@@ -541,8 +544,24 @@ async fn start_listening(
                                 // println!("{}转递控制: {:?}", &addr, &control_data);
                             }
                         }
+                        GameRoute::TileMap(_tile_map_data) => {
+                            let tiles = find_all_tile();
+                            let mut tiles_iter = tiles.chunks(40);
+                            while let Some(t) = tiles_iter.next() {
+                                let packet_tile = Packet::Game(
+                                    protocol::route::GameRoute::TileMap(TileMapData {
+                                        map_id: 0,
+                                        tiles: t.to_vec(),
+                                    }),
+                                );
+                                let _ = tokio::spawn(send(
+                                    send_socket.clone(),
+                                    bincode::serialize(&packet_tile).unwrap(),
+                                    addr,
+                                ));
+                            }
+                        }
                         GameRoute::Update(_) => {}
-                        GameRoute::TileMap(_) => {}
                         GameRoute::Player(_) => {}
                         GameRoute::PlayerList(_) => {}
                     },

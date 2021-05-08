@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use data::server_db::find_tile_map;
 use glam::{IVec3, UVec3, Vec3};
-use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap};
+use protocol::data::tile_map_data::{Slot, Tile, TileCollider, TileJoint, TileMap, TileState};
 use rand::Rng;
 
 /// 创建地图
@@ -19,7 +19,12 @@ pub fn create_init_map() {
             create_map(&mut tile_map);
             for (point, slot) in tile_map.slot_map {
                 if let Some(tile) = slot.tile.clone() {
-                    if let Ok(_result) = data::server_db::save_tile_map(point, tile) {
+                    let tile_state = TileState {
+                        point: (point.x, point.y, point.z),
+                        filename: tile.filename,
+                        collider: tile.collider,
+                    };
+                    if let Ok(_result) = data::server_db::save_tile_map(point, tile_state) {
                         // println!("save: {}==={:?}", point, &slot.tile.unwrap());
                     }
                     if let Ok(data) = data::server_db::find_tile_map(point) {
@@ -60,7 +65,8 @@ pub fn create_map(tile_map: &mut TileMap) {
                     tile: None,
                 };
                 // 获取数据库数据, 存在则载入, 不存在则保持初始化
-                if let Ok(tile) = find_tile_map(point) {
+                if let Ok(tile_state) = find_tile_map(point) {
+                    let tile = get_tile_by_filename(tile_state.filename);
                     slot = Slot {
                         point,
                         superposition: Vec::new(),
@@ -858,4 +864,620 @@ pub fn load_item_superposition(layer: usize) -> Vec<Tile> {
         ],
     });
     superposition
+}
+
+pub fn get_tile_by_filename(filename: String) -> Tile {
+    let mut superposition = HashMap::new();
+    // 添加空地
+    superposition.insert(
+        "0-tileset_30.png".to_string(),
+        Tile {
+            filename: "0-tileset_30.png".to_string(),
+            layer: 1,
+            rng_seed: 40,
+            collider: TileCollider::None,
+            joints: [
+                TileJoint::TagOne("空".to_string()), // 0上
+                TileJoint::TagOne("空".to_string()), // 1下
+                TileJoint::TagOne("空".to_string()), // 2左
+                TileJoint::TagOne("空".to_string()), // 3右
+                TileJoint::All,                       // 4前
+                TileJoint::All,                       // 5后
+            ],
+        },
+    );
+
+    // 草地
+    {
+        superposition.insert(
+            "0-tileset_01.png".to_string(),
+            Tile {
+                filename: "0-tileset_01.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("草空".to_string()),    // 0上
+                    TileJoint::TagOne("x|边|草".to_string()), // 1下
+                    TileJoint::TagOne("草空".to_string()),    // 2左
+                    TileJoint::TagOne("y|边|草".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_02.png".to_string(),
+            Tile {
+                filename: "0-tileset_02.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("草空".to_string()),    // 0上
+                    TileJoint::TagOne("草".to_string()),       // 1下
+                    TileJoint::TagOne("y|边|草".to_string()), // 2左
+                    TileJoint::TagOne("y|边|草".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_03.png".to_string(),
+            Tile {
+                filename: "0-tileset_03.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("草空".to_string()),    // 0上
+                    TileJoint::TagOne("x|草|边".to_string()), // 1下
+                    TileJoint::TagOne("y|边|草".to_string()), // 2左
+                    TileJoint::TagOne("草空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_04.png".to_string(),
+            Tile {
+                filename: "0-tileset_04.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("草".to_string()), // 0上
+                    TileJoint::TagOne("草".to_string()), // 1下
+                    TileJoint::TagOne("草".to_string()), // 2左
+                    TileJoint::TagOne("草".to_string()), // 3右
+                    TileJoint::All,                       // 4前
+                    TileJoint::All,                       // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_21.png".to_string(),
+            Tile {
+                filename: "0-tileset_21.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|边|草".to_string()), // 0上
+                    TileJoint::TagOne("x|边|草".to_string()), // 1下
+                    TileJoint::TagOne("草空".to_string()),    // 2左
+                    TileJoint::TagOne("草".to_string()),       // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_23.png".to_string(),
+            Tile {
+                filename: "0-tileset_23.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|草|边".to_string()), // 0上
+                    TileJoint::TagOne("x|草|边".to_string()), // 1下
+                    TileJoint::TagOne("草".to_string()),       // 2左
+                    TileJoint::TagOne("草空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_39.png".to_string(),
+            Tile {
+                filename: "0-tileset_39.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|边|草".to_string()), // 0上
+                    TileJoint::TagOne("草空".to_string()),    // 1下
+                    TileJoint::TagOne("草空".to_string()),    // 2左
+                    TileJoint::TagOne("y|草|边".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_40.png".to_string(),
+            Tile {
+                filename: "0-tileset_40.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("草".to_string()),       // 0上
+                    TileJoint::TagOne("草空".to_string()),    // 1下
+                    TileJoint::TagOne("y|草|边".to_string()), // 2左
+                    TileJoint::TagOne("y|草|边".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_41.png".to_string(),
+            Tile {
+                filename: "0-tileset_41.png".to_string(),
+                layer: 1,
+                rng_seed: 2,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|草|边".to_string()), // 0上
+                    TileJoint::TagOne("草空".to_string()),    // 1下
+                    TileJoint::TagOne("y|草|边".to_string()), // 2左
+                    TileJoint::TagOne("草空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::All,                             // 5后
+                ],
+            },
+        );
+    }
+
+    // 池塘
+    {
+        superposition.insert(
+            "0-tileset_17.png".to_string(),
+            Tile {
+                filename: "0-tileset_17.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("池空".to_string()),    // 0上
+                    TileJoint::TagOne("x|边|水".to_string()), // 1下
+                    TileJoint::TagOne("池空".to_string()),    // 2左
+                    TileJoint::TagOne("y|边|水".to_string()), // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_18.png".to_string(),
+            Tile {
+                filename: "0-tileset_18.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("池空".to_string()),    // 0上
+                    TileJoint::TagOne("水".to_string()),       // 1下
+                    TileJoint::TagOne("y|边|水".to_string()), // 2左
+                    TileJoint::TagOne("y|边|水".to_string()), // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_19.png".to_string(),
+            Tile {
+                filename: "0-tileset_19.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("池空".to_string()),    // 0上
+                    TileJoint::TagOne("x|水|边".to_string()), // 1下
+                    TileJoint::TagOne("y|边|水".to_string()), // 2左
+                    TileJoint::TagOne("池空".to_string()),    // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_36.png".to_string(),
+            Tile {
+                filename: "0-tileset_36.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|边|水".to_string()), // 0上
+                    TileJoint::TagOne("x|边|水".to_string()), // 1下
+                    TileJoint::TagOne("池空".to_string()),    // 2左
+                    TileJoint::TagOne("水".to_string()),       // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_37.png".to_string(),
+            Tile {
+                filename: "0-tileset_37.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("水".to_string()), // 0上
+                    TileJoint::TagOne("水".to_string()), // 1下
+                    TileJoint::TagOne("水".to_string()), // 2左
+                    TileJoint::TagOne("水".to_string()), // 3右
+                    TileJoint::None,                      // 4前
+                    TileJoint::None,                      // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_38.png".to_string(),
+            Tile {
+                filename: "0-tileset_38.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|水|边".to_string()), // 0上
+                    TileJoint::TagOne("x|水|边".to_string()), // 1下
+                    TileJoint::TagOne("水".to_string()),       // 2左
+                    TileJoint::TagOne("池空".to_string()),    // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_54.png".to_string(),
+            Tile {
+                filename: "0-tileset_54.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|边|水".to_string()), // 0上
+                    TileJoint::TagOne("池空".to_string()),    // 1下
+                    TileJoint::TagOne("池空".to_string()),    // 2左
+                    TileJoint::TagOne("y|水|边".to_string()), // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_55.png".to_string(),
+            Tile {
+                filename: "0-tileset_55.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("水".to_string()),       // 0上
+                    TileJoint::TagOne("池空".to_string()),    // 1下
+                    TileJoint::TagOne("y|水|边".to_string()), // 2左
+                    TileJoint::TagOne("y|水|边".to_string()), // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_56.png".to_string(),
+            Tile {
+                filename: "0-tileset_56.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::Full,
+                joints: [
+                    TileJoint::TagOne("x|水|边".to_string()), // 0上
+                    TileJoint::TagOne("池空".to_string()),    // 1下
+                    TileJoint::TagOne("y|水|边".to_string()), // 2左
+                    TileJoint::TagOne("池空".to_string()),    // 3右
+                    TileJoint::None,                            // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+    }
+
+    // 泥地
+    // {
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_09.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("边".to_string()),       // 0上
+    //             TileJoint::TagOne("x|边|泥".to_string()), // 1下
+    //             TileJoint::TagOne("边".to_string()),       // 2左
+    //             TileJoint::TagOne("y|边|泥".to_string()), // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_10.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("边".to_string()),       // 0上
+    //             TileJoint::TagOne("泥".to_string()),       // 1下
+    //             TileJoint::TagOne("y|边|泥".to_string()), // 2左
+    //             TileJoint::TagOne("y|边|泥".to_string()), // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_11.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("边".to_string()),       // 0上
+    //             TileJoint::TagOne("x|泥|边".to_string()), // 1下
+    //             TileJoint::TagOne("y|边|泥".to_string()), // 2左
+    //             TileJoint::TagOne("边".to_string()),       // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_29.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("x|边|泥".to_string()), // 0上
+    //             TileJoint::TagOne("x|边|泥".to_string()), // 1下
+    //             TileJoint::TagOne("边".to_string()),       // 2左
+    //             TileJoint::TagOne("泥".to_string()),       // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_30.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("泥".to_string()), // 0上
+    //             TileJoint::TagOne("泥".to_string()), // 1下
+    //             TileJoint::TagOne("泥".to_string()), // 2左
+    //             TileJoint::TagOne("泥".to_string()), // 3右
+    //             TileJoint::All,                       // 4前
+    //             TileJoint::None,                      // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_31.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("x|泥|边".to_string()), // 0上
+    //             TileJoint::TagOne("x|泥|边".to_string()), // 1下
+    //             TileJoint::TagOne("泥".to_string()),       // 2左
+    //             TileJoint::TagOne("边".to_string()),       // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_47.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("x|边|泥".to_string()), // 0上
+    //             TileJoint::TagOne("边".to_string()),       // 1下
+    //             TileJoint::TagOne("边".to_string()),       // 2左
+    //             TileJoint::TagOne("y|泥|边".to_string()), // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_48.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("泥".to_string()),       // 0上
+    //             TileJoint::TagOne("边".to_string()),       // 1下
+    //             TileJoint::TagOne("y|泥|边".to_string()), // 2左
+    //             TileJoint::TagOne("y|泥|边".to_string()), // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    //     superposition.push(Tile {
+    //         filename: "0-tileset_49.png".to_string(),
+    //         layer,
+    //         collider: TileCollider::Full,
+    //         joints: [
+    //             TileJoint::TagOne("x|泥|边".to_string()), // 0上
+    //             TileJoint::TagOne("边".to_string()),       // 1下
+    //             TileJoint::TagOne("y|泥|边".to_string()), // 2左
+    //             TileJoint::TagOne("边".to_string()),       // 3右
+    //             TileJoint::All,                             // 4前
+    //             TileJoint::None,                            // 5后
+    //         ],
+    //     });
+    // }
+
+    // 砖地
+    {
+        superposition.insert(
+            "0-tileset_13.png".to_string(),
+            Tile {
+                filename: "0-tileset_13.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("砖空".to_string()),    // 0上
+                    TileJoint::TagOne("x|边|砖".to_string()), // 1下
+                    TileJoint::TagOne("砖空".to_string()),    // 2左
+                    TileJoint::TagOne("y|边|砖".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_14.png".to_string(),
+            Tile {
+                filename: "0-tileset_14.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("砖空".to_string()),    // 0上
+                    TileJoint::TagOne("砖".to_string()),       // 1下
+                    TileJoint::TagOne("y|边|砖".to_string()), // 2左
+                    TileJoint::TagOne("y|边|砖".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_15.png".to_string(),
+            Tile {
+                filename: "0-tileset_15.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("砖空".to_string()),    // 0上
+                    TileJoint::TagOne("x|砖|边".to_string()), // 1下
+                    TileJoint::TagOne("y|边|砖".to_string()), // 2左
+                    TileJoint::TagOne("砖空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_33.png".to_string(),
+            Tile {
+                filename: "0-tileset_33.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("x|边|砖".to_string()), // 0上
+                    TileJoint::TagOne("x|边|砖".to_string()), // 1下
+                    TileJoint::TagOne("砖空".to_string()),    // 2左
+                    TileJoint::TagOne("砖".to_string()),       // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_34.png".to_string(),
+            Tile {
+                filename: "0-tileset_34.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("砖".to_string()), // 0上
+                    TileJoint::TagOne("砖".to_string()), // 1下
+                    TileJoint::TagOne("砖".to_string()), // 2左
+                    TileJoint::TagOne("砖".to_string()), // 3右
+                    TileJoint::All,                       // 4前
+                    TileJoint::None,                      // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_35.png".to_string(),
+            Tile {
+                filename: "0-tileset_35.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("x|砖|边".to_string()), // 0上
+                    TileJoint::TagOne("x|砖|边".to_string()), // 1下
+                    TileJoint::TagOne("砖".to_string()),       // 2左
+                    TileJoint::TagOne("砖空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_51.png".to_string(),
+            Tile {
+                filename: "0-tileset_51.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("x|边|砖".to_string()), // 0上
+                    TileJoint::TagOne("砖空".to_string()),    // 1下
+                    TileJoint::TagOne("砖空".to_string()),    // 2左
+                    TileJoint::TagOne("y|砖|边".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_52.png".to_string(),
+            Tile {
+                filename: "0-tileset_52.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("砖".to_string()),       // 0上
+                    TileJoint::TagOne("砖空".to_string()),    // 1下
+                    TileJoint::TagOne("y|砖|边".to_string()), // 2左
+                    TileJoint::TagOne("y|砖|边".to_string()), // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+        superposition.insert(
+            "0-tileset_53.png".to_string(),
+            Tile {
+                filename: "0-tileset_53.png".to_string(),
+                layer: 1,
+                rng_seed: 1,
+                collider: TileCollider::None,
+                joints: [
+                    TileJoint::TagOne("x|砖|边".to_string()), // 0上
+                    TileJoint::TagOne("砖空".to_string()),    // 1下
+                    TileJoint::TagOne("y|砖|边".to_string()), // 2左
+                    TileJoint::TagOne("砖空".to_string()),    // 3右
+                    TileJoint::All,                             // 4前
+                    TileJoint::None,                            // 5后
+                ],
+            },
+        );
+    }
+
+    superposition.get(&filename).unwrap().clone()
 }
