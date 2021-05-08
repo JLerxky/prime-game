@@ -368,24 +368,24 @@ async fn send_aync(
         }
     }
     // println!("同步包: {:?}", &states);
-    let mut states_iter = states.chunks(30);
+    let mut states_iter = states.chunks(40);
     while let Some(s) = states_iter.next() {
         let packet = Packet::Game(GameRoute::Update(UpdateData {
             frame: frame_no,
             states: s.to_vec(),
         }));
 
-        let _ = engine_tx.send(packet.clone()).await;
+        let _ = tokio::join!(engine_tx.send(packet.clone()));
         // println!("同步包: {:?}", packet);
     }
     // println!("同步包大小: {:?}", states.len());
-    let mut players_iter = players.chunks(30);
+    let mut players_iter = players.chunks(40);
     while let Some(p) = players_iter.next() {
         let packet = Packet::Game(GameRoute::PlayerList(PlayerListData {
             frame: frame_no,
             players: p.to_vec(),
         }));
-        let _ = engine_tx.send(packet.clone()).await;
+        let _ = tokio::join!(engine_tx.send(packet.clone()));
     }
 }
 
