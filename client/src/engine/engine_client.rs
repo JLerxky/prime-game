@@ -37,11 +37,11 @@ pub fn engine_start() {
             // 垂直同步
             vsync: true,
             // 是否可调整窗口大小
-            resizable: true,
+            resizable: false,
             // 是否有窗口外壳
             decorations: true,
-            width: 200f32,
-            height: 200f32,
+            width: 800f32,
+            height: 450f32,
             // 窗口模式
             mode: WindowMode::Windowed,
             // 鼠标隐藏并锁定
@@ -49,7 +49,7 @@ pub fn engine_start() {
             // cursor_visible: false,
             ..Default::default()
         })
-        .insert_resource(Msaa { samples: 4 })
+        // .insert_resource(Msaa { samples: 4 })
         // 窗口背景色
         .insert_resource(ClearColor(Color::rgb_u8(192, 126, 104)))
         // 默认插件

@@ -549,9 +549,9 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     println!("加载地形碰撞体: 完成");
 
     // 加载边界碰撞体
-    for side_x in -29..=29 {
-        for side_y in -29..=29 {
-            if side_y == -29 || side_y == 29 || side_x == -29 || side_x == 29 {
+    for side_x in -58..=58 {
+        for side_y in -58..=58 {
+            if side_y == -58 || side_y == 58 || side_x == -58 || side_x == 58 {
                 let point = IVec3::new(side_x, side_y, 0);
                 // println!("生成边界: {}", point);
                 let point = point.as_f32() * 64.0;

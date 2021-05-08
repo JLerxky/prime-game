@@ -211,7 +211,7 @@ async fn net_client_start(
             // 转发事件
             if let Ok(packet) = packet {
                 if let Ok(mut packet_queue) = packet_queue.lock() {
-                    if packet_queue.len() > 20 {
+                    if packet_queue.len() > 1024 {
                         packet_queue.remove(0);
                     }
                     packet_queue.push(packet);

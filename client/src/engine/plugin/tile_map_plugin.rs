@@ -1,13 +1,18 @@
+use bevy_tilemap::prelude::*;
 use protocol::{
-    data::tile_map_data::{Slot, Tile, TileData, TileMap},
+    data::tile_map_data::{Tile, TileData},
     packet::Packet,
     route::GameRoute,
 };
-use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{asset::LoadState, prelude::*, sprite::TextureAtlasBuilder};
 
 use super::network_plugin::NetWorkState;
+
+const CHUNK_WIDTH: u32 = 16;
+const CHUNK_HEIGHT: u32 = 16;
+const TILEMAP_WIDTH: i32 = CHUNK_WIDTH as i32 * 100;
+const TILEMAP_HEIGHT: i32 = CHUNK_HEIGHT as i32 * 100;
 
 pub struct TileMapPlugin;
 
@@ -19,15 +24,25 @@ struct CleanMapFixedUpdateStage;
 
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(TileMap {
-            center_point: IVec3::new(0, 0, 0),
-            texture_size: UVec3::new(64, 64, 1),
-            chunk_size: UVec3::new(1, 1, 1),
-            map_size: UVec3::new(56, 56, 2),
-            slot_map: HashMap::new(),
-        })
-        .add_startup_system(setup.system());
+        app.init_resource::<TileMapState>()
+            .init_resource::<TileSpriteHandles>()
+            .add_plugins(TilemapDefaultPlugins)
+            .add_startup_system(setup.system())
+            .add_system(load.system())
+            .add_system(build.system());
     }
+}
+
+#[derive(Default, Clone)]
+struct TileMapState {
+    map_loaded: bool,
+    spawned: bool,
+}
+
+#[derive(Default, Clone)]
+struct TileSpriteHandles {
+    handles: Vec<HandleUntyped>,
+    atlas_loaded: bool,
 }
 
 fn get_tile(point: IVec3, net_state: &ResMut<NetWorkState>) -> Option<Tile> {
@@ -44,72 +59,118 @@ fn get_tile(point: IVec3, net_state: &ResMut<NetWorkState>) -> Option<Tile> {
     None
 }
 
-fn setup(
+fn setup(mut tile_sprite_handles: ResMut<TileSpriteHandles>, asset_server: Res<AssetServer>) {
+    tile_sprite_handles.handles = asset_server.load_folder("textures/prime/tiles").unwrap();
+}
+
+fn load(
     mut commands: Commands,
+    mut sprite_handles: ResMut<TileSpriteHandles>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut textures: ResMut<Assets<Texture>>,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut tile_map: ResMut<TileMap>,
-    _window: Res<WindowDescriptor>,
+) {
+    if sprite_handles.atlas_loaded {
+        return;
+    }
+
+    let mut texture_atlas_builder = TextureAtlasBuilder::default();
+    if let LoadState::Loaded =
+        asset_server.get_group_load_state(sprite_handles.handles.iter().map(|handle| handle.id))
+    {
+        for handle in sprite_handles.handles.iter() {
+            let texture = textures.get(handle).unwrap();
+            texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), &texture);
+        }
+
+        let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
+        let atlas_handle = texture_atlases.add(texture_atlas);
+
+        let tilemap = Tilemap::builder()
+            .dimensions(TILEMAP_WIDTH as u32, TILEMAP_HEIGHT as u32)
+            .chunk_dimensions(CHUNK_WIDTH, CHUNK_HEIGHT, 1)
+            .texture_dimensions(64, 64)
+            .auto_chunk()
+            .auto_spawn(2, 2)
+            .add_layer(
+                TilemapLayer {
+                    kind: LayerKind::Dense,
+                    ..Default::default()
+                },
+                0,
+            )
+            .texture_atlas(atlas_handle)
+            .finish()
+            .unwrap();
+
+        let tilemap_components = TilemapBundle {
+            tilemap,
+            visible: Visible {
+                is_visible: true,
+                is_transparent: true,
+            },
+            transform: Transform {
+                translation: Vec3::new(-32., -32., 0.),
+                ..Default::default()
+            },
+            global_transform: Default::default(),
+        };
+        commands
+            .spawn()
+            .insert_bundle(tilemap_components)
+            .insert(Timer::from_seconds(0.075, true));
+
+        sprite_handles.atlas_loaded = true;
+    }
+}
+
+fn build(
+    mut map_state: ResMut<TileMapState>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    mut query: Query<&mut Tilemap>,
     net_state: ResMut<NetWorkState>,
 ) {
-    // 计算tile_size大小
-    let tile_size = tile_map.texture_size * tile_map.chunk_size;
+    if map_state.map_loaded {
+        return;
+    }
 
-    let center_pos = tile_map.center_point.as_f32()
-        * tile_map.texture_size.as_f32()
-        * tile_map.chunk_size.as_f32();
+    for mut map in query.iter_mut() {
+        let texture_atlas = texture_atlases.get(map.texture_atlas()).unwrap();
+        let mut tiles = Vec::new();
 
-    let min_x = tile_map.center_point.x - (tile_map.map_size.x as i32 / 2);
-    let max_x = tile_map.center_point.x + (tile_map.map_size.x as i32 / 2);
-    let min_y = tile_map.center_point.y - (tile_map.map_size.y as i32 / 2);
-    let max_y = tile_map.center_point.y + (tile_map.map_size.y as i32 / 2);
+        let min_x = -TILEMAP_WIDTH / 2;
+        let max_x = TILEMAP_WIDTH / 2;
+        let min_y = -TILEMAP_HEIGHT / 2;
+        let max_y = TILEMAP_HEIGHT / 2;
 
-    // 2. 按Z轴从小到大生成图层
-    for z in 1..tile_map.map_size.z {
         for x in min_x..=max_x {
             for y in min_y..=max_y {
-                let point = IVec3::new(x as i32, y as i32, z as i32);
-                let pos_x = x as f32 * tile_size.x as f32 + center_pos.x;
-                let pos_y = y as f32 * tile_size.y as f32 + center_pos.y;
-                let tile_pos = Vec3::new(pos_x, pos_y, z as f32);
+                let point = IVec3::new(x as i32, y as i32, 1i32);
+                let tile_point = (x, y);
 
                 if let Some(tile) = get_tile(point, &net_state) {
                     // 若最上层也为泥地则不创建精灵
-                    if z == 1 && tile.filename.eq("0-tileset_30.png") {
+                    if tile.filename.eq("0-tileset_30.png") {
                         continue;
                     }
 
-                    tile_map.slot_map.insert(
-                        point.clone(),
-                        Slot {
-                            point,
-                            superposition: Vec::new(),
-                            entropy: 0,
-                            tile: Some(tile.clone()),
-                        },
-                    );
+                    let tile_sprite: Handle<Texture> = asset_server
+                        .get_handle(format!("textures/prime/tiles/{}", tile.filename).as_str());
+                    let tile_idx = texture_atlas.get_texture_index(&tile_sprite).unwrap();
 
-                    let texture_handle = materials.add(
-                        asset_server
-                            .load(format!("textures/prime/tiles/{}", tile.filename).as_str())
-                            .into(),
-                    );
-
-                    commands
-                        .spawn_bundle(SpriteBundle {
-                            material: texture_handle.clone(),
-                            sprite: Sprite::new(tile_size.truncate().as_f32()),
-                            transform: Transform::from_translation(tile_pos),
-                            ..Default::default()
-                        })
-                        .insert(Slot {
-                            superposition: Vec::new(),
-                            entropy: 0,
-                            tile: None,
-                            point: tile_pos.as_i32(),
-                        });
+                    let tile = bevy_tilemap::tile::Tile {
+                        point: tile_point,
+                        sprite_index: tile_idx,
+                        ..Default::default()
+                    };
+                    tiles.push(tile);
                 }
             }
         }
+
+        println!("{}", map.tile_height());
+        map.insert_tiles(tiles).unwrap();
+        map_state.map_loaded = true;
     }
 }
