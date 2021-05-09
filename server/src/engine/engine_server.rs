@@ -721,7 +721,7 @@ pub async fn wait_for_net(
                                         * 40.);
                                     let linvel =
                                         Vec2::new(skill_data.direction.0, skill_data.direction.1)
-                                            * 200.;
+                                            * 1000.;
                                     let entity_id =
                                         next_entity_id(EntityType::Skill as u8).unwrap();
                                     // println!("entity_id: {}", entity_id);
@@ -744,16 +744,16 @@ pub async fn wait_for_net(
                                         // 角速度
                                         .angvel(60.)
                                         // 重力
-                                        .gravity_scale(0.0)
+                                        .gravity_scale(1.0)
                                         // .can_sleep(true)
                                         .user_data(rb_state.get_data())
                                         .build();
                                     // 碰撞体类型
-                                    let collider = ColliderBuilder::new(SharedShape::ball(10.0))
+                                    let collider = ColliderBuilder::new(SharedShape::ball(5.0))
                                         // 密度
-                                        .density(0.1)
+                                        .density(1.0)
                                         // 摩擦
-                                        .friction(1.0)
+                                        .friction(0.0)
                                         // 是否为传感器
                                         // .sensor(true)
                                         .build();

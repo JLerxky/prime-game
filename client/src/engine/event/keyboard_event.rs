@@ -46,7 +46,7 @@ fn keyboard_event_system(
         ui_state.windows_enabled[1] = !ui_state.windows_enabled[1];
     }
     // 释放技能
-    if mourse_input.just_pressed(MouseButton::Left) || keyboard_input.just_released(KeyCode::Space) {
+    if mourse_input.just_pressed(MouseButton::Left) || keyboard_input.pressed(KeyCode::Space) {
         if let Some(window) = windows.get_primary() {
             let center_point = Vec2::new(window.width() / 2., window.height() / 2.);
             // println!("camera_point: {}", &center_point);
