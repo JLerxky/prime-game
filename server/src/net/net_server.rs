@@ -13,7 +13,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use std::str::FromStr;
 use std::{net::SocketAddr, sync::Arc, time::SystemTime};
 
-pub async fn start_server(net_tx: Sender<Packet>, engine_rx: Receiver<Packet>) {
+pub async fn net_server_start(net_tx: Sender<Packet>, engine_rx: Receiver<Packet>) {
     if let Ok(game_server_socket) = UdpSocket::bind(config::SERVER_ADDR).await {
         if let Ok(game_server_addr) = &game_server_socket.local_addr() {
             println!("网络服务器已启动: {:?}", game_server_addr);
@@ -28,9 +28,9 @@ pub async fn start_server(net_tx: Sender<Packet>, engine_rx: Receiver<Packet>) {
             let wait_for_send_future = wait_for_send(s, engine_rx);
             let clean_offline_user_future = clean_offline_user();
 
-            tokio::spawn(async move { clean_offline_user_future.await });
-            tokio::spawn(async move { wait_for_send_future.await });
-            tokio::join!(game_server_future);
+            tokio::spawn(clean_offline_user_future);
+            tokio::spawn(wait_for_send_future);
+            game_server_future.await;
         }
     }
 }
@@ -182,7 +182,7 @@ pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
     // println!("sended");
 }
 
-async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) {
+pub async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) {
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10));
     loop {
         // interval.tick().await;
@@ -195,7 +195,7 @@ async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packet>) 
     }
 }
 
-async fn start_listening(
+pub async fn start_listening(
     socket: Arc<UdpSocket>,
     send_socket: Arc<UdpSocket>,
     net_tx: Sender<Packet>,
@@ -205,7 +205,7 @@ async fn start_listening(
     loop {
         // interval.tick().await;
         // println!("接收ing");
-        if let Ok((len, addr)) = socket.try_recv_from(&mut buf) {
+        if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
             // println!("服务器收到数据: {}", &len);
             if let Ok(packet) = bincode::deserialize::<Packet>(&buf[..len]) {
                 // println!("服务器收到数据: {:?}", &packet);

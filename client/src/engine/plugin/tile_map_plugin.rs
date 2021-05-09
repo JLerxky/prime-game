@@ -76,9 +76,9 @@ pub fn refresh_map_data(net_state: &ResMut<NetWorkState>) {
 fn setup(
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
-    // net_state: ResMut<NetWorkState>,
+    net_state: ResMut<NetWorkState>,
 ) {
-    // refresh_map_data(&net_state);
+    refresh_map_data(&net_state);
     tile_sprite_handles.handles = asset_server.load_folder("textures/prime/tiles").unwrap();
 }
 

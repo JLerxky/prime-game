@@ -1,6 +1,5 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::net;
 use data::server_db::{self, find_player, next_entity_id, save_player, GameData};
 use glam::{IVec3, Vec2};
 use protocol::{
@@ -24,7 +23,7 @@ use rapier2d::{
     pipeline::ChannelEventCollector,
 };
 use tokio::sync::{
-    mpsc::{self, Receiver, Sender},
+    mpsc::{Receiver, Sender},
     Mutex,
 };
 
@@ -33,10 +32,7 @@ type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
 type JointSetState = Arc<Mutex<JointSet>>;
 type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
-pub async fn engine_start() {
-    let (net_tx, net_rx) = mpsc::channel::<Packet>(100);
-    let (engine_tx, engine_rx) = mpsc::channel::<Packet>(100);
-
+pub async fn engine_start(net_rx: Receiver<Packet>, engine_tx: Sender<Packet>) {
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
     let joint_state = Arc::new(Mutex::new(JointSet::new()));
@@ -44,37 +40,32 @@ pub async fn engine_start() {
     let player_handle_map: HashMap<u32, RigidBodyHandle> = HashMap::new();
     let player_handle_state = Arc::new(Mutex::new(player_handle_map));
 
-    // 物理引擎主循环
-    let engine_future = engine_main_loop(
-        engine_tx.clone(),
-        rigid_body_state.clone(),
-        collider_state.clone(),
-        joint_state.clone(),
-    );
-    tokio::spawn(async move { engine_future.await });
-
     let clean_body_future = clean_body(
         rigid_body_state.clone(),
         collider_state.clone(),
         joint_state.clone(),
     );
-    tokio::spawn(async move { clean_body_future.await });
+    tokio::spawn(clean_body_future);
 
     // 监听网络模块传过来的消息
     let net_future = wait_for_net(
-        engine_tx,
+        engine_tx.clone(),
         net_rx,
         rigid_body_state.clone(),
         collider_state.clone(),
         joint_state.clone(),
         player_handle_state,
     );
-    tokio::spawn(async move { net_future.await });
+    tokio::spawn(net_future);
 
-    // 网络监听
-    let net_server = net::net_server::start_server(net_tx, engine_rx);
-
-    tokio::join!(net_server);
+    // 物理引擎主循环
+    let engine_future = engine_main_loop(
+        engine_tx,
+        rigid_body_state.clone(),
+        collider_state.clone(),
+        joint_state.clone(),
+    );
+    engine_future.await;
 }
 
 pub async fn engine_main_loop(
@@ -387,7 +378,7 @@ async fn send_aync(
     }
 }
 
-async fn clean_body(
+pub async fn clean_body(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
     joint_state: JointSetState,
@@ -586,7 +577,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
     println!("生成边界: 完成");
 }
 
-async fn wait_for_net(
+pub async fn wait_for_net(
     engine_tx: Sender<Packet>,
     mut net_rx: Receiver<Packet>,
     rigid_body_state: RigidBodySetState,
