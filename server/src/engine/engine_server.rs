@@ -451,7 +451,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             rotation: 0.,
             linvel: (0., 0.),
             angvel: (0., 0.),
-            texture: (3, 5, 1),
+            texture: (2, 1, 1),
             entity_type: EntityType::Trap,
             animate: 1,
         };
@@ -472,7 +472,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             .user_data(rb_state.get_data())
             .build();
         // 碰撞体类型
-        let collider = ColliderBuilder::new(SharedShape::ball(25.0))
+        let collider = ColliderBuilder::new(SharedShape::ball(30.0))
             // 密度
             .density(0.1)
             // 摩擦
