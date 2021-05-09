@@ -495,7 +495,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                     match tile.collider {
                         protocol::data::tile_map_data::TileCollider::Full => {
                             let mut k_str = String::from_utf8(k.to_vec()).unwrap();
-                            println!("{}", k_str);
+                            // println!("{}", k_str);
                             k_str = k_str
                                 .replace("tile_map-(", "")
                                 .replace(")", "")

@@ -36,14 +36,18 @@ pub async fn net_server_start(net_tx: Sender<Packet>, engine_rx: Receiver<Packet
 }
 
 pub async fn send(socket: Arc<UdpSocket>, packet: Vec<u8>, recv_addr: SocketAddr) {
-    match socket.send_to(&packet[..], recv_addr).await {
-        Ok(_) => {
-            // println!("send ok");
-        }
-        Err(_) => {
-            println!("send err");
-        }
-    };
+    match socket.try_send_to(&packet[..], recv_addr) {
+        Ok(_) => {}
+        Err(_) => {}
+    }
+    // match socket.send_to(&packet[..], recv_addr).await {
+    //     Ok(_) => {
+    //         // println!("send ok");
+    //     }
+    //     Err(_) => {
+    //         println!("send err");
+    //     }
+    // };
 }
 
 pub async fn clean_offline_user() {
@@ -159,6 +163,7 @@ pub async fn multicast(socket: Arc<UdpSocket>, group: u32, packet: Vec<u8>) {
         Ok(data) => {
             // println!("1");
             if data.len() > 0 {
+                // println!("在线玩家IP: {}", &data);
                 let uid_list: Vec<&str> = data.split(",").collect();
                 for index in 0..uid_list.len() {
                     let recv_addr = SocketAddr::from_str(uid_list[index]).unwrap();
@@ -189,7 +194,7 @@ pub async fn wait_for_send(socket: Arc<UdpSocket>, mut engine_rx: Receiver<Packe
         if let Some(packet) = engine_rx.recv().await {
             // println!("{:?}", packet);
             let socket = socket.clone();
-            tokio::spawn(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
+            multicast(socket, 0, bincode::serialize(&packet).unwrap()).await;
             // let _ = tokio::join!(multicast(socket, 0, bincode::serialize(&packet).unwrap()));
         }
     }
