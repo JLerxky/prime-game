@@ -200,7 +200,7 @@ pub async fn start_listening(
     send_socket: Arc<UdpSocket>,
     net_tx: Sender<Packet>,
 ) {
-    let mut buf = [0; 1024];
+    let mut buf = [0; config::PACKET_SIZE];
     // let mut interval = tokio::time::interval(tokio::time::Duration::from_nanos(10));
     loop {
         // interval.tick().await;

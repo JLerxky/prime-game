@@ -174,7 +174,7 @@ async fn net_client_start(
         }
     });
 
-    let mut buf = [0; 2048];
+    let mut buf = [0; config::PACKET_SIZE];
     loop {
         // println!("接收ing");
         if let Ok(len) = r.recv(&mut buf).await {
