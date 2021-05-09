@@ -51,7 +51,7 @@ fn get_tile(point: (i32, i32, i32), net_state: &ResMut<NetWorkState>) -> Option<
         let tile = get_tile_by_filename(tile_state.filename);
         return Some(tile);
     } else {
-        println!("获取地图: {:?}", point);
+        // println!("获取地图: {:?}", point);
         if let Ok(mut to_be_sent_queue) = net_state.to_be_sent_queue.lock() {
             to_be_sent_queue.push(Packet::Game(GameRoute::Tile(TileState {
                 point,
@@ -76,9 +76,9 @@ pub fn refresh_map_data(net_state: &ResMut<NetWorkState>) {
 fn setup(
     mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
-    net_state: ResMut<NetWorkState>,
+    // net_state: ResMut<NetWorkState>,
 ) {
-    refresh_map_data(&net_state);
+    // refresh_map_data(&net_state);
     tile_sprite_handles.handles = asset_server.load_folder("textures/prime/tiles").unwrap();
 }
 

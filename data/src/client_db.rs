@@ -123,8 +123,8 @@ pub fn save_tile_map(tile: TileState) -> Result<(), Box<dyn Error>> {
         bincode::serialize(&tile)?,
     );
     match result {
-        std::result::Result::Ok(_old) => {
-            // println!("old: {:?}", old);
+        std::result::Result::Ok(old) => {
+            println!("old: {:?}", old);
         }
         std::result::Result::Err(e) => {
             println!("error: {}", e);
