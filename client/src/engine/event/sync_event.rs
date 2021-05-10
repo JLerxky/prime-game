@@ -59,6 +59,7 @@ fn event_listener_system(
     asset_server: Res<AssetServer>,
     mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
     mut camera_query: Query<(&mut Transform, &CameraCtrl), Without<SynEntity>>,
+    audio: Res<Audio>,
     // mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     for sync_event in sync_event_reader.iter() {
@@ -136,6 +137,8 @@ fn event_listener_system(
                         format!("textures/prime/fx/{}.png", rigid_body_state.texture.0).as_str(),
                     );
                     tile_size = Vec2::new(32f32, 32f32);
+                    let music = asset_server.load("audio/MWH-skill05.mp3");
+                    audio.play(music);
                 }
             }
 

@@ -71,6 +71,8 @@ pub fn engine_start() {
         .add_startup_system(enable_physics_profiling.system())
         // 设置摄像机
         .add_startup_system(set_camera.system())
+        // BGM
+        .add_startup_system(setup_bgm.system())
         // 辅助功能插件
         // .add_plugin(super::plugin::fps_plugin::Fps)
         // .add_plugin(Ping)
@@ -117,4 +119,9 @@ fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfig
 
 fn enable_physics_profiling(mut pipeline: ResMut<PhysicsPipeline>) {
     pipeline.counters.enable()
+}
+
+fn setup_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+    let music = asset_server.load("audio/MWH-BGM83.mp3");
+    audio.play(music);
 }
