@@ -213,7 +213,7 @@ pub async fn start_listening(
         if let Ok((len, addr)) = socket.recv_from(&mut buf).await {
             // println!("服务器收到数据: {}", &len);
             if let Ok(packet) = bincode::deserialize::<Packet>(&buf[..len]) {
-                println!("服务器收到数据: {:?}", &packet);
+                // println!("服务器收到数据: {:?}", &packet);
                 // 转发事件
                 match packet {
                     Packet::Heartbeat(heartbeat_route) => match heartbeat_route {
