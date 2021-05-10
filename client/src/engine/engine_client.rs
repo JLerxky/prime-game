@@ -1,6 +1,4 @@
 use bevy::{
-    asset::diagnostic::AssetCountDiagnosticsPlugin,
-    diagnostic::LogDiagnosticsPlugin,
     prelude::*,
     wgpu::{WgpuBackend, WgpuOptions, WgpuPowerOptions},
     window::WindowMode,
@@ -100,16 +98,16 @@ pub fn engine_start() {
         .add_plugin(UIPlugin)
         // 日志输出
         // Adds frame time diagnostics
-        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         // Adds a system that prints diagnostics to the console
-        // .add_plugin(LogDiagnosticsPlugin::default())
+        // .add_plugin(bevy::diagnostic::LogDiagnosticsPlugin::default())
         // Any plugin can register diagnostics
         // Uncomment this to add some render resource diagnostics:
         // .add_plugin(bevy::wgpu::diagnostic::WgpuResourceDiagnosticsPlugin::default())
         // Uncomment this to add an entity count diagnostics:
         // .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin::default())
         // Uncomment this to add an asset count diagnostics:
-        // .add_plugin(AssetCountDiagnosticsPlugin::<Texture>::default())
+        // .add_plugin(bevy::asset::diagnostic::AssetCountDiagnosticsPlugin::<Texture>::default())
         .run();
 }
 
