@@ -8,11 +8,11 @@ pub const PACKET_SIZE: usize = 2048;
 // ROG JLer
 // pub const SERVER_ADDR: &str = "192.168.101.220:2101";
 // ROG 网线
-pub const SERVER_ADDR: &str = "192.168.101.228:2101";
+// pub const SERVER_ADDR: &str = "192.168.101.228:2101";
 // 野兽
 // pub const SERVER_ADDR: &str = "180.115.194.174:2101";
 // 发布 server
-// pub const SERVER_ADDR: &str = "0.0.0.0:2101";
+pub const SERVER_ADDR: &str = "0.0.0.0:2101";
 // Mac USB
 // pub const SERVER_ADDR: &str = "172.20.10.5:2101";
 // 阿里云
