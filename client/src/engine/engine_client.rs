@@ -30,6 +30,9 @@ pub fn engine_start() {
         .insert_resource(WgpuOptions {
             backend: WgpuBackend::Auto,
             power_pref: WgpuPowerOptions::HighPerformance,
+            // features: WgpuFeatures {
+            //     features: vec![WgpuFeature::NonFillPolygonMode],
+            // },
             ..Default::default()
         })
         .insert_resource(WindowDescriptor {
