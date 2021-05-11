@@ -1,6 +1,11 @@
 use std::time::SystemTime;
 
 use bevy::{core::FixedTimestep, prelude::*};
+use bevy_rapier2d::{
+    na::Vector2,
+    physics::RigidBodyHandleComponent,
+    rapier::dynamics::{RigidBodyBuilder, RigidBodySet},
+};
 use protocol::data::{
     player_data::PlayerData,
     update_data::{EntityType, UpdateData},
@@ -57,9 +62,13 @@ fn event_listener_system(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
-    mut syn_entity_query: Query<(&mut SynEntity, &mut Transform), Without<CameraCtrl>>,
+    mut syn_entity_query: Query<
+        (&mut SynEntity, &mut Transform, &RigidBodyHandleComponent),
+        Without<CameraCtrl>,
+    >,
     mut camera_query: Query<(&mut Transform, &CameraCtrl), Without<SynEntity>>,
     audio: Res<Audio>,
+    mut rigid_bodies: ResMut<RigidBodySet>,
     // mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     for sync_event in sync_event_reader.iter() {
@@ -68,22 +77,37 @@ fn event_listener_system(
             .unwrap()
             .as_secs();
         'update_data: for rigid_body_state in &sync_event.update_data.states {
-            for (mut syn_entity, mut transform) in syn_entity_query.iter_mut() {
-                // println!("3");
+            for (mut syn_entity, mut transform, rb_handle) in syn_entity_query.iter_mut() {
                 if syn_entity.entity_type == rigid_body_state.entity_type
                     && syn_entity.id == rigid_body_state.id
                 {
                     *transform = Transform {
-                        translation: Vec3::new(
-                            rigid_body_state.translation.0,
-                            rigid_body_state.translation.1,
-                            50.0,
-                        ),
+                        translation: transform.translation,
                         rotation: Quat::from_rotation_z(rigid_body_state.rotation),
                         scale: transform.scale,
+                        ..Default::default()
                     };
                     syn_entity.health = health_now;
                     syn_entity.animate_type = rigid_body_state.animate;
+
+                    if let Some(rb) = rigid_bodies.get_mut(rb_handle.handle()) {
+                        rb.set_linvel(
+                            Vector2::new(rigid_body_state.linvel.0, rigid_body_state.linvel.1),
+                            true,
+                        );
+                        rb.set_angvel(rigid_body_state.angvel.0, true);
+                        let mut pos = rb.position().clone();
+
+                        if (pos.translation.x.abs() - rigid_body_state.translation.0).abs() > 1. {
+                            pos.translation.x = rigid_body_state.translation.0;
+                        }
+                        if (pos.translation.y.abs() - rigid_body_state.translation.1.abs()) > 1. {
+                            pos.translation.y = rigid_body_state.translation.1;
+                        }
+
+                        rb.set_position(pos, true);
+                    }
+
                     unsafe {
                         if rigid_body_state.entity_type == EntityType::Player
                             && PLAYER.uid == rigid_body_state.id as u32
@@ -188,6 +212,10 @@ fn event_listener_system(
                     },
                     ..Default::default()
                 })
+                .insert(RigidBodyBuilder::new_dynamic().translation(
+                    rigid_body_state.translation.0,
+                    rigid_body_state.translation.1,
+                ))
                 .with_children(|parent| {
                     if rigid_body_state.entity_type == EntityType::Player {
                         // 血条背景
