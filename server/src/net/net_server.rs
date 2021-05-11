@@ -36,18 +36,7 @@ pub async fn net_server_start(net_tx: Sender<Packet>, engine_rx: Receiver<Packet
 }
 
 pub async fn send(socket: Arc<UdpSocket>, packet: Vec<u8>, recv_addr: SocketAddr) {
-    match socket.try_send_to(&packet[..], recv_addr) {
-        Ok(_) => {}
-        Err(_) => {}
-    }
-    // match socket.send_to(&packet[..], recv_addr).await {
-    //     Ok(_) => {
-    //         // println!("send ok");
-    //     }
-    //     Err(_) => {
-    //         println!("send err");
-    //     }
-    // };
+    let _ = socket.send_to(&packet[..], recv_addr).await;
 }
 
 pub async fn clean_offline_user() {
