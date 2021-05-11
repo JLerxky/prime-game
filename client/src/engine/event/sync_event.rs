@@ -30,7 +30,7 @@ impl Plugin for SyncEventPlugin {
                 CheckEntityHealthFixedUpdateStage,
                 SystemStage::parallel()
                     .with_run_criteria(
-                        FixedTimestep::step(1.).with_label("build_map_fixed_timestep"),
+                        FixedTimestep::step(100.).with_label("build_map_fixed_timestep"),
                     )
                     .with_system(check_entity_health.system()),
             );
@@ -62,13 +62,11 @@ fn event_listener_system(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
-    mut syn_entity_query: Query<
-        (&mut SynEntity, &mut Transform, &RigidBodyHandleComponent),
-        Without<CameraCtrl>,
-    >,
+    mut syn_entity_query: Query<(&mut SynEntity, &RigidBodyHandleComponent), Without<CameraCtrl>>,
     mut camera_query: Query<(&mut Transform, &CameraCtrl), Without<SynEntity>>,
     audio: Res<Audio>,
     mut rigid_bodies: ResMut<RigidBodySet>,
+    mut player_query: Query<&mut PlayerData>,
     // mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     for sync_event in sync_event_reader.iter() {
@@ -77,16 +75,10 @@ fn event_listener_system(
             .unwrap()
             .as_secs();
         'update_data: for rigid_body_state in &sync_event.update_data.states {
-            for (mut syn_entity, mut transform, rb_handle) in syn_entity_query.iter_mut() {
+            for (mut syn_entity, rb_handle) in syn_entity_query.iter_mut() {
                 if syn_entity.entity_type == rigid_body_state.entity_type
                     && syn_entity.id == rigid_body_state.id
                 {
-                    *transform = Transform {
-                        translation: transform.translation,
-                        rotation: Quat::from_rotation_z(rigid_body_state.rotation),
-                        scale: transform.scale,
-                        ..Default::default()
-                    };
                     syn_entity.health = health_now;
                     syn_entity.animate_type = rigid_body_state.animate;
 
@@ -98,10 +90,10 @@ fn event_listener_system(
                         rb.set_angvel(rigid_body_state.angvel.0, true);
                         let mut pos = rb.position().clone();
 
-                        if (pos.translation.x.abs() - rigid_body_state.translation.0).abs() > 1. {
+                        if (pos.translation.x - rigid_body_state.translation.0).abs() > 10. {
                             pos.translation.x = rigid_body_state.translation.0;
                         }
-                        if (pos.translation.y.abs() - rigid_body_state.translation.1.abs()) > 1. {
+                        if (pos.translation.y - rigid_body_state.translation.1).abs() > 10. {
                             pos.translation.y = rigid_body_state.translation.1;
                         }
 
@@ -112,6 +104,10 @@ fn event_listener_system(
                         if rigid_body_state.entity_type == EntityType::Player
                             && PLAYER.uid == rigid_body_state.id as u32
                         {
+                            if let Ok(mut player_state) = player_query.single_mut() {
+                                player_state.uid = rigid_body_state.id as u32;
+                            }
+
                             if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
                             {
                                 camera_transform.translation = Vec3::new(

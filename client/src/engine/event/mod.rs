@@ -5,5 +5,4 @@ pub mod sync_event;
 pub mod heart_beat_event;
 pub mod window_event;
 pub mod control_event;
-pub mod player_update_event;
 pub mod skill_event;

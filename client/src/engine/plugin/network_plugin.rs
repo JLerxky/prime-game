@@ -13,8 +13,10 @@ use protocol::{
 use tokio::net::UdpSocket;
 
 use crate::engine::event::{
-    heart_beat_event::HeartBeatEvent, player_update_event::PlayerUpdateEvent, sync_event::SyncEvent,
+    heart_beat_event::HeartBeatEvent,   sync_event::SyncEvent,
 };
+
+use super::player_plugin::PlayerUpdateEvent;
 
 // 当前玩家
 pub static mut PLAYER: PlayerData = PlayerData {

@@ -1,185 +1,177 @@
 use bevy::prelude::*;
-use bevy_rapier2d::{
-    na::Vector2,
-    physics::{RapierConfiguration, RigidBodyHandleComponent},
-    rapier::{
-        dynamics::{RigidBodyBuilder, RigidBodySet},
-        geometry::ColliderBuilder,
-    },
-};
+use data::client_db::save_player;
+use protocol::data::player_data::{PlayerData, PlayerListData};
 
-use crate::engine::event::map_event::MapEvent;
+use crate::engine::plugin::network_plugin::{SynEntity, PLAYER};
 
-use super::camera_ctrl_plugin::CameraCtrl;
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(setup.system())
+            .add_event::<PlayerUpdateEvent>()
+            .add_system(event_listener_system.system())
             .add_system(player_ctrl_system.system())
             .add_system(animate_system.system())
             .add_system(player_movement.system());
     }
 }
 
-pub struct Player {
-    pub uid: u32,
-    pub velocity: Vec3,
-    pub show_size: Vec2,
-    pub jumped: bool,
+pub struct PlayerUpdateEvent {
+    pub player_list_data: PlayerListData,
+}
+
+fn event_listener_system(
+    mut event_reader: EventReader<PlayerUpdateEvent>,
+    mut player_bar_query: Query<(&mut PlayerData, &mut Transform), With<PlayerData>>,
+) {
+    for event in event_reader.iter() {
+        'player: for player_data in &event.player_list_data.players {
+            let _ = save_player(player_data.clone());
+            for (mut old_player_data, mut transform) in player_bar_query.iter_mut() {
+                if player_data.uid == old_player_data.uid {
+                    *old_player_data = *player_data;
+                    // println!("{:?}", &player_data);
+                    let blood_len = 12. * (player_data.hp as f32 / player_data.max_hp as f32);
+                    *transform = Transform {
+                        translation: Vec3::new((blood_len / 2.) - 6., 12., 99.0),
+                        scale: Vec3::new(blood_len / 4., 0.1, 0.),
+                        ..Default::default()
+                    };
+                    continue 'player;
+                }
+            }
+        }
+    }
 }
 
 fn setup(
     mut commands: Commands,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     asset_server: Res<AssetServer>,
-    window: Res<WindowDescriptor>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let texture_handle = asset_server.load("textures/chars/player.png");
-    // let tile_size = Vec2::new(100.0, 120.0);
-    let tile_size = Vec2::new(window.width / 21f32 * 2f32, window.height / 13f32 * 2f32);
-    let scale = 1f32;
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, tile_size, 8, 1);
+    let player_texture_index: u32 = rand::Rng::gen_range(&mut rand::thread_rng(), 1..24);
+    let mut rigid_body_state = protocol::data::update_data::EntityState {
+        id: 0,
+        translation: (0., 0.),
+        rotation: 0.,
+        linvel: (0., 0.),
+        angvel: (0., 0.),
+        texture: (player_texture_index, 4, 3),
+        entity_type: protocol::data::update_data::EntityType::Player,
+        animate: 0,
+    };
+    unsafe {
+        rigid_body_state.id = PLAYER.uid as u64;
+    }
+    let texture_handle = asset_server
+        .load(format!("textures/prime/char/{}.png", rigid_body_state.texture.0).as_str());
+    let tile_size = Vec2::new(16f32, 17f32);
+    let scale = Vec3::new(64f32 / tile_size.x, 64f32 / tile_size.y, 0.);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        tile_size,
+        rigid_body_state.texture.1.into(),
+        rigid_body_state.texture.2.into(),
+    );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let blood_box_handle = materials.add(
+        asset_server
+            .load("textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-top-1.png")
+            .into(),
+    );
+    let blood_backgound_handle = materials.add(
+        asset_server
+            .load("textures/rpg/2d misc/prehistoric-platformer/hud/health-bar-backgound.png")
+            .into(),
+    );
+    let blood_handle = materials.add(
+        asset_server
+            .load("textures/rpg/2d misc/prehistoric-platformer/hud/bar-middle.png")
+            .into(),
+    );
+    let mut player = protocol::data::player_data::PlayerData {
+        uid: rigid_body_state.id as u32,
+        hp: 0,
+        mp: 0,
+        max_hp: 100,
+        max_mp: 100,
+    };
+    if let Ok(player_db) = data::client_db::find_player(rigid_body_state.id as u32) {
+        player = player_db;
+    }
     commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             transform: Transform {
-                translation: Vec3::new(0.0, 220.0, 10.0),
-                scale: Vec3::splat(scale),
-                ..Default::default()
+                translation: Vec3::new(
+                    rigid_body_state.translation.0,
+                    rigid_body_state.translation.1,
+                    99.0,
+                ),
+                rotation: Quat::from_rotation_z(rigid_body_state.rotation),
+                scale,
             },
             ..Default::default()
         })
         .insert(
-            RigidBodyBuilder::new_dynamic()
-                .gravity_scale(8.0)
-                .lock_rotations(),
+            bevy_rapier2d::rapier::dynamics::RigidBodyBuilder::new_dynamic().translation(
+                rigid_body_state.translation.0,
+                rigid_body_state.translation.1,
+            ),
         )
-        .insert(ColliderBuilder::capsule_y(tile_size.y / 4.0 - 5f32, tile_size.x / 4.0).friction(0.0))
-        .insert(Player {
-            uid: 0,
-            velocity: Vec3::new(40f32, 12000f32, 0f32),
-            show_size: tile_size * scale,
-            jumped: false,
+        .with_children(|parent| {
+            // 血条背景
+            parent.spawn_bundle(SpriteBundle {
+                material: blood_backgound_handle,
+                transform: Transform {
+                    translation: Vec3::new(0., 12., 99.0),
+                    scale: Vec3::new(0.1, 0.1, 0.),
+                    ..Default::default()
+                },
+                ..Default::default()
+            });
+            // 血量值
+            let blood_len = 12. * (player.hp as f32 / player.max_hp as f32);
+            parent
+                .spawn_bundle(SpriteBundle {
+                    material: blood_handle,
+                    transform: Transform {
+                        translation: Vec3::new((blood_len / 2.) - 6., 12., 99.0),
+                        scale: Vec3::new(blood_len / 4., 0.1, 0.),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                })
+                .insert(player);
+            // 血量框
+            parent.spawn_bundle(SpriteBundle {
+                material: blood_box_handle,
+                transform: Transform {
+                    translation: Vec3::new(0., 12., 99.0),
+                    scale: Vec3::new(0.1, 0.1, 0.),
+                    ..Default::default()
+                },
+                ..Default::default()
+            });
         })
-        .insert(Timer::from_seconds(0.1, true));
+        .insert(Timer::from_seconds(0.1, true))
+        .insert(SynEntity {
+            id: rigid_body_state.id,
+            entity_type: rigid_body_state.entity_type,
+            health: std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+            animate_type: rigid_body_state.animate,
+            animate_index: 0,
+        })
+        .insert(player);
 }
 
-fn player_movement(
-    keyboard_input: Res<Input<KeyCode>>,
-    rapier_parameters: Res<RapierConfiguration>,
-    mut rigid_bodies: ResMut<RigidBodySet>,
-    mut player_info: Query<(&mut Player, &Transform, &RigidBodyHandleComponent)>,
-    mut camera_query: Query<(&CameraCtrl, &mut Transform)>,
-    // window: Res<WindowDescriptor>,
-    mut map_events: EventWriter<MapEvent>,
-) {
-    if let Some((_camera_ctrl, mut camera_transform)) = camera_query.iter_mut().next() {
-        for (player, _player_transform, rigid_body_component) in player_info.iter_mut() {
-            // player_transform.translation.y =
+fn player_movement() {}
 
-            let x_axis = -(keyboard_input.pressed(KeyCode::A) as i8)
-                + (keyboard_input.pressed(KeyCode::D) as i8);
-            let y_axis = keyboard_input.pressed(KeyCode::Space) as i8;
+fn animate_system() {}
 
-            // if !player.jumped {
-
-            let mut move_delta = Vector2::new(x_axis as f32, y_axis as f32);
-            if move_delta != Vector2::zeros() {
-                move_delta /= move_delta.magnitude() * rapier_parameters.scale;
-            }
-
-            if let Some(rb) = rigid_bodies.get_mut(rigid_body_component.handle()) {
-                // println!("{:?}", rb.linvel());
-                if rb.linvel().y == 0f32 && !player.jumped {
-                    rb.set_linvel(
-                        Vector2::new(
-                            move_delta.x * player.velocity.x,
-                            move_delta.y * player.velocity.y,
-                        ),
-                        true,
-                    );
-                // player.jumped = true;
-                } else {
-                    rb.set_linvel(Vector2::new(move_delta.x * player.velocity.x, 0f32), true);
-                }
-                let player_pos = rb.position().translation;
-                let old_pos = camera_transform.translation.clone();
-                camera_transform.translation = Vec3::new(
-                    player_pos.x,
-                    camera_transform.translation.y,
-                    camera_transform.translation.z,
-                );
-                if old_pos.distance(camera_transform.translation) > 0f32 {
-                    map_events.send(MapEvent::Add);
-                }
-            }
-            // }
-
-            // 屏幕可见范围偏移量
-            // let w = (window.width / 2f32) - (3f32 * (player.show_size.x / 2f32));
-            // let h = (window.height / 2f32) - (3f32 * (player.show_size.y / 2f32));
-
-            // if player_transform.translation.x > (camera_transform.translation.x + w)
-            //     || player_transform.translation.x < (camera_transform.translation.x - w)
-            //     || player_transform.translation.y > (camera_transform.translation.y + h)
-            //     || player_transform.translation.y < (camera_transform.translation.y - h)
-            // {
-            //     camera_transform.translation +=
-            //         Vec3::new(move_delta.x, move_delta.y, 0.0) * player.velocity.x;
-            // }
-        }
-    }
-}
-
-fn animate_system(
-    time: Res<Time>,
-    mut rigid_bodies: ResMut<RigidBodySet>,
-    mut player_query: Query<
-        (
-            &RigidBodyHandleComponent,
-            &mut Timer,
-            &mut TextureAtlasSprite,
-            &Handle<TextureAtlas>,
-        ),
-        With<Player>,
-    >,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) {
-    if let Some((player_rb, mut timer, mut sprite, texture_atlas_handle)) =
-        player_query.iter_mut().next()
-    {
-        if let Some(rb) = rigid_bodies.get_mut(player_rb.handle()) {
-            if rb.linvel().x > 0.001f32
-                || rb.linvel().y > 0.001f32
-                || rb.linvel().x < -0.001f32
-                || rb.linvel().y < -0.001f32
-            {
-                timer.tick(time.delta());
-                if timer.finished() {
-                    if let Some(texture_atlas) = texture_atlases.get(texture_atlas_handle) {
-                        sprite.index =
-                            ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
-                    }
-                }
-            } else {
-                sprite.index = 0u32;
-            }
-        }
-    }
-    // if player.velocity.distance(Vec3::new(0.0, 0.0, 0.0)) != 0f32 {
-    //     timer.tick(time.delta_seconds());
-    //     if timer.finished() {
-    //         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-    //         sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
-    //     }
-    // } else {
-    //     sprite.index = 0u32;
-    // }
-}
-
-fn player_ctrl_system(// diagnostics: Res<Diagnostics>,
-    // mut query: Query<&mut Text, With<PlayerPlugin>>,
-) {
-}
+fn player_ctrl_system() {}

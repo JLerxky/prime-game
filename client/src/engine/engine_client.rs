@@ -16,12 +16,12 @@ use super::{
     event::{
         control_event::ControlEventPlugin, heart_beat_event::HeartBeatEventPlugin,
         keyboard_event::KeyboardEventPlugin, map_event::MapEventPlugin,
-        player_update_event::PlayerUpdateEventPlugin, skill_event::SkillEventPlugin,
-        sync_event::SyncEventPlugin,
+        skill_event::SkillEventPlugin, sync_event::SyncEventPlugin,
     },
     plugin::{
         animate_plugin::AnimatePlugin, camera_ctrl_plugin::CameraCtrl,
-        network_plugin::NetworkPlugin, tile_map_plugin::TileMapPlugin, ui_plugin::UIPlugin,
+        network_plugin::NetworkPlugin, player_plugin::PlayerPlugin, tile_map_plugin::TileMapPlugin,
+        ui_plugin::UIPlugin,
     },
 };
 
@@ -86,13 +86,12 @@ pub fn engine_start() {
         .add_plugin(MapEventPlugin)
         .add_plugin(HeartBeatEventPlugin)
         .add_plugin(SyncEventPlugin)
-        .add_plugin(PlayerUpdateEventPlugin)
         .add_plugin(SkillEventPlugin)
         // .add_plugin(WindowEventPlugin)
         // 地图初始化
         .add_plugin(TileMapPlugin)
-        // 玩家
-        // .add_plugin(PlayerPlugin)
+        // 玩家插件
+        .add_plugin(PlayerPlugin)
         // 网络
         .add_plugin(NetworkPlugin)
         // 动画

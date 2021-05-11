@@ -1260,6 +1260,7 @@ dependencies = [
  "data",
  "glam 0.13.1",
  "protocol",
+ "rand 0.8.3",
  "rustyline",
  "serde",
  "serde_json",
