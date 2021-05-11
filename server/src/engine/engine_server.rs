@@ -660,8 +660,7 @@ pub async fn wait_for_net(
                         }
                         let packet =
                             Packet::Game(GameRoute::Update(UpdateData { frame: 0, states }));
-                        let _ = engine_tx.send(packet.clone()).await;
-                        let _ = engine_tx.send(packet.clone()).await;
+                        let _ = engine_tx.send(packet).await;
                     }
                     protocol::route::AccountRoute::Logout(_) => {}
                     protocol::route::AccountRoute::GetInfo(_) => {}

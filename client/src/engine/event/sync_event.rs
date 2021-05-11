@@ -63,12 +63,11 @@ fn event_listener_system(
     // mut sync_event_writer: EventWriter<SyncEvent>,
 ) {
     for sync_event in sync_event_reader.iter() {
-        let update_data = sync_event.update_data.clone();
         let health_now = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        'update_data: for rigid_body_state in update_data.states {
+        'update_data: for rigid_body_state in &sync_event.update_data.states {
             for (mut syn_entity, mut transform) in syn_entity_query.iter_mut() {
                 // println!("3");
                 if syn_entity.entity_type == rigid_body_state.entity_type
