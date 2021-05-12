@@ -64,6 +64,9 @@ fn event_listener_system(
             };
             if let Ok(rb_handle) = player_query.single_mut() {
                 if let Some(rb) = rigid_bodies.get_mut(rb_handle.handle()) {
+                    if control_event.action == 0 {
+                        rb.set_linvel(Vector2::new(0., 0.), true);
+                    }
                     if control_event.action == 1 {
                         rb.set_linvel(
                             Vector2::new(control_event.direction.0, control_event.direction.1)
