@@ -4018,6 +4018,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "shadow-client"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_rapier2d",
+ "bincode",
+ "common",
+ "config",
+ "data",
+ "protocol",
+ "tokio",
+]
+
+[[package]]
+name = "shadow-server"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "bincode",
+ "bytes",
+ "common",
+ "config",
+ "crossbeam",
+ "data",
+ "futures",
+ "glam 0.13.1",
+ "protocol",
+ "rand 0.8.3",
+ "rapier2d",
+ "rustyline",
+ "serde",
+ "sha2",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+]
+
+[[package]]
 name = "sharded-slab"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

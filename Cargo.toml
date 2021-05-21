@@ -7,4 +7,6 @@ members = [
     "server",
     "client",
     "example",
+    "shadow-server",
+    "shadow-client",
 ]
