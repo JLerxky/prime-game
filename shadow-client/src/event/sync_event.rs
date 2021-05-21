@@ -110,7 +110,7 @@ fn event_listener_system(
                     rigid_body_state.translation.0,
                     rigid_body_state.translation.1,
                 ))
-                .insert(Timer::from_seconds(0.1, true))
+                .insert(Timer::from_seconds(1., true))
                 .insert(SynEntity {
                     id: rigid_body_state.id,
                     entity_type: rigid_body_state.entity_type,

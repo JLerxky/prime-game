@@ -74,7 +74,7 @@ fn net_handler_system(
                 Packet::Game(game_route) => match game_route {
                     GameRoute::Update(update_data) => {
                         println!(
-                            "时间: {:?}, 位置: {:?}",
+                            "数据包: {:?}, 位置: {:?}",
                             update_data.frame, update_data.states[0].translation
                         );
                         sync_event_writer.send(SyncEvent { update_data });
