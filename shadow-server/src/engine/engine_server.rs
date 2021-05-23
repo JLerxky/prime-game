@@ -465,12 +465,13 @@ pub async fn wait_for_net(
                             animate: 1,
                         };
                         let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                            .translation(
-                                rand::thread_rng().gen_range(-500..500) as f32,
-                                rand::thread_rng().gen_range(-500..500) as f32,
-                            )
+                            // .translation(
+                            //     rand::thread_rng().gen_range(-500..500) as f32,
+                            //     rand::thread_rng().gen_range(-500..500) as f32,
+                            // )
+                            .translation(0f32, 0f32)
                             // 线速度
-                            .linvel(0.0, 0.0)
+                            .linvel(1.0, 0.0)
                             // 角速度
                             .angvel(0.0)
                             // 重力

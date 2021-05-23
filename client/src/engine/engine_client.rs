@@ -75,7 +75,7 @@ pub fn engine_start() {
         // 设置摄像机
         .add_startup_system(set_camera.system())
         // BGM
-        .add_startup_system(setup_bgm.system())
+        // .add_startup_system(setup_bgm.system())
         // 辅助功能插件
         // .add_plugin(super::plugin::fps_plugin::Fps)
         // .add_plugin(Ping)

@@ -106,10 +106,7 @@ fn event_listener_system(
                     },
                     ..Default::default()
                 })
-                .insert(RigidBodyBuilder::new_dynamic().translation(
-                    rigid_body_state.translation.0,
-                    rigid_body_state.translation.1,
-                ))
+                .insert(RigidBodyBuilder::new_dynamic())
                 .insert(Timer::from_seconds(1., true))
                 .insert(SynEntity {
                     id: rigid_body_state.id,
