@@ -2,7 +2,6 @@ use std::time::SystemTime;
 
 use bevy::{core::FixedTimestep, prelude::*};
 use bevy_rapier2d::{
-    na::Vector2,
     physics::RigidBodyHandleComponent,
     rapier::dynamics::{RigidBodyBuilder, RigidBodySet},
 };
@@ -84,7 +83,7 @@ fn event_listener_system(
 
                     if let Some(rb) = rigid_bodies.get_mut(rb_handle.handle()) {
                         rb.set_linvel(
-                            Vector2::new(rigid_body_state.linvel.0, rigid_body_state.linvel.1),
+                            [rigid_body_state.linvel.0, rigid_body_state.linvel.1].into(),
                             true,
                         );
                         rb.set_angvel(rigid_body_state.angvel.0, true);
@@ -208,10 +207,15 @@ fn event_listener_system(
                     },
                     ..Default::default()
                 })
-                .insert(RigidBodyBuilder::new_dynamic().translation(
-                    rigid_body_state.translation.0,
-                    rigid_body_state.translation.1,
-                ))
+                .insert(
+                    RigidBodyBuilder::new_dynamic().translation(
+                        [
+                            rigid_body_state.translation.0,
+                            rigid_body_state.translation.1,
+                        ]
+                        .into(),
+                    ),
+                )
                 .with_children(|parent| {
                     if rigid_body_state.entity_type == EntityType::Player {
                         // 血条背景

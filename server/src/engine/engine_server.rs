@@ -12,16 +12,7 @@ use protocol::{
     route::GameRoute,
 };
 use rand::Rng;
-use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase, SharedShape};
-use rapier2d::na::Vector2;
-use rapier2d::pipeline::PhysicsPipeline;
-use rapier2d::{
-    dynamics::{
-        BodyStatus, CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle,
-        RigidBodySet,
-    },
-    pipeline::ChannelEventCollector,
-};
+use rapier2d::prelude::*;
 use tokio::sync::{
     mpsc::{Receiver, Sender},
     Mutex,
@@ -30,12 +21,14 @@ use tokio::sync::{
 type ColliderSetState = Arc<Mutex<ColliderSet>>;
 type RigidBodySetState = Arc<Mutex<RigidBodySet>>;
 type JointSetState = Arc<Mutex<JointSet>>;
+type IslandState = Arc<Mutex<IslandManager>>;
 type PlayerHandleMapState = Arc<Mutex<HashMap<u32, RigidBodyHandle>>>;
 
 pub async fn engine_start(net_rx: Receiver<Packet>, engine_tx: Sender<Packet>) {
     let rigid_body_state = Arc::new(Mutex::new(RigidBodySet::new()));
     let collider_state = Arc::new(Mutex::new(ColliderSet::new()));
     let joint_state = Arc::new(Mutex::new(JointSet::new()));
+    let island_state = Arc::new(Mutex::new(IslandManager::new()));
 
     let player_handle_map: HashMap<u32, RigidBodyHandle> = HashMap::new();
     let player_handle_state = Arc::new(Mutex::new(player_handle_map));
@@ -44,6 +37,7 @@ pub async fn engine_start(net_rx: Receiver<Packet>, engine_tx: Sender<Packet>) {
         rigid_body_state.clone(),
         collider_state.clone(),
         joint_state.clone(),
+        island_state.clone(),
     );
     tokio::spawn(clean_body_future);
 
@@ -64,6 +58,7 @@ pub async fn engine_start(net_rx: Receiver<Packet>, engine_tx: Sender<Packet>) {
         rigid_body_state.clone(),
         collider_state.clone(),
         joint_state.clone(),
+        island_state.clone(),
     );
     engine_future.await;
 }
@@ -73,12 +68,13 @@ pub async fn engine_main_loop(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
     joint_state: JointSetState,
+    island_state: IslandState,
 ) {
     println!("物理引擎已启动!");
     // 物理引擎初始化配置
     let mut pipeline = PhysicsPipeline::new();
     // 世界重力
-    let gravity = Vector2::new(0.0, 0.0);
+    let gravity = vector![0.0, 0.0];
     //
     let integration_parameters = IntegrationParameters::default();
     //
@@ -109,10 +105,12 @@ pub async fn engine_main_loop(
         let mut bodies = &mut rigid_body_state.lock().await;
         let mut colliders = &mut collider_state.lock().await;
         let mut joints = &mut joint_state.lock().await;
+        let mut islands = &mut island_state.lock().await;
         // 运行物理引擎计算世界
         pipeline.step(
             &gravity,
             &integration_parameters,
+            &mut islands,
             &mut broad_phase,
             &mut narrow_phase,
             &mut bodies,
@@ -130,7 +128,13 @@ pub async fn engine_main_loop(
         while let Ok(contact_event) = contact_recv.try_recv() {
             // println!("接触事件: {:?}", contact_event);
             // 处理碰撞事件
-            tokio::join!(handle_contact(contact_event, colliders, bodies, joints));
+            tokio::join!(handle_contact(
+                contact_event,
+                colliders,
+                bodies,
+                joints,
+                islands
+            ));
         }
 
         // 处理运行后结果世界状态
@@ -148,6 +152,7 @@ async fn handle_contact(
     colliders: &mut tokio::sync::MutexGuard<'_, ColliderSet>,
     bodies: &mut tokio::sync::MutexGuard<'_, RigidBodySet>,
     joints: &mut tokio::sync::MutexGuard<'_, JointSet>,
+    islands: &mut tokio::sync::MutexGuard<'_, IslandManager>,
 ) {
     match contact_event {
         rapier2d::geometry::ContactEvent::Started(ch1, ch2) => {
@@ -172,7 +177,7 @@ async fn handle_contact(
                 animate: 0,
             };
             if let Some(collider1) = colliders.get(ch1) {
-                if let Some(body1) = bodies.get(collider1.parent()) {
+                if let Some(body1) = bodies.get(collider1.parent().unwrap()) {
                     entity_state1 = EntityState {
                         id: body1.user_data as u64,
                         translation: (
@@ -190,7 +195,7 @@ async fn handle_contact(
                 }
             }
             if let Some(collider2) = colliders.get(ch2) {
-                if let Some(body2) = bodies.get(collider2.parent()) {
+                if let Some(body2) = bodies.get(collider2.parent().unwrap()) {
                     entity_state2 = EntityState {
                         id: body2.user_data as u64,
                         translation: (
@@ -234,7 +239,7 @@ async fn handle_contact(
         }
         rapier2d::geometry::ContactEvent::Stopped(ch1, ch2) => {
             if let Some(collider1) = colliders.get(ch1) {
-                if let Some(body1) = bodies.get(collider1.parent()) {
+                if let Some(body1) = bodies.get(collider1.parent().unwrap()) {
                     let mut entity_state1 = EntityState {
                         id: body1.user_data as u64,
                         translation: (
@@ -250,12 +255,12 @@ async fn handle_contact(
                     };
                     entity_state1.make_up_data(body1.user_data);
                     if entity_state1.entity_type == EntityType::Skill {
-                        bodies.remove(collider1.parent(), colliders, joints);
+                        bodies.remove(collider1.parent().unwrap(), islands, colliders, joints);
                     }
                 }
             }
             if let Some(collider2) = colliders.get(ch2) {
-                if let Some(body2) = bodies.get(collider2.parent()) {
+                if let Some(body2) = bodies.get(collider2.parent().unwrap()) {
                     let mut entity_state2 = EntityState {
                         id: body2.user_data as u64,
                         translation: (
@@ -271,7 +276,7 @@ async fn handle_contact(
                     };
                     entity_state2.make_up_data(body2.user_data);
                     if entity_state2.entity_type == EntityType::Skill {
-                        bodies.remove(collider2.parent(), colliders, joints);
+                        bodies.remove(collider2.parent().unwrap(), islands, colliders, joints);
                     }
                 }
             }
@@ -289,7 +294,7 @@ async fn send_aync(
     let mut states = Vec::new();
     let mut players = Vec::new();
     for (_colloder_handle, collider) in colliders.iter() {
-        if let Some(body) = bodies.get(collider.parent()) {
+        if let Some(body) = bodies.get(collider.parent().unwrap()) {
             // 更新所有动态物体
             if body.is_dynamic()
             // 只更新在运动的物体
@@ -382,6 +387,7 @@ pub async fn clean_body(
     rigid_body_state: RigidBodySetState,
     collider_state: ColliderSetState,
     joint_state: JointSetState,
+    island_state: IslandState,
 ) {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64));
     loop {
@@ -389,6 +395,7 @@ pub async fn clean_body(
         let bodies = &mut rigid_body_state.lock().await;
         let colliders = &mut collider_state.lock().await;
         let joints = &mut joint_state.lock().await;
+        let islands = &mut island_state.lock().await;
 
         let mut handles_for_remove = Vec::new();
 
@@ -432,7 +439,7 @@ pub async fn clean_body(
 
         for handle in handles_for_remove {
             println!("清除(过界/离线)实体: {:?}", &handle);
-            bodies.remove(handle, colliders, joints);
+            bodies.remove(handle, islands, colliders, joints);
             println!("剩余实体: {:?}", &bodies.len());
         }
     }
@@ -455,15 +462,15 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             entity_type: EntityType::Trap,
             animate: 1,
         };
-        let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-            .translation(
+        let rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
+            .translation(vector![
                 rand::thread_rng().gen_range(-1000..1000) as f32,
-                rand::thread_rng().gen_range(-1000..1000) as f32,
-            )
+                rand::thread_rng().gen_range(-1000..1000) as f32
+            ])
             // .rotation(0.0)
             // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
             // 线速度
-            .linvel(0.0, 0.0)
+            .linvel(vector![0.0, 0.0])
             // 角速度
             .angvel(1.0)
             // 重力
@@ -481,7 +488,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
             // .sensor(true)
             .build();
         let rb_handle = bodies.insert(rigid_body);
-        colliders.insert(collider, rb_handle, bodies);
+        colliders.insert_with_parent(collider, rb_handle, bodies);
     }
 
     // 加载地形
@@ -508,12 +515,12 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                             );
                             // println!("生成碰撞体: {}", point);
                             let point = point.as_f32() * 64.0;
-                            let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
-                                .translation(point.x, point.y)
+                            let rigid_body = RigidBodyBuilder::new(RigidBodyType::Static)
+                                .translation(vector![point.x, point.y])
                                 // .rotation(0.0)
                                 // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
                                 // 线速度
-                                .linvel(0.0, 0.0)
+                                .linvel(vector![0.0, 0.0])
                                 // 角速度
                                 .angvel(0.0)
                                 // 重力
@@ -530,7 +537,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                                 // .sensor(true)
                                 .build();
                             let rb_handle = bodies.insert(rigid_body);
-                            colliders.insert(collider, rb_handle, bodies);
+                            colliders.insert_with_parent(collider, rb_handle, bodies);
                         }
                         _ => {}
                     }
@@ -548,12 +555,12 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                 let point = IVec3::new(side_x, side_y, 0);
                 // println!("生成边界: {}", point);
                 let point = point.as_f32() * 64.0;
-                let rigid_body = RigidBodyBuilder::new(BodyStatus::Static)
-                    .translation(point.x, point.y)
+                let rigid_body = RigidBodyBuilder::new(RigidBodyType::Static)
+                    .translation(vector![point.x, point.y])
                     // .rotation(0.0)
                     // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
                     // 线速度
-                    .linvel(0.0, 0.0)
+                    .linvel(vector![0.0, 0.0])
                     // 角速度
                     .angvel(0.0)
                     // 重力
@@ -570,7 +577,7 @@ async fn create_object(rigid_body_state: RigidBodySetState, collider_state: Coll
                     // .sensor(true)
                     .build();
                 let rb_handle = bodies.insert(rigid_body);
-                colliders.insert(collider, rb_handle, bodies);
+                colliders.insert_with_parent(collider, rb_handle, bodies);
             }
         }
     }
@@ -607,13 +614,12 @@ pub async fn wait_for_net(
                             entity_type: EntityType::Player,
                             animate: 1,
                         };
-                        let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                            .translation(
-                                rand::thread_rng().gen_range(-500..500) as f32,
-                                rand::thread_rng().gen_range(-500..500) as f32,
-                            )
+                        let x = rand::thread_rng().gen_range(-500..500) as f32;
+                        let y = rand::thread_rng().gen_range(-500..500) as f32;
+                        let rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
+                            .translation(vector![x, y])
                             // 线速度
-                            .linvel(0.0, 0.0)
+                            .linvel(vector![0.0, 0.0])
                             // 角速度
                             .angvel(0.0)
                             // 重力
@@ -629,7 +635,7 @@ pub async fn wait_for_net(
                             .friction(0.0)
                             .build();
                         let rb_handle = bodies.insert(rigid_body);
-                        colliders.insert(collider, rb_handle, bodies);
+                        colliders.insert_with_parent(collider, rb_handle, bodies);
                         player_handle_map.insert(login_data.uid, rb_handle);
                         // println!("{:?}", player_handle_map);
                         // entity_id += 1;
@@ -637,7 +643,7 @@ pub async fn wait_for_net(
                         // 发送当前所有可移动实体状态给新登录玩家
                         let mut states = Vec::new();
                         for (_colloder_handle, collider) in colliders.iter() {
-                            if let Some(body) = bodies.get(collider.parent()) {
+                            if let Some(body) = bodies.get(collider.parent().unwrap()) {
                                 // 只更新可运动的物体
                                 if body.is_dynamic() {
                                     let mut state = EntityState {
@@ -671,30 +677,30 @@ pub async fn wait_for_net(
                         if check_player_health(control_data.uid) {
                             if let Some(handle) = player_handle_map.get(&control_data.uid) {
                                 if let Some(body) = bodies.get_mut(*handle) {
-                                    let s = Vector2::new(
+                                    let s = Vec2::new(
                                         control_data.direction.0,
                                         control_data.direction.1,
                                     )
-                                    .norm();
+                                    .length();
                                     if s == 0. {
-                                        body.set_linvel(Vector2::new(0., 0.), true);
+                                        body.set_linvel(vector![0., 0.], true);
                                     } else {
                                         if control_data.action == 1 {
                                             body.set_linvel(
-                                                Vector2::new(
+                                                vector![
                                                     control_data.direction.0,
-                                                    control_data.direction.1,
-                                                ) / s
+                                                    control_data.direction.1
+                                                ] / s
                                                     * 100.,
                                                 true,
                                             );
                                         }
                                         if control_data.action == 2 {
                                             body.set_linvel(
-                                                Vector2::new(
+                                                vector![
                                                     control_data.direction.0,
-                                                    control_data.direction.1,
-                                                ) / s
+                                                    control_data.direction.1
+                                                ] / s
                                                     * 150.,
                                                 true,
                                             );
@@ -734,12 +740,12 @@ pub async fn wait_for_net(
                                         entity_type: EntityType::Skill,
                                         animate: 1,
                                     };
-                                    let rigid_body = RigidBodyBuilder::new(BodyStatus::Dynamic)
-                                        .translation(translation.x, translation.y)
+                                    let rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
+                                        .translation(vector![translation.x, translation.y])
                                         // .rotation(0.0)
                                         // .position(Isometry2::new(Vector2::new(1.0, 5.0), 0.0))
                                         // 线速度
-                                        .linvel(linvel.x, linvel.y)
+                                        .linvel(vector![linvel.x, linvel.y])
                                         // 角速度
                                         .angvel(60.)
                                         // 重力
@@ -757,7 +763,7 @@ pub async fn wait_for_net(
                                         // .sensor(true)
                                         .build();
                                     let rb_handle = bodies.insert(rigid_body);
-                                    colliders.insert(collider, rb_handle, bodies);
+                                    colliders.insert_with_parent(collider, rb_handle, bodies);
                                 }
                             }
                         }

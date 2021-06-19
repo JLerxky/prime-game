@@ -4,12 +4,7 @@ use bevy::{
     window::WindowMode,
     winit::WinitPlugin,
 };
-use bevy_rapier2d::{
-    na::Vector2,
-    physics::{RapierConfiguration, RapierPhysicsPlugin},
-    rapier::pipeline::PhysicsPipeline,
-    render::RapierRenderPlugin,
-};
+use bevy_rapier2d::prelude::*;
 // use protocol::Packet;
 
 use super::{
@@ -68,8 +63,8 @@ pub fn engine_start() {
         .add_plugin(WinitPlugin::default())
         // .add_plugin(WgpuPlugin::default())
         // 物理插件
-        .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        // .add_plugin(RapierRenderPlugin)
         .add_startup_system(setup_graphics.system())
         .add_startup_system(enable_physics_profiling.system())
         // 设置摄像机
@@ -124,7 +119,7 @@ fn set_camera(mut commands: Commands) {
 fn setup_graphics(mut commands: Commands, mut rapier_config: ResMut<RapierConfiguration>) {
     // configuration.scale = 40.0;
 
-    rapier_config.gravity = Vector2::new(0.0, -512.0);
+    rapier_config.gravity = vector![0.0, -512.0];
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_translation(Vec3::new(1000.0, 100.0, 2000.0)),
         ..Default::default()

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use data::client_db::save_player;
 use protocol::data::player_data::{PlayerData, PlayerListData};
 
@@ -116,10 +117,10 @@ fn setup(
             ..Default::default()
         })
         .insert(
-            bevy_rapier2d::rapier::dynamics::RigidBodyBuilder::new_dynamic().translation(
+            bevy_rapier2d::rapier::dynamics::RigidBodyBuilder::new_dynamic().translation(vector![
                 rigid_body_state.translation.0,
-                rigid_body_state.translation.1,
-            ),
+                rigid_body_state.translation.1
+            ]),
         )
         .with_children(|parent| {
             // 血条背景
