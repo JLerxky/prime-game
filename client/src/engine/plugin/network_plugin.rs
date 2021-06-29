@@ -12,9 +12,7 @@ use protocol::{
 };
 use tokio::net::UdpSocket;
 
-use crate::engine::event::{
-    heart_beat_event::HeartBeatEvent,   sync_event::SyncEvent,
-};
+use crate::engine::event::{heart_beat_event::HeartBeatEvent, sync_event::SyncEvent};
 
 use super::player_plugin::PlayerUpdateEvent;
 
@@ -52,7 +50,8 @@ impl Plugin for NetworkPlugin {
         let to_be_sent_queue = Arc::new(Mutex::new(to_be_sent_queue));
         let to_be_sent_queue_c = to_be_sent_queue.clone();
 
-        tokio::spawn(net_client_start(packet_queue_c, to_be_sent_queue_c));
+        let net_client_runtime = tokio::runtime::Runtime::new().unwrap();
+        net_client_runtime.spawn(net_client_start(packet_queue_c, to_be_sent_queue_c));
         app.insert_resource(NetWorkState {
             packet_queue,
             to_be_sent_queue,
