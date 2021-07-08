@@ -166,7 +166,7 @@ fn ui_system(
                     .put(
                         widget_rect,
                         bevy_egui::egui::Button::new("性能监控")
-                            .fill(Some(Color32::from_rgba_unmultiplied(0, 0, 0, 0))),
+                            .fill(Color32::from_rgba_unmultiplied(0, 0, 0, 0)),
                     )
                     .clicked()
                 {
@@ -180,7 +180,7 @@ fn ui_system(
                     .put(
                         widget_rect,
                         bevy_egui::egui::Button::new("退出游戏")
-                            .fill(Some(Color32::from_rgba_unmultiplied(0, 0, 0, 0))),
+                            .fill(Color32::from_rgba_unmultiplied(0, 0, 0, 0)),
                     )
                     .clicked()
                 {
