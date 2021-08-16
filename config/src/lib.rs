@@ -4,7 +4,7 @@ pub const PACKET_SIZE: usize = 2048;
 // PC
 // pub const SERVER_ADDR: &str = "192.168.101.198:2101";
 // ROG JLer-0
-// pub const SERVER_ADDR: &str = "192.168.101.17:2101";
+pub const SERVER_ADDR: &str = "192.168.101.17:2101";
 // ROG JLer
 // pub const SERVER_ADDR: &str = "192.168.101.220:2101";
 // ROG 网线
@@ -14,7 +14,7 @@ pub const PACKET_SIZE: usize = 2048;
 // 发布 server
 // pub const SERVER_ADDR: &str = "0.0.0.0:2101";
 // Mac USB
-pub const SERVER_ADDR: &str = "172.20.10.5:2101";
+// pub const SERVER_ADDR: &str = "172.20.10.5:2101";
 // 阿里云
 // pub const SERVER_ADDR: &str = "47.114.179.240:2101";
 // 腾讯云

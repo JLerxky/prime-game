@@ -101,7 +101,7 @@ pub async fn engine_main_loop(
 
     // 物理引擎主循环
     // let start_time = Instant::now();
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 120f64));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 360f64));
     let mut frame_no: u128 = 0;
     loop {
         // println!("{}", &frame_no);
@@ -134,7 +134,7 @@ pub async fn engine_main_loop(
         }
 
         // 处理运行后结果世界状态
-        if frame_no % 6 == 0 {
+        if frame_no % 18 == 0 {
             tokio::join!(send_aync(colliders, bodies, frame_no, engine_tx.clone()));
         }
         frame_no += 1;
@@ -721,7 +721,7 @@ pub async fn wait_for_net(
                                         * 40.);
                                     let linvel =
                                         Vec2::new(skill_data.direction.0, skill_data.direction.1)
-                                            * 1000.;
+                                            * 100.;
                                     let entity_id =
                                         next_entity_id(EntityType::Skill as u8).unwrap();
                                     // println!("entity_id: {}", entity_id);
