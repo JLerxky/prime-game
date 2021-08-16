@@ -1,4 +1,4 @@
-use data::server_db::{self, find_all_tile, GameData};
+use data::server_db::{self, GameData, find_all_tile, find_player, save_player};
 use protocol::{
     data::{
         control_data::ControlData, player_data::PlayerData, skill_data::SkillData,
@@ -348,6 +348,12 @@ pub async fn start_listening(
                                         .as_millis()
                                 )),
                             ));
+                            // 初始化玩家状态
+                            if let Ok(mut player) = find_player(uid) {
+                                    player.hp = 100;
+                                    player.mp = 100;
+                                    let _ = save_player(player);
+                            }
                             // 发送生成玩家实体事件到引擎
                             let packet_login =
                                 Packet::Account(protocol::route::AccountRoute::Login(

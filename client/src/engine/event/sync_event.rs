@@ -90,12 +90,12 @@ fn event_listener_system(
                         rb.set_angvel(rigid_body_state.angvel.0, true);
                         let mut pos = rb.position().clone();
 
-                        if (pos.translation.x - rigid_body_state.translation.0).abs() > 10. {
-                            pos.translation.x = rigid_body_state.translation.0;
-                        }
-                        if (pos.translation.y - rigid_body_state.translation.1).abs() > 10. {
-                            pos.translation.y = rigid_body_state.translation.1;
-                        }
+                        // if (pos.translation.x - rigid_body_state.translation.0).abs() > 1. {
+                        pos.translation.x = rigid_body_state.translation.0;
+                        // }
+                        // if (pos.translation.y - rigid_body_state.translation.1).abs() > 1. {
+                        pos.translation.y = rigid_body_state.translation.1;
+                        // }
 
                         rb.set_position(pos, true);
                     }
