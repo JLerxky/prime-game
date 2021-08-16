@@ -101,7 +101,7 @@ pub async fn engine_main_loop(
 
     // 物理引擎主循环
     // let start_time = Instant::now();
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(60f64 / 60f64));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(1f64 / 120f64));
     let mut frame_no: u128 = 0;
     loop {
         // println!("{}", &frame_no);
@@ -134,8 +134,9 @@ pub async fn engine_main_loop(
         }
 
         // 处理运行后结果世界状态
-        tokio::join!(send_aync(colliders, bodies, frame_no, engine_tx.clone()));
-
+        if frame_no % 6 == 0 {
+            tokio::join!(send_aync(colliders, bodies, frame_no, engine_tx.clone()));
+        }
         frame_no += 1;
     }
     // let time = start_time.elapsed().as_secs_f64();
