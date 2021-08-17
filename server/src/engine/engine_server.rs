@@ -685,7 +685,7 @@ pub async fn wait_for_net(
                                                     control_data.direction.0,
                                                     control_data.direction.1,
                                                 ) / s
-                                                    * 100.,
+                                                    * 150.,
                                                 true,
                                             );
                                         }
@@ -695,7 +695,7 @@ pub async fn wait_for_net(
                                                     control_data.direction.0,
                                                     control_data.direction.1,
                                                 ) / s
-                                                    * 150.,
+                                                    * 200.,
                                                 true,
                                             );
                                         }
