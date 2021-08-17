@@ -97,27 +97,29 @@ fn event_listener_system(
                         pos.translation.y = rigid_body_state.translation.1;
                         // }
 
-                        rb.set_position(pos, true);
-                    }
-
-                    unsafe {
-                        if rigid_body_state.entity_type == EntityType::Player
-                            && PLAYER.uid == rigid_body_state.id as u32
-                        {
-                            if let Ok(mut player_state) = player_query.single_mut() {
-                                player_state.uid = rigid_body_state.id as u32;
-                            }
-
-                            if let Some((mut camera_transform, _)) = camera_query.iter_mut().next()
+                        // rb.set_position(pos, true);
+                        rb.set_next_kinematic_position(pos);
+                        unsafe {
+                            if rigid_body_state.entity_type == EntityType::Player
+                                && PLAYER.uid == rigid_body_state.id as u32
                             {
-                                camera_transform.translation = Vec3::new(
-                                    rigid_body_state.translation.0,
-                                    rigid_body_state.translation.1,
-                                    99.0,
-                                );
+                                if let Ok(mut player_state) = player_query.single_mut() {
+                                    player_state.uid = rigid_body_state.id as u32;
+                                }
+
+                                if let Some((mut camera_transform, _)) =
+                                    camera_query.iter_mut().next()
+                                {
+                                    camera_transform.translation = Vec3::new(
+                                        rb.position().translation.x,
+                                        rb.position().translation.y,
+                                        99.0,
+                                    );
+                                }
                             }
                         }
                     }
+
                     continue 'update_data;
                 }
             }
